@@ -1,7 +1,8 @@
-package bf1record
+package bf1api
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/tidwall/gjson"
 	"gopkg.in/h2non/gentleman.v2"
@@ -42,6 +43,9 @@ const (
 //设置session
 var SESSION string = ""
 
+//bearerAccessToken
+var TOKEN string = ""
+
 var client = gentleman.New()
 
 //Session 获取
@@ -59,6 +63,8 @@ func Session(username, password string, refreshToken bool) error {
 		return errors.New("更新session时出错：" + err.Error())
 	}
 	SESSION = gjson.Get(res.String(), "data.gatewaySession").Str
+	tk := gjson.Get(res.String(), "data.bearerAccessToken").Str
+	TOKEN = fmt.Sprintf("%s%s", "Bearer ", tk)
 	return nil
 }
 

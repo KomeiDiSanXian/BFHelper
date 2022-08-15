@@ -1,0 +1,156 @@
+package bfhelper
+
+import (
+	"errors"
+	"sync"
+
+	ctrl "github.com/FloatTech/zbpctrl"
+	"github.com/FloatTech/zbputils/control"
+	"gorm.io/gorm"
+
+	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
+	"github.com/tidwall/gjson"
+	zero "github.com/wdvxdr1123/ZeroBot"
+	"github.com/wdvxdr1123/ZeroBot/message"
+)
+
+//读写锁
+var rmu sync.RWMutex
+
+//waitgroup
+var wg sync.WaitGroup
+
+//引擎注册
+var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
+	DisableOnDefault:  false,
+	Help:              "",
+	PrivateDataFolder: "battlefield",
+})
+
+//返回插件数据目录
+func GetDataFolder() string {
+	return engine.DataFolder()
+}
+
+//权限设置
+/*
+func permission(ctx *zero.Ctx) bool {
+	return ctx.Event.Sender.Role != "member"
+	//TODO: 检测该qq是否在权限组中
+	/*
+		return db.IsExist(grp, ctx.Event.Sender.ID)
+
+}
+*/
+func init() {
+	//初始化数据库
+	bf1model.InitDB(engine.DataFolder()+"player.db", &bf1model.Player{})
+	//bf1model.InitDB(engine.DataFolder()+"server.db", &bf1model.Admin{}, &bf1model.Server{}, &bf1model.Group{})
+	//查询在线玩家数
+	engine.OnFullMatchGroup([]string{".bf1stats", "战地1人数", "bf1人数"}).SetBlock(true).
+		Handle(func(ctx *zero.Ctx) {
+			ctx.Send("少女折寿中...")
+			data, err := rsp.ReturnJson("https://api.s-wg.net/ServersCollection/getStatus", "GET", nil)
+			if err != nil {
+				ctx.Send("ERROR:" + err.Error())
+				return
+			}
+			ctx.SendChain(
+				message.At(ctx.Event.UserID),
+				message.Text(
+					"\n更新时间：", gjson.Get(data, "updateTime").Str, "\n",
+					"亚服私服总数：", gjson.Get(data, "quantity"), "\n",
+					"在线人数：", gjson.Get(data, "totalPeople"), "[", gjson.Get(data, "totalQueue"), "]", "\n",
+					"小模式服：", gjson.Get(data, "mode.smallMode.full"), "/", gjson.Get(data, "mode.smallMode.amount"), "\n",
+					"前线：", gjson.Get(data, "mode.frontLine.full"), "/", gjson.Get(data, "mode.frontLine.amount"), "\n",
+					"征服：", gjson.Get(data, "mode.conquer.full"), "/", gjson.Get(data, "mode.conquer.amount"), "\n",
+					"行动：", gjson.Get(data, "mode.operation.full"), "/", gjson.Get(data, "mode.operation.amount"),
+				))
+		})
+	//Bind QQ绑定ID
+	engine.OnRegex(`^[\.\/。] *绑定 *(.*)$`).SetBlock(true).
+		Handle(func(ctx *zero.Ctx) {
+			id := ctx.State["regex_matched"].([]string)[1]
+			gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
+			if err != nil {
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，打开数据库时出错！"))
+				return
+			}
+			db := (*bf1model.PlayerDB)(gdb)
+			//先绑定再查询pid和是否实锤
+			//检查是否已经绑定
+			if data, err := db.FindByQid(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
+				//未绑定...
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("正在绑定id为 ", id))
+				rmu.Lock()
+				err := db.Create(bf1model.Player{
+					Qid:         ctx.Event.UserID,
+					DisplayName: id,
+				})
+				rmu.Unlock()
+				if err != nil {
+					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，ERR:", err))
+					return
+				}
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定成功"))
+			} else {
+				//已绑定，换绑...
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("将原绑定id为 ", data.DisplayName, " 改绑为 ", id))
+				rmu.Lock()
+				err := db.Update(bf1model.Player{
+					Qid:         ctx.Event.UserID,
+					DisplayName: id,
+				})
+				rmu.Unlock()
+				if err != nil {
+					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，ERR:", err))
+					return
+				}
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定成功！"))
+			}
+			hack := false
+			pid := ""
+			wg.Add(2)
+			go func() {
+				hack = IsGetBan(id)
+				if hack {
+					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("你刚才绑定id: ", id, " 已被联ban实锤！"))
+				}
+				wg.Done()
+			}()
+			go func() {
+				pid, _ = GetPersonalID(id)
+				wg.Done()
+			}()
+			rmu.Lock()
+			db.Update(bf1model.Player{
+				PersonalID: pid,
+				Qid:        ctx.Event.UserID,
+				IsHack:     hack,
+			})
+			rmu.Unlock()
+		})
+	//Kick 踢出玩家
+	/*
+		engine.OnRegex(`^[\.\/。] *kick\s*(.*)\s(.*)$`, permission).SetBlock(true).
+			Handle(func(ctx *zero.Ctx) {
+				id := ctx.State["regex_matched"].([]string)[1]
+				reason := ctx.State["regex_matched"].([]string)[2]
+				//reason为空的情况
+				if id == "" {
+					id = reason
+					reason = "Adimin kicks!"
+				}
+				reason = fmt.Sprintf("%s%s", "RemiliaBot: ", reason)
+				//检查reason长度
+				if len(reason) > 32 {
+					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("理由过长！请重新填写！"))
+					return
+				}
+				//translation
+				reason = S2tw(reason)
+				//.......
+			})
+	*/
+}
