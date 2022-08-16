@@ -16,31 +16,31 @@ type PlayerDB gorm.DB
 //CURD...
 
 func (pdb *PlayerDB) Create(player Player) error {
-	return (*gorm.DB)(pdb).Debug().Create(&player).Error
+	return (*gorm.DB)(pdb).Create(&player).Error
 }
 
 func (pdb *PlayerDB) Update(player Player) error {
-	return (*gorm.DB)(pdb).Debug().Model(&Player{}).Where("qid = ?", player.Qid).Updates(&player).Error
+	return (*gorm.DB)(pdb).Model(&Player{}).Where("qid = ?", player.Qid).Updates(&player).Error
 }
 
 func (pdb *PlayerDB) FindByPid(pid uint) (*Player, error) {
 	var player Player
-	err := (*gorm.DB)(pdb).Debug().Model(&Player{}).First(&player, "personal_id = ?", pid).Error
+	err := (*gorm.DB)(pdb).Model(&Player{}).First(&player, "personal_id = ?", pid).Error
 	return &player, err
 }
 
 func (pdb *PlayerDB) FindByName(name string) (*Player, error) {
 	var player Player
-	err := (*gorm.DB)(pdb).Debug().Model(&Player{}).First(&player, "display_name = ?", name).Error
+	err := (*gorm.DB)(pdb).Model(&Player{}).First(&player, "display_name = ?", name).Error
 	return &player, err
 }
 
 func (pdb *PlayerDB) FindByQid(qid int64) (*Player, error) {
 	var player Player
-	err := (*gorm.DB)(pdb).Debug().Model(&Player{}).First(&player, "qid = ?", qid).Error
+	err := (*gorm.DB)(pdb).Model(&Player{}).First(&player, "qid = ?", qid).Error
 	return &player, err
 }
 
 func (pdb *PlayerDB) Delete(pid uint) error {
-	return (*gorm.DB)(pdb).Debug().Delete(&Player{}, "personal_id = ?", pid).Error
+	return (*gorm.DB)(pdb).Delete(&Player{}, "personal_id = ?", pid).Error
 }

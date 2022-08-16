@@ -3,12 +3,16 @@ package bfhelper
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"	
+	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/FloatTech/zbputils/img/text"
 	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	"github.com/tidwall/gjson"
+	zero "github.com/wdvxdr1123/ZeroBot"
+	"github.com/wdvxdr1123/ZeroBot/message"
+	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 	"gopkg.in/h2non/gentleman.v2"
 	"gopkg.in/h2non/gentleman.v2/plugins/headers"
 )
@@ -74,4 +78,15 @@ func S2tw(str string) string {
 		result += twmap[string(v)]
 	}
 	return result
+}
+
+//文字转图片并发送
+func Txt2Img(ctx *zero.Ctx, txt string) {
+	data, err := text.RenderToBase64(txt, text.FontFile, 400, 20)
+	if err != nil {
+		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("将文字转换成图片时发生错误"))
+	}
+	if id := ctx.SendChain(message.Image("base64://" + helper.BytesToString(data))); id.ID() == 0 {
+		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERROR:可能被风控了"))
+	}
 }

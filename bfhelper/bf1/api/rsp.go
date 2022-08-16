@@ -28,17 +28,26 @@ const (
 //原生API 方法名常量
 const (
 	//NativeAPI
-	ADDVIP    string = "RSP.addServerVip"
-	REMOVEVIP string = "RSP.removeServerVip"
-	ADDBAN    string = "RSP.addServerBan"
-	REMOVEBAN string = "RSP.removeServerBan"
-	KICK      string = "RSP.kickPlayer"
-	STATS     string = "Stats.detailedStatsByPersonaId"
-	WEAPONS   string = "Progression.getWeaponsByPersonaId"
-	VEHICLES  string = "Progression.getVehiclesByPersonaId"
+	ADDVIP       string = "RSP.addServerVip"
+	REMOVEVIP    string = "RSP.removeServerVip"
+	ADDBAN       string = "RSP.addServerBan"
+	REMOVEBAN    string = "RSP.removeServerBan"
+	KICK         string = "RSP.kickPlayer"
+	STATS        string = "Stats.detailedStatsByPersonaId"
+	WEAPONS      string = "Progression.getWeaponsByPersonaId"
+	VEHICLES     string = "Progression.getVehiclesByPersonaId"
+	PLAYING      string = "GameServer.getServersByPersonaIds"
+	RECENTSERVER string = "ServerHistory.mostRecentServers"
 	//OperationAPI
 	EXCHANGE string = "ScrapExchange.getOffers"
 	CAMPAIGN string = "CampaignOperations.getPlayerCampaignStatus"
+)
+
+//游戏代号
+const (
+	BF1 string = "tunguska"
+	BFV string = "casablanca"
+	BF4 string = "bf4"
 )
 
 //设置session

@@ -10,6 +10,7 @@ import (
 
 	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/record"
 	"github.com/tidwall/gjson"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
@@ -134,6 +135,57 @@ func init() {
 				IsHack:     hack,
 			})
 			rmu.Unlock()
+		})
+	engine.OnRegex(`^[\.\/。] *1?战绩 *(.*)$`).SetBlock(true).
+		Handle(func(ctx *zero.Ctx) {
+			id := ctx.State["regex_matched"].([]string)[1]
+			ctx.Send("少女折寿中...")
+			if id == "" {
+				gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
+				if err != nil {
+					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("打开数据库时出错！请重新尝试"))
+					return
+				}
+				db := (*bf1model.PlayerDB)(gdb)
+				//检查是否已经绑定
+				if data, err := db.FindByQid(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
+					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("你还没有绑定账号，可以使用.绑定 id来绑定\n或者使用.战绩 id来查询"))
+					return
+				} else {
+					id = data.DisplayName
+				}
+			}
+			stat, err := bf1record.GetStats(id)
+			if err != nil {
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("获取失败：", err))
+				return
+			}
+			if stat.Rank == "" {
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("获取到的部分数据为空，请检查id是否有效"))
+				return
+			}
+			txt := "id：" + id +
+				"等级：" + stat.Rank +
+				"技巧值：" + stat.Skill +
+				"游玩时长：" + stat.TimePlayed +
+				"总kd：" + stat.TotalKD + "(" + stat.Kills + "/" + stat.Deaths + ")" +
+				"总kpm：" + stat.KPM +
+				"准度：" + stat.Accuracy +
+				"爆头率：" + stat.Headshots +
+				"胜率：" + stat.WinPercent + "(" + stat.Wins + "/" + stat.Losses + ")" +
+				"场均击杀：" + stat.KillsPerGame +
+				"步战kd：" + stat.InfantryKD +
+				"步战击杀：" + stat.InfantryKills +
+				"步战kpm：" + stat.InfantryKPM +
+				"载具击杀：" + stat.VehicleKills +
+				"载具kpm：" + stat.VehicleKPM +
+				"近战击杀：" + stat.DogtagsTaken +
+				"最高连杀：" + stat.HighestKillStreak +
+				"最远爆头：" + stat.LongestHeadshot +
+				"MVP数：" + stat.MVP +
+				"作为神医拉起了 " + stat.Revives + " 人" +
+				"开棺材车创死了 " + stat.CarriersKills + " 人"
+			Txt2Img(ctx, txt)
 		})
 	//Kick 踢出玩家
 	/*
