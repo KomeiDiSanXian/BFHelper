@@ -30,10 +30,12 @@ func GetStats(name string) (*Stat, error) {
 		"stats.20.displayValue",
 		"stats.26.value",
 		"stats.27.value",
+		"stats.31.value",
 		"stats.32.value",
 		"stats.35.value",
 		"stats.37.value",
 		"stats.41.value",
+		"stats.54.value",
 	)
 	stat := &Stat{
 		SPM:               result[0].Str,
@@ -55,10 +57,12 @@ func GetStats(name string) (*Stat, error) {
 		TimePlayed:        result[16].Str,
 		MVP:               result[17].Str,
 		Accuracy:          result[18].Str,
-		Headshots:         result[19].Str,
-		HighestKillStreak: result[20].Str,
-		LongestHeadshot:   result[21].Str,
-		Revives:           result[22].Str,
+		DogtagsTaken:      result[19].Str,
+		Headshots:         result[20].Str,
+		HighestKillStreak: result[21].Str,
+		LongestHeadshot:   result[22].Str,
+		Revives:           result[23].Str,
+		CarriersKills:     result[24].Str,
 	}
 	return stat, err
 }

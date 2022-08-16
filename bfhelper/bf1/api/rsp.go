@@ -58,6 +58,9 @@ var TOKEN string = ""
 
 //Session 获取
 func Session(username, password string, refreshToken bool) error {
+	if username == "" || password == "" {
+		return errors.New("账号信息不完整！")
+	}
 	login := map[string]interface{}{"username": username, "password": password, "refreshToken": refreshToken}
 	//requesting..
 	var client = gentleman.New()

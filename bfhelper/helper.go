@@ -164,26 +164,26 @@ func init() {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("获取到的部分数据为空，请检查id是否有效"))
 				return
 			}
-			txt := "id：" + id +
-				"等级：" + stat.Rank +
-				"技巧值：" + stat.Skill +
-				"游玩时长：" + stat.TimePlayed +
-				"总kd：" + stat.TotalKD + "(" + stat.Kills + "/" + stat.Deaths + ")" +
-				"总kpm：" + stat.KPM +
-				"准度：" + stat.Accuracy +
-				"爆头率：" + stat.Headshots +
-				"胜率：" + stat.WinPercent + "(" + stat.Wins + "/" + stat.Losses + ")" +
-				"场均击杀：" + stat.KillsPerGame +
-				"步战kd：" + stat.InfantryKD +
-				"步战击杀：" + stat.InfantryKills +
-				"步战kpm：" + stat.InfantryKPM +
-				"载具击杀：" + stat.VehicleKills +
-				"载具kpm：" + stat.VehicleKPM +
-				"近战击杀：" + stat.DogtagsTaken +
-				"最高连杀：" + stat.HighestKillStreak +
-				"最远爆头：" + stat.LongestHeadshot +
-				"MVP数：" + stat.MVP +
-				"作为神医拉起了 " + stat.Revives + " 人" +
+			txt := "id：" + id + "\n" +
+				"等级：" + stat.Rank + "\n" +
+				"技巧值：" + stat.Skill + "\n" +
+				"游玩时长：" + stat.TimePlayed + "\n" +
+				"总kd：" + stat.TotalKD + "(" + stat.Kills + "/" + stat.Deaths + ")" + "\n" +
+				"总kpm：" + stat.KPM + "\n" +
+				"准度：" + stat.Accuracy + "\n" +
+				"爆头率：" + stat.Headshots + "\n" +
+				"胜率：" + stat.WinPercent + "(" + stat.Wins + "/" + stat.Losses + ")" + "\n" +
+				"场均击杀：" + stat.KillsPerGame + "\n" +
+				"步战kd：" + stat.InfantryKD + "\n" +
+				"步战击杀：" + stat.InfantryKills + "\n" +
+				"步战kpm：" + stat.InfantryKPM + "\n" +
+				"载具击杀：" + stat.VehicleKills + "\n" +
+				"载具kpm：" + stat.VehicleKPM + "\n" +
+				"近战击杀：" + stat.DogtagsTaken + "\n" +
+				"最高连杀：" + stat.HighestKillStreak + "\n" +
+				"最远爆头：" + stat.LongestHeadshot + "\n" +
+				"MVP数：" + stat.MVP + "\n" +
+				"作为神医拉起了 " + stat.Revives + " 人" + "\n" +
 				"开棺材车创死了 " + stat.CarriersKills + " 人"
 			Txt2Img(ctx, txt)
 		})

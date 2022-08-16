@@ -62,7 +62,10 @@ func GetPersonalID(name string) (string, error) {
 	}
 	info := gjson.Get(res.String(), "error").Str
 	if info == "invalid_access_token" || info == "invalid_oauth_info" {
-		rsp.Session(rsp.USERNAME, rsp.PASSWORD, true)
+		err := rsp.Session(rsp.USERNAME, rsp.PASSWORD, true)
+		if err != nil {
+			return "", err
+		}
 		return GetPersonalID(name)
 	}
 	if info != "" {
