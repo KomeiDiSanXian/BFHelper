@@ -3,6 +3,7 @@ package bf1api
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/tidwall/gjson"
 	"gopkg.in/h2non/gentleman.v2"
@@ -46,12 +47,11 @@ var SESSION string = ""
 //bearerAccessToken
 var TOKEN string = ""
 
-var client = gentleman.New()
-
 //Session 获取
 func Session(username, password string, refreshToken bool) error {
 	login := map[string]interface{}{"username": username, "password": password, "refreshToken": refreshToken}
 	//requesting..
+	var client = gentleman.New()
 	client.URL(SessionAPI)
 	client.Use(body.JSON(login))
 	//寻找SakuraKooi申请APIKey...
@@ -62,14 +62,18 @@ func Session(username, password string, refreshToken bool) error {
 	if err != nil {
 		return errors.New("更新session时出错：" + err.Error())
 	}
+	var mu sync.Mutex
+	mu.Lock()
 	SESSION = gjson.Get(res.String(), "data.gatewaySession").Str
 	tk := gjson.Get(res.String(), "data.bearerAccessToken").Str
 	TOKEN = fmt.Sprintf("%s%s", "Bearer ", tk)
+	defer mu.Unlock()
 	return nil
 }
 
 //NativeAPI 返回json
 func ReturnJson(url, method string, parms interface{}) (string, error) {
+	var client = gentleman.New()
 	client.URL(url)
 	client.Use(body.JSON(parms))
 	client.Use(headers.Set("X-Gatewaysession", SESSION))

@@ -18,9 +18,6 @@ import (
 //读写锁
 var rmu sync.RWMutex
 
-//waitgroup
-var wg sync.WaitGroup
-
 //引擎注册
 var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 	DisableOnDefault:  false,
@@ -96,7 +93,12 @@ func init() {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定成功"))
 			} else {
 				//已绑定，换绑...
-				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("将原绑定id为 ", data.DisplayName, " 改绑为 ", id))
+				if data.DisplayName == id { //同id..
+					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("笨蛋！你现在绑的就是这个id"))
+					return
+				} else {
+					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("将原绑定id为 ", data.DisplayName, " 改绑为 ", id))
+				}
 				rmu.Lock()
 				err := db.Update(bf1model.Player{
 					Qid:         ctx.Event.UserID,
@@ -111,6 +113,7 @@ func init() {
 			}
 			hack := false
 			pid := ""
+			var wg sync.WaitGroup
 			wg.Add(2)
 			go func() {
 				hack = IsGetBan(id)
@@ -120,9 +123,10 @@ func init() {
 				wg.Done()
 			}()
 			go func() {
-				pid, _ = GetPersonalID(id)
+				pid, _ = GetPersonalID(id) //TODO:err写入日志
 				wg.Done()
 			}()
+			wg.Wait()
 			rmu.Lock()
 			db.Update(bf1model.Player{
 				PersonalID: pid,
