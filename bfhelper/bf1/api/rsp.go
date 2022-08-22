@@ -11,7 +11,7 @@ import (
 	"gopkg.in/h2non/gentleman.v2/plugins/headers"
 )
 
-//APIs
+// APIs
 const (
 	AuthAPI      string = "https://api.s-wg.net/ServersCollection/getPlayerAll?DisplayName="
 	NativeAPI    string = "https://sparta-gw.battlelog.com/jsonrpc/pc/api"
@@ -19,13 +19,13 @@ const (
 	OperationAPI string = "https://sparta-gw.battlelog.com/jsonrpc/ps4/api" //交换和行动包查询
 )
 
-//ea账密
+// ea账密
 const (
 	USERNAME string = "" //邮箱
 	PASSWORD string = ""
 )
 
-//原生API 方法名常量
+// 原生API 方法名常量
 const (
 	//NativeAPI
 	ADDVIP       string = "RSP.addServerVip"
@@ -43,20 +43,20 @@ const (
 	CAMPAIGN string = "CampaignOperations.getPlayerCampaignStatus"
 )
 
-//游戏代号
+// 游戏代号
 const (
 	BF1 string = "tunguska"
 	BFV string = "casablanca"
 	BF4 string = "bf4"
 )
 
-//设置session
+// 设置session
 var SESSION string = ""
 
-//bearerAccessToken
+// bearerAccessToken
 var TOKEN string = ""
 
-//Session 获取
+// Session 获取
 func Session(username, password string, refreshToken bool) error {
 	if username == "" || password == "" {
 		return errors.New("账号信息不完整！")
@@ -83,7 +83,7 @@ func Session(username, password string, refreshToken bool) error {
 	return nil
 }
 
-//NativeAPI 返回json
+// NativeAPI 返回json
 func ReturnJson(url, method string, parms interface{}) (string, error) {
 	var client = gentleman.New()
 	client.URL(url)

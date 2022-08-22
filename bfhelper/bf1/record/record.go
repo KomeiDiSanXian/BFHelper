@@ -9,7 +9,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-//获取战绩信息
+// 获取战绩信息
 func GetStats(name string) (*Stat, error) {
 	if name == "" {
 		return nil, errors.New("ID cannot be empty")
@@ -75,7 +75,7 @@ func GetStats(name string) (*Stat, error) {
 	return stat, err
 }
 
-//获取武器
+// 获取武器
 func GetWeapons(pid string, class string) (*WeaponSort, error) {
 	post := NewPostWeapon(pid)
 	data, err := rsp.ReturnJson(rsp.NativeAPI, "POST", post)
@@ -92,7 +92,7 @@ func GetWeapons(pid string, class string) (*WeaponSort, error) {
 	return weapon, err
 }
 
-//武器排序
+// 武器排序
 func SortWeapon(weapons []gjson.Result) *WeaponSort {
 	wp := WeaponSort{}
 	for i := range weapons {
@@ -114,6 +114,7 @@ func SortWeapon(weapons []gjson.Result) *WeaponSort {
 			headshots float64
 			eff       float64
 		)
+		// 除以0的情况
 		if kills == 0 || seconds == 0 {
 			kpm = 0
 			headshots = 0

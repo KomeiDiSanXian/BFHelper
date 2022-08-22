@@ -16,17 +16,17 @@ import (
 	"github.com/wdvxdr1123/ZeroBot/message"
 )
 
-//读写锁
+// 读写锁
 var rmu sync.RWMutex
 
-//引擎注册
+// 引擎注册
 var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 	DisableOnDefault:  false,
 	Help:              "",
 	PrivateDataFolder: "battlefield",
 })
 
-//返回插件数据目录
+// 返回插件数据目录
 func GetDataFolder() string {
 	return engine.DataFolder()
 }
@@ -136,6 +136,7 @@ func init() {
 			})
 			rmu.Unlock()
 		})
+	// bf1个人战绩
 	engine.OnRegex(`^[\.\/。] *1?战绩 *(.*)$`).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["regex_matched"].([]string)[1]
@@ -177,17 +178,30 @@ func init() {
 				"开棺材车创死了 " + stat.CarriersKills + " 人"
 			Txt2Img(ctx, txt)
 		})
-	engine.OnRegex(`^[\.\/。] *1?武器 *(.*)$`).SetBlock(true).
-		Handle(func(ctx *zero.Ctx) {
-			id := ctx.State["regex_matched"].([]string)[1]
-			ctx.Send("少女折寿中...")
-			id, err := ReturnBindID(ctx, id)
-			if err != nil {
-				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
-				return
-			}
-			
-		})
+	//所有武器，只展示前五个，修改 RequestWeapon 函数可以展示多个
+	engine.OnRegex(`^[\.\/。] *1?武器 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.ALL) })
+	//半自动
+	engine.OnRegex(`^[\.\/。] *1?半自动 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Semi) })
+	//冲锋枪
+	engine.OnRegex(`^[\.\/。] *1?冲锋枪 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.SMG) })
+	//轻机枪
+	engine.OnRegex(`^[\.\/。] *1?轻?机枪 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.LMG) })
+	//步枪
+	engine.OnRegex(`^[\.\/。] *1?步枪 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Bolt) })
+	//霰弹枪
+	engine.OnRegex(`^[\.\/。] *1?[霰散]弹枪 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Shotgun) })
+	//手枪
+	engine.OnRegex(`^[\.\/。] *1?[手配佩]枪 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Sidearm) })
+	//近战武器
+	engine.OnRegex(`^[\.\/。] *1?近战 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Melee) })
+	//手榴弹
+	engine.OnRegex(`^[\.\/。] *1?手[榴雷]弹? *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Grenade) })
+	//驾驶员
+	engine.OnRegex(`^[\.\/。] *1?驾驶员 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Dirver) })
+	//配备
+	engine.OnRegex(`^[\.\/。] *1?[配装]备 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Gadget) })
+	//精英兵
+	engine.OnRegex(`^[\.\/。] *1?精英兵? *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Elite) })
 	//Kick 踢出玩家
 	/*
 		engine.OnRegex(`^[\.\/。] *kick\s*(.*)\s(.*)$`, permission).SetBlock(true).

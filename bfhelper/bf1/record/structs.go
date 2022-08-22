@@ -14,6 +14,7 @@ const (
 	Dirver  string = "ID_P_CAT_VEHICLEKITWEAPON" //驾驶员
 	SMG     string = "ID_P_CAT_SMG"              //冲锋枪
 	Sidearm string = "ID_P_CAT_SIDEARM"          //手枪
+	Bolt    string = "ID_P_CAT_BOLT"             //步枪
 )
 
 type WeaponSort []Weapons
