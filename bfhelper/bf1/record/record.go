@@ -1,11 +1,19 @@
 package bf1record
 
 import (
+	"errors"
+	"fmt"
+	"sort"
+
 	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	"github.com/tidwall/gjson"
 )
 
+//获取战绩信息
 func GetStats(name string) (*Stat, error) {
+	if name == "" {
+		return nil, errors.New("ID cannot be empty")
+	}
 	data, err := rsp.ReturnJson("https://battlefieldtracker.com/api/appStats?platform=3&name="+name, "GET", nil)
 	if err != nil {
 		return nil, err
@@ -65,4 +73,65 @@ func GetStats(name string) (*Stat, error) {
 		CarriersKills:     result[24].Str,
 	}
 	return stat, err
+}
+
+//获取武器
+func GetWeapons(pid string, class string) (*WeaponSort, error) {
+	post := NewPostWeapon(pid)
+	data, err := rsp.ReturnJson(rsp.NativeAPI, "POST", post)
+	if err != nil {
+		return nil, err
+	}
+	var result []gjson.Result
+	if class == ALL {
+		result = gjson.Get(data, "result.#.weapons|@flatten").Array()
+	} else {
+		result = gjson.Get(data, "result.#(categoryId=\""+class+"\").weapons").Array()
+	}
+	weapon := SortWeapon(result)
+	return weapon, err
+}
+
+//武器排序
+func SortWeapon(weapons []gjson.Result) *WeaponSort {
+	wp := WeaponSort{}
+	for i := range weapons {
+		gets := gjson.GetMany(weapons[i].Raw,
+			"name",
+			"stats.values.kills",
+			"stats.values.headshots",
+			"stats.values.accuracy",
+			"stats.values.seconds",
+			"stats.values.hits",
+			"stats.values.shots",
+		)
+		kills := gets[1].Float()
+		seconds := gets[4].Float()
+		heads := gets[2].Float()
+		hits := gets[5].Float()
+		var (
+			kpm       float64
+			headshots float64
+			eff       float64
+		)
+		if kills == 0 || seconds == 0 {
+			kpm = 0
+			headshots = 0
+			eff = 0
+		} else {
+			headshots = heads / kills * 100
+			kpm = kills / seconds * 60
+			eff = hits / kills
+		}
+		wp = append(wp, Weapons{
+			Name:       gets[0].Str,
+			Kills:      kills,
+			Accuracy:   fmt.Sprintf("%.2f%%", gets[3].Float()),
+			KPM:        fmt.Sprintf("%.3f", kpm),
+			Headshots:  fmt.Sprintf("%.2f%%", headshots),
+			Efficiency: fmt.Sprintf("%.3f", eff),
+		})
+	}
+	sort.Sort(wp)
+	return &wp
 }

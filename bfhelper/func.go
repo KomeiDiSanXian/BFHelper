@@ -9,12 +9,14 @@ import (
 
 	"github.com/FloatTech/zbputils/img/text"
 	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
 	"github.com/tidwall/gjson"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
 	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 	"gopkg.in/h2non/gentleman.v2"
 	"gopkg.in/h2non/gentleman.v2/plugins/headers"
+	"gorm.io/gorm"
 )
 
 //字典
@@ -93,3 +95,38 @@ func Txt2Img(ctx *zero.Ctx, txt string) {
 		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERROR:可能被风控了"))
 	}
 }
+
+//检查是否绑定，返回id
+func ReturnBindID(ctx *zero.Ctx, id string) (string, error) {
+	if id == "" {
+		gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
+		if err != nil {
+			return "", errors.New("打开数据库错误")
+		}
+		db := (*bf1model.PlayerDB)(gdb)
+		//检查是否已经绑定
+		if data, err := db.FindByQid(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", errors.New("账号未绑定，请使用 .绑定 id 来绑定")
+		} else {
+			id = data.DisplayName
+		}
+	}
+	return id, nil
+}
+
+/*
+//id to pid
+func ID2PID(ctx *zero.Ctx, id string) (string, error) {
+	id, err := ReturnBindID(ctx, id)
+	gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
+	if err != nil {
+		return "", errors.New("打开数据库错误")
+	}
+	db := (*bf1model.PlayerDB)(gdb)
+	if data, err := db.FindByQid(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", errors.New("账号未绑定，请使用 .绑定 id 来绑定")
+	} else {
+		id = data.DisplayName
+	}
+}
+*/

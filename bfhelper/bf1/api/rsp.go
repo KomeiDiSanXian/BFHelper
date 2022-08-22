@@ -94,7 +94,10 @@ func ReturnJson(url, method string, parms interface{}) (string, error) {
 	code := gjson.Get(data, "error.code").Int()
 	//如果session过期，重新请求
 	if code == -32501 {
-		Session(USERNAME, PASSWORD, true)
+		err := Session(USERNAME, PASSWORD, true)
+		if err != nil {
+			return "", err
+		}
 		return ReturnJson(url, method, parms)
 	}
 	if err != nil {

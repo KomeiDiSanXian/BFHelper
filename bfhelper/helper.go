@@ -140,20 +140,10 @@ func init() {
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["regex_matched"].([]string)[1]
 			ctx.Send("少女折寿中...")
-			if id == "" {
-				gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
-				if err != nil {
-					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("打开数据库时出错！请重新尝试"))
-					return
-				}
-				db := (*bf1model.PlayerDB)(gdb)
-				//检查是否已经绑定
-				if data, err := db.FindByQid(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
-					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("你还没有绑定账号，可以使用.绑定 id来绑定\n或者使用.战绩 id来查询"))
-					return
-				} else {
-					id = data.DisplayName
-				}
+			id, err := ReturnBindID(ctx, id)
+			if err != nil {
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
+				return
 			}
 			stat, err := bf1record.GetStats(id)
 			if err != nil {
@@ -171,7 +161,7 @@ func init() {
 				"总kd：" + stat.TotalKD + "(" + stat.Kills + "/" + stat.Deaths + ")" + "\n" +
 				"总kpm：" + stat.KPM + "\n" +
 				"准度：" + stat.Accuracy + "\n" +
-				"爆头率：" + stat.Headshots + "\n" +
+				"爆头数：" + stat.Headshots + "\n" +
 				"胜率：" + stat.WinPercent + "(" + stat.Wins + "/" + stat.Losses + ")" + "\n" +
 				"场均击杀：" + stat.KillsPerGame + "\n" +
 				"步战kd：" + stat.InfantryKD + "\n" +
@@ -186,6 +176,17 @@ func init() {
 				"作为神医拉起了 " + stat.Revives + " 人" + "\n" +
 				"开棺材车创死了 " + stat.CarriersKills + " 人"
 			Txt2Img(ctx, txt)
+		})
+	engine.OnRegex(`^[\.\/。] *1?武器 *(.*)$`).SetBlock(true).
+		Handle(func(ctx *zero.Ctx) {
+			id := ctx.State["regex_matched"].([]string)[1]
+			ctx.Send("少女折寿中...")
+			id, err := ReturnBindID(ctx, id)
+			if err != nil {
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
+				return
+			}
+			
 		})
 	//Kick 踢出玩家
 	/*
