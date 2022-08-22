@@ -21,8 +21,27 @@ var rmu sync.RWMutex
 
 // 引擎注册
 var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
-	DisableOnDefault:  false,
-	Help:              "",
+	DisableOnDefault: false,
+	Help: "battlefield\n" +
+		"<-----以下是武器查询----->\n" +
+		"- .武器 [id]\n" +
+		"- .半自动 [id]\n" +
+		"- .冲锋枪 [id]\n" +
+		"- .霰弹枪 [id]\n" +
+		"- .机枪 [id]\n" +
+		"- .步枪 [id]\n" +
+		"- .装备 [id]\n" +
+		"- .手枪 [id]\n" +
+		"- .驾驶员 [id]\n" +
+		"- .手雷 [id]\n" +
+		"- .近战 [id]\n" +
+		"- .精英 [id]\n" +
+		"<-----以下是服务器管理----->\n" +
+		"开发中..." +
+		"<-----以下是更多功能----->\n" +
+		"- .bf1stats	查询亚服相关信息（来自水神的api）\n" +
+		"- .战绩 [id]	查询生涯的战绩\n" +
+		"- .绑定 id		进行账号绑定，会检测绑定id是否被实锤",
 	PrivateDataFolder: "battlefield",
 })
 
