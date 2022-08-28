@@ -61,3 +61,18 @@ type Weapons struct {
 	Headshots  string
 	Efficiency string
 }
+
+//最近战绩
+type Recent []struct {
+	Server   string  `json:"server"`
+	Map      string  `json:"map"`
+	Mode     string  `json:"mode"`
+	Date     int64   `json:"date"`
+	Score    int     `json:"score"`
+	Kill     int     `json:"kill"`
+	Death    int     `json:"death"`
+	Kd       float64 `json:"kd"`
+	Kpm      float64 `json:"kpm"`
+	Accuracy float64 `json:"accuracy"`
+	Time     int     `json:"time"`
+}

@@ -4,11 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/tidwall/gjson"
 	"gopkg.in/h2non/gentleman.v2"
 	"gopkg.in/h2non/gentleman.v2/plugins/body"
 	"gopkg.in/h2non/gentleman.v2/plugins/headers"
+	"gopkg.in/h2non/gentleman.v2/plugins/timeout"
 )
 
 // APIs
@@ -74,6 +76,9 @@ func Session(username, password string, refreshToken bool) error {
 	if err != nil {
 		return errors.New("更新session时出错：" + err.Error())
 	}
+	if gjson.Get(res.String(), "code").Int() != 0 {
+		return errors.New("更新session时出错：" + gjson.Get(res.String(), "message").Str)
+	}
 	var mu sync.Mutex
 	mu.Lock()
 	SESSION = gjson.Get(res.String(), "data.gatewaySession").Str
@@ -86,10 +91,14 @@ func Session(username, password string, refreshToken bool) error {
 // NativeAPI 返回json
 func ReturnJson(url, method string, parms interface{}) (string, error) {
 	var client = gentleman.New()
+	client.Use(timeout.Request(time.Second * 30))
 	client.URL(url)
 	client.Use(body.JSON(parms))
 	client.Use(headers.Set("X-Gatewaysession", SESSION))
 	res, err := client.Request().Method(method).Send()
+	if err != nil {
+		return "", errors.New("请求失败")
+	}
 	data := res.String()
 	code := gjson.Get(data, "error.code").Int()
 	//如果session过期，重新请求
@@ -99,9 +108,6 @@ func ReturnJson(url, method string, parms interface{}) (string, error) {
 			return "", err
 		}
 		return ReturnJson(url, method, parms)
-	}
-	if err != nil {
-		return "", err
 	}
 	return data, nil
 }

@@ -92,9 +92,9 @@ func S2tw(str string) string {
 func Txt2Img(ctx *zero.Ctx, txt string) {
 	data, err := text.RenderToBase64(txt, text.FontFile, 400, 20)
 	if err != nil {
-		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("将文字转换成图片时发生错误"))
+		ctx.Send(message.ReplyWithMessage(ctx.Event.MessageID, message.Text("将文字转换成图片时发生错误")))
 	}
-	if id := ctx.SendChain(message.Image("base64://" + helper.BytesToString(data))); id.ID() == 0 {
+	if id := ctx.Send(message.ReplyWithMessage(ctx.Event.MessageID, message.Image("base64://"+helper.BytesToString(data)))); id.ID() == 0 {
 		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERROR:可能被风控了"))
 	}
 }
@@ -171,4 +171,18 @@ func RequestWeapon(ctx *zero.Ctx, class string) {
 		)
 	}
 	Txt2Img(ctx, txt)
+}
+
+// 获取bf1最近战绩
+func GetBF1Recent(id string) (result *bf1record.Recent, err error) {
+	u := "https://api.bili22.me/bf1/recent?name=" + id
+	data, err := rsp.ReturnJson(u, "GET", nil)
+	if err != nil {
+		return nil, err
+	}
+	err = json.NewDecoder(strings.NewReader(data)).Decode(&result)
+	if err != nil {
+		return nil, errors.New("ERR: JSON decode failed")
+	}
+	return result, err
 }

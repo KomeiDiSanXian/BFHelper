@@ -2,6 +2,7 @@ package bfhelper
 
 import (
 	"errors"
+	"strconv"
 	"sync"
 
 	ctrl "github.com/FloatTech/zbpctrl"
@@ -37,10 +38,11 @@ var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 		"- .近战 [id]\n" +
 		"- .精英 [id]\n" +
 		"<-----以下是服务器管理----->\n" +
-		"开发中..." +
+		"开发中...\n" +
 		"<-----以下是更多功能----->\n" +
 		"- .bf1stats	查询亚服相关信息（来自水神的api）\n" +
 		"- .战绩 [id]	查询生涯的战绩\n" +
+		"- .最近 [id]	查询最近的战绩\n" +
 		"- .绑定 id		进行账号绑定，会检测绑定id是否被实锤",
 	PrivateDataFolder: "battlefield",
 })
@@ -221,6 +223,32 @@ func init() {
 	engine.OnRegex(`^[\.\/。] *1?[配装]备 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Gadget) })
 	//精英兵
 	engine.OnRegex(`^[\.\/。] *1?精英兵? *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Elite) })
+	//最近战绩
+	engine.OnRegex(`^[\.\/。] *1?最近 *(.*)$`).SetBlock(true).
+		Handle(func(ctx *zero.Ctx) {
+			id := ctx.State["regex_matched"].([]string)[1]
+			ctx.Send("少女折寿中...")
+			id, err := ReturnBindID(ctx, id)
+			if err != nil {
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
+				return
+			}
+			recent, err := GetBF1Recent(id)
+			if err != nil {
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
+				return
+			}
+			var msg string
+			for i := range *recent {
+				msg += "服务器：" + (*recent)[i].Server[:24] + "\n"
+				msg += "地图：" + (*recent)[i].Map + "   (" + (*recent)[i].Mode + ")\n"
+				msg += "kd：" + strconv.FormatFloat((*recent)[i].Kd, 'f', -1, 64) + "\n"
+				msg += "kpm：" + strconv.FormatFloat((*recent)[i].Kpm, 'f', -1, 64) + "\n"
+				msg += "游玩时长：" + strconv.FormatFloat(float64((*recent)[i].Time/60), 'f', -1, 64) + "分钟"
+				msg += "\n---------------\n"
+			}
+			Txt2Img(ctx, msg)
+		})
 	//Kick 踢出玩家
 	/*
 		engine.OnRegex(`^[\.\/。] *kick\s*(.*)\s(.*)$`, permission).SetBlock(true).
