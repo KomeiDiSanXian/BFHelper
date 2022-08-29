@@ -18,10 +18,14 @@ const (
 )
 
 type WeaponSort []Weapons
+type VehicleSort []Vehicle
 
-func (a WeaponSort) Len() int           { return len(a) }
-func (a WeaponSort) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a WeaponSort) Less(i, j int) bool { return a[i].Kills > a[j].Kills }
+func (a WeaponSort) Len() int            { return len(a) }
+func (a WeaponSort) Swap(i, j int)       { a[i], a[j] = a[j], a[i] }
+func (a WeaponSort) Less(i, j int) bool  { return a[i].Kills > a[j].Kills }
+func (a VehicleSort) Len() int           { return len(a) }
+func (a VehicleSort) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a VehicleSort) Less(i, j int) bool { return a[i].Kills > a[j].Kills }
 
 //战绩
 type Stat struct {
@@ -75,4 +79,13 @@ type Recent []struct {
 	Kpm      float64 `json:"kpm"`
 	Accuracy float64 `json:"accuracy"`
 	Time     int     `json:"time"`
+}
+
+//载具
+type Vehicle struct {
+	Name      string
+	Kills     float64
+	Destroyed float64
+	KPM       string
+	Time      string
 }

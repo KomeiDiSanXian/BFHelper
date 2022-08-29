@@ -43,6 +43,11 @@ func init() {
 	}
 }
 
+// 返回插件数据目录
+func GetDataFolder() string {
+	return engine.DataFolder()
+}
+
 // 查询是否被实锤为外挂
 func IsGetBan(id string) bool {
 	cli := gentleman.New()
@@ -118,14 +123,14 @@ func ReturnBindID(ctx *zero.Ctx, id string) (string, error) {
 }
 
 // id to pid, 返回pid和id
-func ID2PID(ctx *zero.Ctx, id string) (string, string, error) {
+func ID2PID(qid int64, id string) (string, string, error) {
 	gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
 	if err != nil {
 		return "", "", errors.New("打开数据库错误")
 	}
 	db := (*bf1model.PlayerDB)(gdb)
 	if id == "" {
-		if data, err := db.FindByQid(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
+		if data, err := db.FindByQid(qid); errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", "", errors.New("账号未绑定，请使用 .绑定 id 来绑定")
 		} else {
 			return data.PersonalID, data.DisplayName, err
@@ -147,7 +152,7 @@ func ID2PID(ctx *zero.Ctx, id string) (string, string, error) {
 func RequestWeapon(ctx *zero.Ctx, class string) {
 	id := ctx.State["regex_matched"].([]string)[1]
 	ctx.Send("少女折寿中...")
-	pid, id, err := ID2PID(ctx, id)
+	pid, id, err := ID2PID(ctx.Event.UserID, id)
 	if err != nil {
 		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 		return

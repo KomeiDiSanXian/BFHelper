@@ -24,7 +24,7 @@ var rmu sync.RWMutex
 var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 	DisableOnDefault: false,
 	Help: "battlefield\n" +
-		"<-----以下是武器查询----->\n" +
+		"<-----以下是玩家查询----->\n" +
 		"- .武器 [id]\n" +
 		"- .半自动 [id]\n" +
 		"- .冲锋枪 [id]\n" +
@@ -37,6 +37,7 @@ var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 		"- .手雷 [id]\n" +
 		"- .近战 [id]\n" +
 		"- .精英 [id]\n" +
+		"- .载具 [id]\n" +
 		"<-----以下是服务器管理----->\n" +
 		"开发中...\n" +
 		"<-----以下是更多功能----->\n" +
@@ -47,25 +48,9 @@ var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 	PrivateDataFolder: "battlefield",
 })
 
-// 返回插件数据目录
-func GetDataFolder() string {
-	return engine.DataFolder()
-}
-
-//权限设置
-/*
-func permission(ctx *zero.Ctx) bool {
-	return ctx.Event.Sender.Role != "member"
-	//TODO: 检测该qq是否在权限组中
-	/*
-		return db.IsExist(grp, ctx.Event.Sender.ID)
-
-}
-*/
 func init() {
 	//初始化数据库
 	bf1model.InitDB(engine.DataFolder()+"player.db", &bf1model.Player{})
-	//bf1model.InitDB(engine.DataFolder()+"server.db", &bf1model.Admin{}, &bf1model.Server{}, &bf1model.Group{})
 	//查询在线玩家数
 	engine.OnFullMatchGroup([]string{".bf1stats", "战地1人数", "bf1人数"}).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
@@ -238,7 +223,7 @@ func init() {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 				return
 			}
-			var msg string
+			msg := "id：" + id + "\n"
 			for i := range *recent {
 				msg += "服务器：" + (*recent)[i].Server[:24] + "\n"
 				msg += "地图：" + (*recent)[i].Map + "   (" + (*recent)[i].Mode + ")\n"
@@ -249,26 +234,30 @@ func init() {
 			}
 			Txt2Img(ctx, msg)
 		})
-	//Kick 踢出玩家
-	/*
-		engine.OnRegex(`^[\.\/。] *kick\s*(.*)\s(.*)$`, permission).SetBlock(true).
-			Handle(func(ctx *zero.Ctx) {
-				id := ctx.State["regex_matched"].([]string)[1]
-				reason := ctx.State["regex_matched"].([]string)[2]
-				//reason为空的情况
-				if id == "" {
-					id = reason
-					reason = "Adimin kicks!"
-				}
-				reason = fmt.Sprintf("%s%s", "RemiliaBot: ", reason)
-				//检查reason长度
-				if len(reason) > 32 {
-					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("理由过长！请重新填写！"))
-					return
-				}
-				//translation
-				reason = S2tw(reason)
-				//.......
-			})
-	*/
+	//获取所有种类的载具信息
+	engine.OnRegex(`^[\.\/。] *1?载具 *(.*)$`).SetBlock(true).
+		Handle(func(ctx *zero.Ctx) {
+			id := ctx.State["regex_matched"].([]string)[1]
+			ctx.Send("少女折寿中...")
+			pid, id, err := ID2PID(ctx.Event.UserID, id)
+			if err != nil {
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
+				return
+			}
+			car, err := bf1record.GetVehicles(pid)
+			if err != nil {
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
+				return
+			}
+			msg := "id：" + id + "\n"
+			for i := range *car {
+				msg += "------------\n"
+				msg += "载具种类：" + (*car)[i].Name + "\n"
+				msg += "击杀数：" + strconv.FormatFloat((*car)[i].Kills, 'f', -1, 64) + "\n"
+				msg += "kpm：" + (*car)[i].KPM + "\n"
+				msg += "已摧毁：" + strconv.FormatFloat((*car)[i].Destroyed, 'f', -1, 64) + "\n"
+				msg += "游玩时间：" + (*car)[i].Time + "\n"
+			}
+			Txt2Img(ctx, msg)
+		})
 }

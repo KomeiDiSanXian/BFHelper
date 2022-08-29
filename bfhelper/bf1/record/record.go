@@ -88,8 +88,7 @@ func GetWeapons(pid string, class string) (*WeaponSort, error) {
 	} else {
 		result = gjson.Get(data, "result.#(categoryId=\""+class+"\").weapons").Array()
 	}
-	weapon := SortWeapon(result)
-	return weapon, err
+	return SortWeapon(result), err
 }
 
 // 武器排序
@@ -135,4 +134,38 @@ func SortWeapon(weapons []gjson.Result) *WeaponSort {
 	}
 	sort.Sort(wp)
 	return &wp
+}
+
+// 获取载具信息
+func GetVehicles(pid string) (*VehicleSort, error) {
+	post := NewPostVehicle(pid)
+	data, err := rsp.ReturnJson(rsp.NativeAPI, "POST", post)
+	if err != nil {
+		return nil, err
+	}
+	gets := gjson.Get(data, "result").Array()
+	var vehicle VehicleSort
+	for i := range gets {
+		res := gjson.GetMany(gets[i].Raw,
+			"name",
+			"stats.values.kills",
+			"stats.values.destroyed",
+			"stats.values.seconds",
+		)
+		kills := res[1].Float()
+		seconds := res[3].Float()
+		var kpm float64 = 0
+		if seconds != 0 {
+			kpm = kills / seconds * 60
+		}
+		vehicle = append(vehicle, Vehicle{
+			Name:      res[0].Str,
+			Kills:     kills,
+			Destroyed: res[2].Float(),
+			KPM:       fmt.Sprintf("%.3f", kpm),
+			Time:      fmt.Sprintf("%.2f", seconds/3600),
+		})
+	}
+	sort.Sort(vehicle)
+	return &vehicle, err
 }

@@ -53,7 +53,7 @@ const (
 )
 
 // 设置session
-var SESSION string = ""
+var SESSION string = "c3f46e02-ebd3-4b3f-ab5a-e8d548ee14b5"
 
 // bearerAccessToken
 var TOKEN string = ""
