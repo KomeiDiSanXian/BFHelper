@@ -4,13 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/tidwall/gjson"
 	"gopkg.in/h2non/gentleman.v2"
 	"gopkg.in/h2non/gentleman.v2/plugins/body"
 	"gopkg.in/h2non/gentleman.v2/plugins/headers"
-	"gopkg.in/h2non/gentleman.v2/plugins/timeout"
 )
 
 // APIs
@@ -21,10 +19,19 @@ const (
 	OperationAPI string = "https://sparta-gw.battlelog.com/jsonrpc/ps4/api" //交换和行动包查询
 )
 
+/*
+	下面两个必填
+*/
 // ea账密
 const (
-	USERNAME string = "" //邮箱
-	PASSWORD string = ""
+	UserName string = "" //邮箱
+	Password string = ""
+)
+
+// Sakura API info, contacts to SakuraKooi to get it
+const (
+	SakuraID    string = ""
+	SakuraToken string = ""
 )
 
 // 原生API 方法名常量
@@ -53,7 +60,7 @@ const (
 )
 
 // 设置session
-var SESSION string = "c3f46e02-ebd3-4b3f-ab5a-e8d548ee14b5"
+var SESSION string = ""
 
 // bearerAccessToken
 var TOKEN string = ""
@@ -69,8 +76,8 @@ func Session(username, password string, refreshToken bool) error {
 	client.URL(SessionAPI)
 	client.Use(body.JSON(login))
 	//寻找SakuraKooi申请APIKey...
-	client.Use(headers.Set("Sakura-Instance-Id", ""))
-	client.Use(headers.Set("Sakura-Access-Token", ""))
+	client.Use(headers.Set("Sakura-Instance-Id", SakuraID))
+	client.Use(headers.Set("Sakura-Access-Token", SakuraToken))
 
 	res, err := client.Request().Method("POST").Send()
 	if err != nil {
@@ -91,7 +98,6 @@ func Session(username, password string, refreshToken bool) error {
 // NativeAPI 返回json
 func ReturnJson(url, method string, parms interface{}) (string, error) {
 	var client = gentleman.New()
-	client.Use(timeout.Request(time.Second * 30))
 	client.URL(url)
 	client.Use(body.JSON(parms))
 	client.Use(headers.Set("X-Gatewaysession", SESSION))
@@ -103,7 +109,7 @@ func ReturnJson(url, method string, parms interface{}) (string, error) {
 	code := gjson.Get(data, "error.code").Int()
 	//如果session过期，重新请求
 	if code == -32501 {
-		err := Session(USERNAME, PASSWORD, true)
+		err := Session(UserName, Password, true)
 		if err != nil {
 			return "", err
 		}

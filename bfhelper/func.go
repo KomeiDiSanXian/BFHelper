@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/FloatTech/zbputils/img/text"
 	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
@@ -22,7 +23,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// 字典
+// 简转繁 字典
 var twmap map[string]string
 
 // 初始化
@@ -41,11 +42,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-// 返回插件数据目录
-func GetDataFolder() string {
-	return engine.DataFolder()
 }
 
 // 查询是否被实锤为外挂
@@ -72,7 +68,7 @@ func GetPersonalID(name string) (string, error) {
 	}
 	info := gjson.Get(res.String(), "error").Str
 	if info == "invalid_access_token" || info == "invalid_oauth_info" {
-		err := rsp.Session(rsp.USERNAME, rsp.PASSWORD, true)
+		err := rsp.Session(rsp.UserName, rsp.Password, true)
 		if err != nil {
 			return "", err
 		}
@@ -143,6 +139,21 @@ func ID2PID(qid int64, id string) (string, string, error) {
 			}
 			return pid, id, err
 		} else {
+			//若绑定账号时未获取到pid,重新获取并写入数据库
+			if data.PersonalID == "" {
+				pid, err := GetPersonalID(id)
+				if err != nil {
+					return "", id, errors.New("获取pid失败，请重试")
+				}
+				var rmu sync.RWMutex
+				rmu.Lock()
+				db.Update(bf1model.Player{
+					Qid:        qid,
+					PersonalID: pid,
+				})
+				rmu.Unlock()
+				return pid, id, err
+			}
 			return data.PersonalID, data.DisplayName, err
 		}
 	}

@@ -2,6 +2,7 @@ package bfhelper
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -76,6 +77,11 @@ func init() {
 	engine.OnRegex(`^[\.\/。] *绑定 *(.*)$`).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["regex_matched"].([]string)[1]
+			//id不能为空
+			if id == "" {
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定的id为空！"))
+				return
+			}
 			gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，打开数据库时出错！"))
@@ -252,11 +258,11 @@ func init() {
 			msg := "id：" + id + "\n"
 			for i := range *car {
 				msg += "------------\n"
-				msg += "载具种类：" + (*car)[i].Name + "\n"
-				msg += "击杀数：" + strconv.FormatFloat((*car)[i].Kills, 'f', -1, 64) + "\n"
+				msg += (*car)[i].Name + "\n"
+				msg += fmt.Sprintf("%s%6.0f\t", "击杀数：", (*car)[i].Kills)
 				msg += "kpm：" + (*car)[i].KPM + "\n"
-				msg += "已摧毁：" + strconv.FormatFloat((*car)[i].Destroyed, 'f', -1, 64) + "\n"
-				msg += "游玩时间：" + (*car)[i].Time + "\n"
+				msg += fmt.Sprintf("%s%6.0f\t", "击毁数：", (*car)[i].Destroyed)
+				msg += "游玩时间：" + (*car)[i].Time + " 小时\n"
 			}
 			Txt2Img(ctx, msg)
 		})

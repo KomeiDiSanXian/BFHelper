@@ -19,6 +19,7 @@ func (pdb *PlayerDB) Create(player Player) error {
 	return (*gorm.DB)(pdb).Create(&player).Error
 }
 
+//根据qid来更新数据
 func (pdb *PlayerDB) Update(player Player) error {
 	return (*gorm.DB)(pdb).Model(&Player{}).Where("qid = ?", player.Qid).Updates(&player).Error
 }
