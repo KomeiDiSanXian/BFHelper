@@ -3,14 +3,16 @@ package bfhelper
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 
 	ctrl "github.com/FloatTech/zbpctrl"
 	"github.com/FloatTech/zbputils/control"
 	"gorm.io/gorm"
 
-	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/record"
 	"github.com/tidwall/gjson"
@@ -26,18 +28,7 @@ var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 	DisableOnDefault: false,
 	Help: "battlefield\n" +
 		"<-----以下是玩家查询----->\n" +
-		"- .武器 [id]\n" +
-		"- .半自动 [id]\n" +
-		"- .冲锋枪 [id]\n" +
-		"- .霰弹枪 [id]\n" +
-		"- .机枪 [id]\n" +
-		"- .步枪 [id]\n" +
-		"- .装备 [id]\n" +
-		"- .手枪 [id]\n" +
-		"- .驾驶员 [id]\n" +
-		"- .手雷 [id]\n" +
-		"- .近战 [id]\n" +
-		"- .精英 [id]\n" +
+		"- .武器 [武器类型] [id]	不填武器武器类型默认查询全部\n" +
 		"- .载具 [id]\n" +
 		"<-----以下是服务器管理----->\n" +
 		"开发中...\n" +
@@ -56,7 +47,7 @@ func init() {
 	engine.OnFullMatchGroup([]string{".bf1stats", "战地1人数", "bf1人数"}).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			ctx.Send("少女折寿中...")
-			data, err := rsp.ReturnJson("https://api.s-wg.net/ServersCollection/getStatus", "GET", nil)
+			data, err := api.ReturnJson("https://api.s-wg.net/ServersCollection/getStatus", "GET", nil)
 			if err != nil {
 				ctx.Send("ERROR:" + err.Error())
 				return
@@ -74,20 +65,16 @@ func init() {
 				))
 		})
 	//Bind QQ绑定ID
-	engine.OnRegex(`^[\.\/。] *绑定 *(.*)$`).SetBlock(true).
+	engine.OnPrefixGroup([]string{".绑定", ".bind"}).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
-			id := ctx.State["regex_matched"].([]string)[1]
-			//id不能为空
-			if id == "" {
-				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定的id为空！"))
-				return
-			}
+			id := ctx.State["args"].(string)
 			gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，打开数据库时出错！"))
 				return
 			}
 			db := (*bf1model.PlayerDB)(gdb)
+			defer db.Close()
 			//先绑定再查询pid和是否实锤
 			//检查是否已经绑定
 			if data, err := db.FindByQid(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
@@ -149,7 +136,7 @@ func init() {
 			rmu.Unlock()
 		})
 	// bf1个人战绩
-	engine.OnRegex(`^[\.\/。] *1?战绩 *(.*)$`).SetBlock(true).
+	engine.OnRegex(`\. *1?战绩 *(.*)$`).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["regex_matched"].([]string)[1]
 			ctx.Send("少女折寿中...")
@@ -190,32 +177,52 @@ func init() {
 				"开棺材车创死了 " + stat.CarriersKills + " 人"
 			Txt2Img(ctx, txt)
 		})
-	//所有武器，只展示前五个，修改 RequestWeapon 函数可以展示多个
-	engine.OnRegex(`^[\.\/。] *1?武器 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.ALL) })
-	//半自动
-	engine.OnRegex(`^[\.\/。] *1?半自动 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Semi) })
-	//冲锋枪
-	engine.OnRegex(`^[\.\/。] *1?冲锋枪 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.SMG) })
-	//轻机枪
-	engine.OnRegex(`^[\.\/。] *1?轻?机枪 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.LMG) })
-	//步枪
-	engine.OnRegex(`^[\.\/。] *1?步枪 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Bolt) })
-	//霰弹枪
-	engine.OnRegex(`^[\.\/。] *1?[霰散]弹枪 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Shotgun) })
-	//手枪
-	engine.OnRegex(`^[\.\/。] *1?[手配佩]枪 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Sidearm) })
-	//近战武器
-	engine.OnRegex(`^[\.\/。] *1?近战 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Melee) })
-	//手榴弹
-	engine.OnRegex(`^[\.\/。] *1?手[榴雷]弹? *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Grenade) })
-	//驾驶员
-	engine.OnRegex(`^[\.\/。] *1?驾驶员 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Dirver) })
-	//配备
-	engine.OnRegex(`^[\.\/。] *1?[配装]备 *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Gadget) })
-	//精英兵
-	engine.OnRegex(`^[\.\/。] *1?精英兵? *(.*)$`).SetBlock(true).Handle(func(ctx *zero.Ctx) { RequestWeapon(ctx, bf1record.Elite) })
+	//武器查询，只展示前五个
+	engine.OnRegex(`^\. *1?武器 *(.*)$`).SetBlock(true).
+		Handle(func(ctx *zero.Ctx) {
+			str := strings.Split(ctx.State["regex_matched"].([]string)[1], " ")
+			id := ""
+			if str[0] == " " {
+				RequestWeapon(ctx, id, bf1record.ALL)
+				return
+			}
+			//检查str长度
+			if len(str) > 1 {
+				id = str[1]
+			}
+			switch str[0] {
+			case "半自动", "semi":
+				RequestWeapon(ctx, id, bf1record.Semi)
+			case "冲锋枪", "冲锋":
+				RequestWeapon(ctx, id, bf1record.SMG)
+			case "轻机枪", "机枪":
+				RequestWeapon(ctx, id, bf1record.LMG)
+			case "步枪", "狙击枪", "狙击":
+				RequestWeapon(ctx, id, bf1record.Bolt)
+			case "霰弹枪", "散弹枪", "霰弹", "散弹":
+				RequestWeapon(ctx, id, bf1record.Shotgun)
+			case "配枪", "手枪", "副手":
+				RequestWeapon(ctx, id, bf1record.Sidearm)
+			case "近战", "刀":
+				RequestWeapon(ctx, id, bf1record.Melee)
+			case "手榴弹", "手雷", "雷":
+				RequestWeapon(ctx, id, bf1record.Grenade)
+			case "驾驶员", "坦克兵", "载具":
+				RequestWeapon(ctx, id, bf1record.Dirver)
+			case "配备", "装备":
+				RequestWeapon(ctx, id, bf1record.Gadget)
+			case "精英", "精英兵":
+				RequestWeapon(ctx, id, bf1record.Elite)
+			default:
+				if regexp.MustCompile(`\w+`).MatchString(str[0]) {
+					id = str[0]
+					RequestWeapon(ctx, id, bf1record.ALL)
+				}
+				ctx.Send(message.ReplyWithMessage(ctx.Event.MessageID, message.Text("请检查输入格式是否有误...")))
+			}
+		})
 	//最近战绩
-	engine.OnRegex(`^[\.\/。] *1?最近 *(.*)$`).SetBlock(true).
+	engine.OnRegex(`^\. *1?最近 *(.*)$`).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["regex_matched"].([]string)[1]
 			ctx.Send("少女折寿中...")
@@ -241,7 +248,7 @@ func init() {
 			Txt2Img(ctx, msg)
 		})
 	//获取所有种类的载具信息
-	engine.OnRegex(`^[\.\/。] *1?载具 *(.*)$`).SetBlock(true).
+	engine.OnRegex(`^\. *1?载具 *(.*)$`).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["regex_matched"].([]string)[1]
 			ctx.Send("少女折寿中...")
@@ -266,4 +273,29 @@ func init() {
 			}
 			Txt2Img(ctx, msg)
 		})
+	/* waiting for completion
+	//查水表
+	engine.OnPrefixGroup([]string{"查水表", "/查水表", ".查水表"}, zero.AdminPermission).SetBlock(true).
+		Handle(func(ctx *zero.Ctx) {
+			id := ctx.State["args"].(string)
+			var wg sync.WaitGroup
+			msg := "id： " + id + "\n"
+			wg.Add(3)
+			go func(id string) {
+				stat, err := bf1record.GetStats(id)
+				if err != nil {
+					msg += "获取战绩信息失败\n-----------\n"
+					wg.Done()
+				} else {
+					msg+="等级：" + stat.Rank + "\n" +
+					"技巧值：" + stat.Skill + "\n" +
+					"游玩时长：" + stat.TimePlayed + "\n" +
+					"总kd：" + stat.TotalKD + "(" + stat.Kills + "/" + stat.Deaths + ")" + "\n" +
+					"总kpm：" + stat.KPM + "\n" +
+					"准度：" + stat.Accuracy + "\n" +
+					"爆头数：" + stat.Headshots + "\n"
+				}
+			}(id)
+		})
+	*/
 }

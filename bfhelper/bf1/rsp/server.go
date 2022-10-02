@@ -1,0 +1,72 @@
+package bf1rsp
+
+import (
+	"errors"
+
+	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	"github.com/tidwall/gjson"
+)
+
+type server struct {
+	Sid  string
+	Gid  string
+	PGid string
+}
+
+// New server info
+func NewServer(sid, gid, pgid string) *server {
+	return &server{
+		Sid:  sid,
+		Gid:  gid,
+		PGid: pgid,
+	}
+}
+
+// kick player, reason needs BIG5, return reason and err
+func (s *server) Kick(pid, reason string) (string, error) {
+	post := NewPostKick(pid, s.Gid, reason)
+	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
+	if err != nil {
+		return "", err
+	}
+	return gjson.Get(data, "result.reason").Str, err
+}
+
+// ban player, check returned id
+func (s *server) Ban(pid, reason string) error {
+	post := NewPostBan(pid, s.Sid)
+	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
+	if err != nil {
+		return err
+	}
+	if gjson.Get(data, "id").Str == "" {
+		return errors.New("服务器未发出正确的响应，请稍后再试")
+	}
+	return nil
+}
+
+// unban player
+func (s *server) Unban(pid string) error {
+	post := NewPostRemoveBan(pid, s.Sid)
+	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
+	if err != nil {
+		return err
+	}
+	if gjson.Get(data, "id").Str == "" {
+		return errors.New("服务器未发出正确的响应，请稍后再试")
+	}
+	return nil
+}
+
+// choose level
+func (s *server) ChangeMap(index int) error {
+	post := NewPostChangeMap(s.PGid,index)
+	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
+	if err != nil {
+		return err
+	}
+	if gjson.Get(data, "id").Str == "" {
+		return errors.New("服务器未发出正确的响应，请稍后再试")
+	}
+	return nil
+}

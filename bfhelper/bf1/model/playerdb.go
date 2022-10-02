@@ -9,6 +9,7 @@ type Player struct {
 	Qid         int64  `gorm:"primaryKey"` //QQ号
 	DisplayName string //玩家id
 	IsHack      bool   //是否实锤开挂
+	BanReason   string
 }
 
 type PlayerDB gorm.DB
@@ -44,4 +45,13 @@ func (pdb *PlayerDB) FindByQid(qid int64) (*Player, error) {
 
 func (pdb *PlayerDB) Delete(pid uint) error {
 	return (*gorm.DB)(pdb).Delete(&Player{}, "personal_id = ?", pid).Error
+}
+
+//close the database
+func (pdb *PlayerDB) Close() error {
+	sqlDB, err := (*gorm.DB)(pdb).DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
 }

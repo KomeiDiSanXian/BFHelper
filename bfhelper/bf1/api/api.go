@@ -42,6 +42,8 @@ const (
 	ADDBAN       string = "RSP.addServerBan"
 	REMOVEBAN    string = "RSP.removeServerBan"
 	KICK         string = "RSP.kickPlayer"
+	MAPS         string = "RSP.chooseLeve"
+	SERVERDETALS string = "GameServer.getServerDetails"
 	STATS        string = "Stats.detailedStatsByPersonaId"
 	WEAPONS      string = "Progression.getWeaponsByPersonaId"
 	VEHICLES     string = "Progression.getVehiclesByPersonaId"

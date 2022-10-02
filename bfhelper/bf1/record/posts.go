@@ -9,7 +9,7 @@ type post struct {
 	Params  struct {
 		Game       string   `json:"game"`
 		PersonaID  string   `json:"personaId"`
-		PersonaIds []string `json:"personaIds"`
+		PersonaIds []string `json:"personaIds"`	
 	} `json:"params"`
 	ID string `json:"id"`
 }
@@ -22,24 +22,7 @@ func NewPostWeapon(pid string) *post {
 		Params: struct {
 			Game       string   "json:\"game\""
 			PersonaID  string   "json:\"personaId\""
-			PersonaIds []string "json:\"personaIds\""
-		}{
-			Game:      rsp.BF1,
-			PersonaID: pid,
-		},
-		ID: "ed26fa43-816d-4f7b-a9d8-de9785ae1bb6",
-	}
-}
-
-//POST 战绩结构体
-func NewPostStats(pid string) *post { //无法获取等级，弃用
-	return &post{
-		Jsonrpc: "2.0",
-		Method:  rsp.STATS,
-		Params: struct {
-			Game       string   "json:\"game\""
-			PersonaID  string   "json:\"personaId\""
-			PersonaIds []string "json:\"personaIds\""
+			PersonaIds []string "json:\"personaIds\""	
 		}{
 			Game:      rsp.BF1,
 			PersonaID: pid,
@@ -56,7 +39,7 @@ func NewPostVehicle(pid string) *post {
 		Params: struct {
 			Game       string   "json:\"game\""
 			PersonaID  string   "json:\"personaId\""
-			PersonaIds []string "json:\"personaIds\""
+			PersonaIds []string "json:\"personaIds\""		
 		}{
 			Game:      rsp.BF1,
 			PersonaID: pid,
@@ -73,7 +56,7 @@ func NewPostRecent(pid string) *post {
 		Params: struct {
 			Game       string   "json:\"game\""
 			PersonaID  string   "json:\"personaId\""
-			PersonaIds []string "json:\"personaIds\""
+			PersonaIds []string "json:\"personaIds\""		
 		}{
 			Game:      rsp.BF1,
 			PersonaID: pid,

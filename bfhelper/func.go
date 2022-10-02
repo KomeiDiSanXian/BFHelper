@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -34,7 +34,7 @@ func init() {
 		panic(err)
 	}
 	defer f.Close()
-	content, err := ioutil.ReadAll(f)
+	content, err := io.ReadAll(f)
 	if err != nil {
 		panic(err)
 	}
@@ -108,6 +108,7 @@ func ReturnBindID(ctx *zero.Ctx, id string) (string, error) {
 			return "", errors.New("打开数据库错误")
 		}
 		db := (*bf1model.PlayerDB)(gdb)
+		defer db.Close()
 		//检查是否已经绑定
 		if data, err := db.FindByQid(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", errors.New("账号未绑定，请使用 .绑定 id 来绑定")
@@ -121,17 +122,34 @@ func ReturnBindID(ctx *zero.Ctx, id string) (string, error) {
 // id to pid, 返回pid和id
 func ID2PID(qid int64, id string) (string, string, error) {
 	gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
+	var rmu sync.RWMutex
 	if err != nil {
 		return "", "", errors.New("打开数据库错误")
 	}
 	db := (*bf1model.PlayerDB)(gdb)
+	defer db.Close()
 	if id == "" {
 		if data, err := db.FindByQid(qid); errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", "", errors.New("账号未绑定，请使用 .绑定 id 来绑定")
 		} else {
+			//若绑定账号时未获取到pid,重新获取并写入数据库
+			if data.PersonalID == "" {
+				pid, err := GetPersonalID(id)
+				if err != nil {
+					return "", id, errors.New("获取pid失败，请重试")
+				}
+				rmu.Lock()
+				db.Update(bf1model.Player{
+					Qid:        qid,
+					PersonalID: pid,
+				})
+				rmu.Unlock()
+				return pid, id, err
+			}
 			return data.PersonalID, data.DisplayName, err
 		}
 	} else {
+		//检查数据库内是否存在该id
 		if data, err := db.FindByName(id); errors.Is(err, gorm.ErrRecordNotFound) {
 			pid, err := GetPersonalID(id)
 			if err != nil {
@@ -145,7 +163,6 @@ func ID2PID(qid int64, id string) (string, string, error) {
 				if err != nil {
 					return "", id, errors.New("获取pid失败，请重试")
 				}
-				var rmu sync.RWMutex
 				rmu.Lock()
 				db.Update(bf1model.Player{
 					Qid:        qid,
@@ -160,8 +177,7 @@ func ID2PID(qid int64, id string) (string, string, error) {
 }
 
 // 发送武器信息
-func RequestWeapon(ctx *zero.Ctx, class string) {
-	id := ctx.State["regex_matched"].([]string)[1]
+func RequestWeapon(ctx *zero.Ctx, id, class string) {
 	ctx.Send("少女折寿中...")
 	pid, id, err := ID2PID(ctx.Event.UserID, id)
 	if err != nil {
