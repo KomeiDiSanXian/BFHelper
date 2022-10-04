@@ -68,6 +68,16 @@ func init() {
 	engine.OnPrefixGroup([]string{".绑定", ".bind"}).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["args"].(string)
+			//验证id是否有效
+			vld, err := api.ReturnJson("https://signin.ea.com/p/ajax/user/checkOriginId?originId="+id, "GET", nil)
+			if err != nil {
+				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", "验证id有效性失败，将继续绑定，请自行检查id是否正确"))
+			} else {
+				if gjson.Get(vld, "message").Str != "origin_id_duplicated" {
+					ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("id无效，请检查id..."))
+					return
+				}
+			}
 			gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，打开数据库时出错！"))
@@ -182,7 +192,7 @@ func init() {
 		Handle(func(ctx *zero.Ctx) {
 			str := strings.Split(ctx.State["regex_matched"].([]string)[1], " ")
 			id := ""
-			if str[0] == " " {
+			if str[0] == "" {
 				RequestWeapon(ctx, id, bf1record.ALL)
 				return
 			}

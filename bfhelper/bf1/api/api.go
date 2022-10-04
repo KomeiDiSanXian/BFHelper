@@ -83,7 +83,7 @@ func Session(username, password string, refreshToken bool) error {
 
 	res, err := client.Request().Method("POST").Send()
 	if err != nil {
-		return errors.New("更新session时出错：" + err.Error())
+		return errors.New("更新session时出错")
 	}
 	if gjson.Get(res.String(), "code").Int() != 0 {
 		return errors.New("更新session时出错：" + gjson.Get(res.String(), "message").Str)
