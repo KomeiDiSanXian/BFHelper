@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/FloatTech/zbputils/img/text"
-	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
 	bf1record "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/record"
 	"github.com/tidwall/gjson"
@@ -60,7 +60,7 @@ func GetPersonalID(name string) (string, error) {
 	cli := gentleman.New()
 	cli.URL("https://gateway.ea.com/proxy/identity/personas?namespaceName=cem_ea_id&displayName=" + name)
 	cli.Use(headers.Set("X-Expand-Results", "true"))
-	cli.Use(headers.Set("Authorization", rsp.TOKEN))
+	cli.Use(headers.Set("Authorization", api.TOKEN))
 	cli.Use(headers.Set("Host", "gateway.ea.com"))
 	res, err := cli.Request().Send()
 	if err != nil {
@@ -68,7 +68,7 @@ func GetPersonalID(name string) (string, error) {
 	}
 	info := gjson.Get(res.String(), "error").Str
 	if info == "invalid_access_token" || info == "invalid_oauth_info" {
-		err := rsp.Session(rsp.UserName, rsp.Password, true)
+		err := api.Session(api.UserName, api.Password, true)
 		if err != nil {
 			return "", err
 		}
@@ -208,7 +208,7 @@ func RequestWeapon(ctx *zero.Ctx, id, class string) {
 // 获取bf1最近战绩
 func GetBF1Recent(id string) (result *bf1record.Recent, err error) {
 	u := "https://api.bili22.me/bf1/recent?name=" + id
-	data, err := rsp.ReturnJson(u, "GET", nil)
+	data, err := api.ReturnJson(u, "GET", nil)
 	if err != nil {
 		return nil, err
 	}

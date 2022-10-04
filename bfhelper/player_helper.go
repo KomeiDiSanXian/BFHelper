@@ -34,6 +34,7 @@ var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 		"开发中...\n" +
 		"<-----以下是更多功能----->\n" +
 		"- .bf1stats	查询亚服相关信息（来自水神的api）\n" +
+		"- .交换		查询本周战地一武器皮肤\n" +
 		"- .战绩 [id]	查询生涯的战绩\n" +
 		"- .最近 [id]	查询最近的战绩\n" +
 		"- .绑定 id		进行账号绑定，会检测绑定id是否被实锤",
@@ -280,6 +281,23 @@ func init() {
 				msg += "kpm：" + (*car)[i].KPM + "\n"
 				msg += fmt.Sprintf("%s%6.0f\t", "击毁数：", (*car)[i].Destroyed)
 				msg += "游玩时间：" + (*car)[i].Time + " 小时\n"
+			}
+			Txt2Img(ctx, msg)
+		})
+	//交换查询
+	engine.OnFullMatchGroup([]string{".交换", ".exchange"}).SetBlock(true).
+		Handle(func(ctx *zero.Ctx) {
+			exchange, err := api.GetExchange()
+			if err != nil {
+				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
+				return
+			}
+			var msg string
+			for i, v := range exchange {
+				msg += i + "：\n"
+				for _, skin := range v {
+					msg += "\t" + skin + "\n"
+				}
 			}
 			Txt2Img(ctx, msg)
 		})

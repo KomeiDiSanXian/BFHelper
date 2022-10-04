@@ -119,3 +119,38 @@ func ReturnJson(url, method string, parms interface{}) (string, error) {
 	}
 	return data, nil
 }
+
+// 查询该周交换
+func GetExchange() (map[string][]string, error) {
+	type exchange struct {
+		Jsonrpc string `json:"jsonrpc"`
+		Method  string `json:"method"`
+		Params  struct {
+			Game string `json:"game"`
+		} `json:"params"`
+		ID string `json:"id"`
+	}
+	post := &exchange{
+		Jsonrpc: "2.0",
+		Method:  EXCHANGE,
+		Params: struct {
+			Game string "json:\"game\""
+		}{
+			Game: BF1,
+		},
+		ID: "ed26fa43-816d-4f7b-a9d8-de9785ae1bb6",
+	}
+	data, err := ReturnJson(OperationAPI, "POST", post)
+	if err != nil {
+		return nil, errors.New("获取交换失败")
+	}
+	var exmap map[string][]string = make(map[string][]string)
+	for _, v := range gjson.Get(data, "result.items.#.item").Array() {
+		var wpname string = v.Get("parentName").Str
+		if wpname == "" {
+			wpname = "其他"
+		}
+		exmap[wpname] = append(exmap[wpname], v.Get("name").Str)
+	}
+	return exmap, err
+}
