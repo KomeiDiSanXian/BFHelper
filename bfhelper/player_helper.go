@@ -35,6 +35,7 @@ var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 		"<-----以下是更多功能----->\n" +
 		"- .bf1stats	查询亚服相关信息（来自水神的api）\n" +
 		"- .交换		查询本周战地一武器皮肤\n" +
+		"- .行动		查询战地一行动箱子\n" +
 		"- .战绩 [id]	查询生涯的战绩\n" +
 		"- .最近 [id]	查询最近的战绩\n" +
 		"- .绑定 id		进行账号绑定，会检测绑定id是否被实锤",
@@ -301,29 +302,20 @@ func init() {
 			}
 			Txt2Img(ctx, msg)
 		})
-	/* waiting for completion
-	//查水表
-	engine.OnPrefixGroup([]string{"查水表", "/查水表", ".查水表"}, zero.AdminPermission).SetBlock(true).
+	//行动包查询
+	engine.OnFullMatchGroup([]string{".行动", ".行动包", ".pack"}).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
-			id := ctx.State["args"].(string)
-			var wg sync.WaitGroup
-			msg := "id： " + id + "\n"
-			wg.Add(3)
-			go func(id string) {
-				stat, err := bf1record.GetStats(id)
-				if err != nil {
-					msg += "获取战绩信息失败\n-----------\n"
-					wg.Done()
-				} else {
-					msg+="等级：" + stat.Rank + "\n" +
-					"技巧值：" + stat.Skill + "\n" +
-					"游玩时长：" + stat.TimePlayed + "\n" +
-					"总kd：" + stat.TotalKD + "(" + stat.Kills + "/" + stat.Deaths + ")" + "\n" +
-					"总kpm：" + stat.KPM + "\n" +
-					"准度：" + stat.Accuracy + "\n" +
-					"爆头数：" + stat.Headshots + "\n"
-				}
-			}(id)
+			pack, err := api.GetCampaignPacks()
+			if err != nil {
+				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
+				return
+			}
+			var msg string
+			msg += "行动名：" + pack.Name + "\n"
+			msg += "剩余时间：" + fmt.Sprintf("%.2f", float64(pack.RemainTime)/60/24) + " 天\n"
+			msg += "箱子重置时间：" + fmt.Sprintf("%.2f", float64(pack.ResetTime)/60) + " 小时\n"
+			msg += "行动地图：" + pack.Op1Name + " 与 " + pack.Op2Name + "\n"
+			msg += "行动简介：" + pack.Desc
+			Txt2Img(ctx, msg)
 		})
-	*/
 }

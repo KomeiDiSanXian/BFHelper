@@ -67,6 +67,26 @@ var SESSION string = ""
 // bearerAccessToken
 var TOKEN string = ""
 
+// post operation struct
+type post struct {
+	Jsonrpc string `json:"jsonrpc"`
+	Method  string `json:"method"`
+	Params  struct {
+		Game string `json:"game"`
+	} `json:"params"`
+	ID string `json:"id"`
+}
+
+// unmarshal json
+type Pack struct {
+	RemainTime int64
+	ResetTime  int64
+	Name       string
+	Desc       string
+	Op1Name    string
+	Op2Name    string
+}
+
 // Session 获取
 func Session(username, password string, refreshToken bool) error {
 	if username == "" || password == "" {
@@ -122,15 +142,7 @@ func ReturnJson(url, method string, parms interface{}) (string, error) {
 
 // 查询该周交换
 func GetExchange() (map[string][]string, error) {
-	type exchange struct {
-		Jsonrpc string `json:"jsonrpc"`
-		Method  string `json:"method"`
-		Params  struct {
-			Game string `json:"game"`
-		} `json:"params"`
-		ID string `json:"id"`
-	}
-	post := &exchange{
+	post := &post{
 		Jsonrpc: "2.0",
 		Method:  EXCHANGE,
 		Params: struct {
@@ -153,4 +165,38 @@ func GetExchange() (map[string][]string, error) {
 		exmap[wpname] = append(exmap[wpname], v.Get("name").Str)
 	}
 	return exmap, err
+}
+
+// 查询本周行动包
+func GetCampaignPacks() (*Pack, error) {
+	post := &post{
+		Jsonrpc: "2.0",
+		Method:  CAMPAIGN,
+		Params: struct {
+			Game string "json:\"game\""
+		}{
+			Game: BF1,
+		},
+		ID: "ed26fa43-816d-4f7b-a9d8-de9785ae1bb6",
+	}
+	data, err := ReturnJson(OperationAPI, "POST", post)
+	if err != nil {
+		return nil, errors.New("获取行动包失败")
+	}
+	result := gjson.GetMany(data,
+		"result.minutesRemaining",
+		"result.name",
+		"result.shortDesc",
+		"result.op1.name",
+		"result.op2.name",
+		"result.minutesToDailyReset",
+	)
+	return &Pack{
+		RemainTime: result[0].Int(),
+		Name:       result[1].Str,
+		Desc:       result[2].Str,
+		Op1Name:    result[3].Str,
+		Op2Name:    result[4].Str,
+		ResetTime:  result[5].Int(),
+	}, err
 }
