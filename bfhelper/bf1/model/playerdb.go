@@ -17,33 +17,45 @@ type PlayerDB gorm.DB
 //CURD...
 
 func (pdb *PlayerDB) Create(player Player) error {
+	rmu.Lock()
+	defer rmu.Unlock()
 	return (*gorm.DB)(pdb).Create(&player).Error
 }
 
 //根据qid来更新数据
 func (pdb *PlayerDB) Update(player Player) error {
+	rmu.Lock()
+	defer rmu.Unlock()
 	return (*gorm.DB)(pdb).Model(&Player{}).Where("qid = ?", player.Qid).Updates(&player).Error
 }
 
 func (pdb *PlayerDB) FindByPid(pid uint) (*Player, error) {
 	var player Player
+	rmu.Lock()
+	defer rmu.Unlock()
 	err := (*gorm.DB)(pdb).Model(&Player{}).First(&player, "personal_id = ?", pid).Error
 	return &player, err
 }
 
 func (pdb *PlayerDB) FindByName(name string) (*Player, error) {
 	var player Player
+	rmu.Lock()
+	defer rmu.Unlock()
 	err := (*gorm.DB)(pdb).Model(&Player{}).First(&player, "display_name = ?", name).Error
 	return &player, err
 }
 
 func (pdb *PlayerDB) FindByQid(qid int64) (*Player, error) {
 	var player Player
+	rmu.Lock()
+	defer rmu.Unlock()
 	err := (*gorm.DB)(pdb).Model(&Player{}).First(&player, "qid = ?", qid).Error
 	return &player, err
 }
 
 func (pdb *PlayerDB) Delete(pid uint) error {
+	rmu.Lock()
+	defer rmu.Unlock()
 	return (*gorm.DB)(pdb).Delete(&Player{}, "personal_id = ?", pid).Error
 }
 

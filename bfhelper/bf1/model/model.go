@@ -2,10 +2,14 @@ package bf1model
 
 import (
 	"os"
+	"sync"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
+
+// 读写锁
+var rmu sync.RWMutex
 
 // 如果数据库不存在就创建数据库
 func InitDB(dbpath string, tables ...interface{}) error {

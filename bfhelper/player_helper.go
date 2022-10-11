@@ -20,9 +20,6 @@ import (
 	"github.com/wdvxdr1123/ZeroBot/message"
 )
 
-// 读写锁
-var rmu sync.RWMutex
-
 // 引擎注册
 var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 	DisableOnDefault: false,
@@ -71,14 +68,13 @@ func init() {
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["args"].(string)
 			//验证id是否有效
-			vld, err := api.ReturnJson("https://signin.ea.com/p/ajax/user/checkOriginId?originId="+id, "GET", nil)
-			if err != nil {
-				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", "验证id有效性失败，将继续绑定，请自行检查id是否正确"))
-			} else {
-				if gjson.Get(vld, "message").Str != "origin_id_duplicated" {
-					ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("id无效，请检查id..."))
-					return
+			if vld, err := IsValidId(id); vld {
+				if err != nil {
+					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 				}
+			} else {
+				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("id无效，请检查id..."))
+				return
 			}
 			gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
 			if err != nil {
@@ -92,12 +88,10 @@ func init() {
 			if data, err := db.FindByQid(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
 				//未绑定...
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("正在绑定id为 ", id))
-				rmu.Lock()
 				err := db.Create(bf1model.Player{
 					Qid:         ctx.Event.UserID,
 					DisplayName: id,
 				})
-				rmu.Unlock()
 				if err != nil {
 					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，ERR:", err))
 					return
@@ -111,12 +105,10 @@ func init() {
 				} else {
 					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("将原绑定id为 ", data.DisplayName, " 改绑为 ", id))
 				}
-				rmu.Lock()
 				err := db.Update(bf1model.Player{
 					Qid:         ctx.Event.UserID,
 					DisplayName: id,
 				})
-				rmu.Unlock()
 				if err != nil {
 					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，ERR:", err))
 					return
@@ -135,17 +127,15 @@ func init() {
 				wg.Done()
 			}()
 			go func() {
-				pid, _ = GetPersonalID(id) //TODO:err写入日志
+				pid, _ = api.GetPersonalID(id) //TODO:err写入日志
 				wg.Done()
 			}()
 			wg.Wait()
-			rmu.Lock()
 			db.Update(bf1model.Player{
 				PersonalID: pid,
 				Qid:        ctx.Event.UserID,
 				IsHack:     hack,
 			})
-			rmu.Unlock()
 		})
 	// bf1个人战绩
 	engine.OnRegex(`\. *1?战绩 *(.*)$`).SetBlock(true).

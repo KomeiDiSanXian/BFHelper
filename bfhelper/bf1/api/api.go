@@ -19,6 +19,11 @@ const (
 	OperationAPI string = "https://sparta-gw.battlelog.com/jsonrpc/ps4/api" //交换和行动包查询
 )
 
+// error code
+const (
+	ErrServerNotFound string = "-34501"
+)
+
 /*
 	下面两个必填
 */
@@ -43,7 +48,7 @@ const (
 	REMOVEBAN    string = "RSP.removeServerBan"
 	KICK         string = "RSP.kickPlayer"
 	MAPS         string = "RSP.chooseLeve"
-	SERVERDETALS string = "GameServer.getServerDetails"
+	SERVERDETALS string = "GameServer.getFullServerDetails"
 	STATS        string = "Stats.detailedStatsByPersonaId"
 	WEAPONS      string = "Progression.getWeaponsByPersonaId"
 	VEHICLES     string = "Progression.getVehiclesByPersonaId"
@@ -199,4 +204,32 @@ func GetCampaignPacks() (*Pack, error) {
 		Op2Name:    result[4].Str,
 		ResetTime:  result[5].Int(),
 	}, err
+}
+
+// 获取玩家pid
+func GetPersonalID(name string) (string, error) {
+	cli := gentleman.New()
+	cli.URL("https://gateway.ea.com/proxy/identity/personas?namespaceName=cem_ea_id&displayName=" + name)
+	cli.Use(headers.Set("X-Expand-Results", "true"))
+	cli.Use(headers.Set("Authorization", TOKEN))
+	cli.Use(headers.Set("Host", "gateway.ea.com"))
+	res, err := cli.Request().Send()
+	if err != nil {
+		return "", err
+	}
+	info := gjson.Get(res.String(), "error").Str
+	if info == "invalid_access_token" || info == "invalid_oauth_info" {
+		err := Session(UserName, Password, true)
+		if err != nil {
+			return "", err
+		}
+		return GetPersonalID(name)
+	}
+	if info != "" {
+		return "", errors.New(info)
+	}
+	if gjson.Get(res.String(), "personas.persona.0.personaId").String() == "" {
+		return "", errors.New("获取玩家pid失败")
+	}
+	return gjson.Get(res.String(), "personas.persona.0.personaId").String(), err
 }

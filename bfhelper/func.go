@@ -19,7 +19,6 @@ import (
 	"github.com/wdvxdr1123/ZeroBot/message"
 	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 	"gopkg.in/h2non/gentleman.v2"
-	"gopkg.in/h2non/gentleman.v2/plugins/headers"
 	"gorm.io/gorm"
 )
 
@@ -55,30 +54,7 @@ func IsGetBan(id string) bool {
 	return gjson.Get(res.String(), "names."+strings.ToLower(id)+".hacker").Bool()
 }
 
-// 获取玩家pid
-func GetPersonalID(name string) (string, error) {
-	cli := gentleman.New()
-	cli.URL("https://gateway.ea.com/proxy/identity/personas?namespaceName=cem_ea_id&displayName=" + name)
-	cli.Use(headers.Set("X-Expand-Results", "true"))
-	cli.Use(headers.Set("Authorization", api.TOKEN))
-	cli.Use(headers.Set("Host", "gateway.ea.com"))
-	res, err := cli.Request().Send()
-	if err != nil {
-		return "", err
-	}
-	info := gjson.Get(res.String(), "error").Str
-	if info == "invalid_access_token" || info == "invalid_oauth_info" {
-		err := api.Session(api.UserName, api.Password, true)
-		if err != nil {
-			return "", err
-		}
-		return GetPersonalID(name)
-	}
-	if info != "" {
-		return "", errors.New(info)
-	}
-	return gjson.Get(res.String(), "personas.persona.0.personaId").String(), err
-}
+
 
 // 简体转繁体
 func S2tw(str string) string {
@@ -134,7 +110,7 @@ func ID2PID(qid int64, id string) (string, string, error) {
 		} else {
 			//若绑定账号时未获取到pid,重新获取并写入数据库
 			if data.PersonalID == "" {
-				pid, err := GetPersonalID(id)
+				pid, err := api.GetPersonalID(id)
 				if err != nil {
 					return "", id, errors.New("获取pid失败，请重试")
 				}
@@ -151,7 +127,7 @@ func ID2PID(qid int64, id string) (string, string, error) {
 	} else {
 		//检查数据库内是否存在该id
 		if data, err := db.FindByName(id); errors.Is(err, gorm.ErrRecordNotFound) {
-			pid, err := GetPersonalID(id)
+			pid, err := api.GetPersonalID(id)
 			if err != nil {
 				return "", id, errors.New("获取pid失败，请检查id是否有误")
 			}
@@ -159,7 +135,7 @@ func ID2PID(qid int64, id string) (string, string, error) {
 		} else {
 			//若绑定账号时未获取到pid,重新获取并写入数据库
 			if data.PersonalID == "" {
-				pid, err := GetPersonalID(id)
+				pid, err := api.GetPersonalID(id)
 				if err != nil {
 					return "", id, errors.New("获取pid失败，请重试")
 				}
@@ -217,4 +193,16 @@ func GetBF1Recent(id string) (result *bf1record.Recent, err error) {
 		return nil, errors.New("ERR: JSON decode failed")
 	}
 	return result, err
+}
+
+// 检查id有效性
+func IsValidId(id string) (bool, error) {
+	vld, err := api.ReturnJson("https://signin.ea.com/p/ajax/user/checkOriginId?originId="+id, "GET", nil)
+	if err != nil {
+		return true, errors.New("验证id有效性失败，将继续绑定，请自行检查id是否正确")
+	}
+	if gjson.Get(vld, "message").Str != "origin_id_duplicated" {
+		return false, nil
+	}
+	return true, nil
 }
