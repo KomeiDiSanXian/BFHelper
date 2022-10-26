@@ -54,8 +54,6 @@ func IsGetBan(id string) bool {
 	return gjson.Get(res.String(), "names."+strings.ToLower(id)+".hacker").Bool()
 }
 
-
-
 // 简体转繁体
 func S2tw(str string) string {
 	result := ""
@@ -205,4 +203,38 @@ func IsValidId(id string) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+// 是否拥有权限
+func ServerAdminPermission(ctx *zero.Ctx) bool {
+	if zero.AdminPermission(ctx) {
+		return true
+	}
+	sdb, _ := bf1model.Open(engine.DataFolder() + "server.db")
+	db := (*bf1model.ServerDB)(sdb)
+	adm, _ := db.IsAdmin(ctx.Event.GroupID, ctx.Event.UserID)
+	return adm
+}
+
+// 腐竹权限
+func ServerOwnerPermission(ctx *zero.Ctx) bool {
+	sdb, _ := bf1model.Open(engine.DataFolder() + "server.db")
+	db := (*bf1model.ServerDB)(sdb)
+	p, _ := db.IsOwner(ctx.Event.GroupID, ctx.Event.UserID)
+	return p
+}
+
+// 打开服务器数据库，返回数据库及close方法,需要调用close
+func OpenServerDB() (*bf1model.ServerDB, func() error, error) {
+	sdb, err := bf1model.Open(engine.DataFolder() + "server.db")
+	if err != nil {
+		sql, _ := sdb.DB()
+		sql.Close()
+		return nil, nil, errors.New("数据库错误")
+	}
+	db := (*bf1model.ServerDB)(sdb)
+	close := func() error {
+		return db.Close()
+	}
+	return db, close, nil
 }

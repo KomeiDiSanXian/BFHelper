@@ -14,6 +14,7 @@ import (
 // 群绑定服务器
 type Group struct {
 	GroupID   int64    `gorm:"primaryKey"`
+	Owner     int64    `gorm:"not null"`
 	Servers   []Server `gorm:"foreignkey:GroupID;references:GroupID"`
 	Admins    []Admin  `gorm:"foreignkey:GroupID;references:GroupID"`
 	CreatedAt time.Time
@@ -22,40 +23,29 @@ type Group struct {
 
 // 服务器 表
 type Server struct {
-	GroupID     int64
+	GroupID     int64  `gorm:"primaryKey"`
 	Gameid      string `gorm:"primaryKey"` //gid
-	Serverid    string `gorm:"primaryKey"` //sid
+	Serverid    string //sid
 	PGid        string //also guid
 	NameInGroup string //群内对该服务器起的别名
 	ServerName  string //服务器名
-	Owner       string //腐竹
-	Bans        []Ban  `gorm:"foreignkey:Gameid;references:Gameid"` //Ban 列
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
 
 // 服务器管理
 type Admin struct {
-	GroupID   int64 `gorm:"primaryKey"`
+	GroupID   int64
 	QQid      int64
 	CreatedAt time.Time
 	UpdatedAt time.Time
-}
-
-// BAN列 表
-type Ban struct {
-	Gameid      string `gorm:"primaryKey"`
-	DisplayName string
-	PersonalID  string `gorm:"primaryKey"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
 }
 
 type ServerDB gorm.DB
 
 // curd
 // Create new server bind
-func (sdb *ServerDB) Create(groupid int64, gameid string) error {
+func (sdb *ServerDB) Create(groupid, ownerid int64, gameid string) error {
 	// check gameid
 	post := bf1rsp.NewPostGetServerDetails(gameid)
 	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
@@ -69,30 +59,19 @@ func (sdb *ServerDB) Create(groupid int64, gameid string) error {
 	// read needed info from data
 	result := gjson.GetMany(
 		data,
-		"result.rspInfo.bannedList",
 		"result.rspInfo.server.serverId",
 		"result.rspInfo.server.persistedGameId",
 		"result.rspInfo.server.name",
-		"result.rspInfo.server.ownerId",
 	)
-	ban := result[0].Array()
-	var bans []Ban
-	for _, v := range ban {
-		bans = append(bans, Ban{
-			DisplayName: v.Get("displayName").Str,
-			PersonalID:  v.Get("personaId").Str,
-		})
-	}
 	grp := &Group{
 		GroupID: groupid,
+		Owner:   ownerid,
 		Servers: []Server{
 			{
 				Gameid:     gameid,
-				Serverid:   result[1].String(),
-				PGid:       result[2].Str,
-				ServerName: result[3].Str,
-				Owner:      result[4].String(),
-				Bans:       bans,
+				Serverid:   result[0].Str,
+				PGid:       result[1].Str,
+				ServerName: result[2].Str,
 			},
 		},
 	}
@@ -113,7 +92,7 @@ func (sdb *ServerDB) Find(grpid int64) (*Group, error) {
 	var result Group
 	rmu.Lock()
 	defer rmu.Unlock()
-	err := (*gorm.DB)(sdb).Model(&Group{}).Where("group_id = ?", grpid).Preload("Servers.Bans").Preload(clause.Associations).First(&result).Error
+	err := (*gorm.DB)(sdb).Model(&Group{}).Where("group_id = ?", grpid).Preload(clause.Associations).First(&result).Error
 	return &result, err
 }
 
@@ -121,7 +100,7 @@ func (sdb *ServerDB) Find(grpid int64) (*Group, error) {
 func (sdb *ServerDB) AddAdmin(grpid, qid int64) error {
 	rmu.Lock()
 	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Model(&Group{GroupID: grpid}).Where("group_id = ?", grpid).Association("Admins").Append(&Admin{QQid: qid})
+	return (*gorm.DB)(sdb).Model(&Group{GroupID: grpid}).Association("Admins").Append(&Admin{QQid: qid})
 }
 
 // add server to group
@@ -139,77 +118,85 @@ func (sdb *ServerDB) AddServer(grpid int64, gid string) error {
 	// read needed info from data
 	result := gjson.GetMany(
 		data,
-		"result.rspInfo.bannedList",
 		"result.rspInfo.server.serverId",
 		"result.rspInfo.server.persistedGameId",
 		"result.rspInfo.server.name",
-		"result.rspInfo.server.ownerId",
 	)
-	ban := result[0].Array()
-	var bans []Ban
-	for _, v := range ban {
-		bans = append(bans, Ban{
-			DisplayName: v.Get("displayName").Str,
-			PersonalID:  v.Get("personaId").Str,
-		})
-	}
 	rmu.Lock()
 	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Model(&Group{GroupID: grpid}).Where("group_id = ?", grpid).Session(&gorm.Session{FullSaveAssociations: true}).Association("Servers").
+	return (*gorm.DB)(sdb).Model(&Group{GroupID: grpid}).Association("Servers").
 		Append(&Server{
 			Gameid:     gid,
-			Serverid:   result[1].String(),
-			PGid:       result[2].Str,
-			ServerName: result[3].Str,
-			Owner:      result[4].String(),
-			Bans:       bans,
+			Serverid:   result[0].Str,
+			PGid:       result[1].Str,
+			ServerName: result[2].Str,
 		})
 }
 
-// add ban to server
-func (sdb *ServerDB) AddBan(gid, name string, grpid int64) error {
-	pid, err := bf1api.GetPersonalID(name)
-	if err != nil {
-		return errors.New("添加到ban列失败：" + err.Error())
-	}
+// set alias
+func (sdb *ServerDB) SetAlias(grpid int64, gid, alias string) error {
 	rmu.Lock()
 	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Model(&Group{GroupID: grpid}).Where("group_id = ?", grpid).Session(&gorm.Session{FullSaveAssociations: true}).Association("Servers").
-		Append(&Server{
-			Gameid: gid,
-			Bans: append([]Ban{}, Ban{
-				Gameid:      gid,
-				DisplayName: name,
-				PersonalID:  pid,
-			}),
-		})
+	return (*gorm.DB)(sdb).Where("group_id = ? AND gameid = ?", grpid, gid).Updates(&Server{NameInGroup: alias}).Error
 }
 
-/*
+// Get Server by alias
+func (sdb *ServerDB) GetServer(alias string, grpid int64) (*Server, error) {
+	var s Server
+	rmu.Lock()
+	defer rmu.Unlock()
+	err := (*gorm.DB)(sdb).Where("group_id = ? AND name_in_group = ?", grpid, alias).First(&s).Error
+	return &s, err
+}
+
 // remove admin
 func (sdb *ServerDB) DelAdmin(grpid, qid int64) error {
 	rmu.Lock()
 	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Model(&Group{GroupID: grpid}).Where("group_id = ?", grpid).Association("Admins").Delete(&Admin{QQid: qid})
+	return (*gorm.DB)(sdb).Where("group_id = ? AND q_qid = ?", grpid, qid).Delete(&Admin{}).Error
 }
 
 // remove server
 func (sdb *ServerDB) DelServer(grpid int64, gid string) error {
 	rmu.Lock()
 	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Model(&Group{GroupID: grpid}).Where("group_id = ?", grpid).Session(&gorm.Session{FullSaveAssociations: true}).Association("Servers").
-		Delete(&Server{
-			Gameid: gid,
-		})
+	return (*gorm.DB)(sdb).Where("group_id = ? AND gameid = ?", grpid, gid).Delete(&Server{}).Error
 }
 
-// remove ban
-func (sdb *ServerDB) DelBan(gid, name string, grpid int64) error {
-	rmu.Lock()
-	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Model(&Group{GroupID: grpid}).Where("group_id = ?", grpid).Session(&gorm.Session{FullSaveAssociations: true}).Association("Servers").
-	Delete(&Server{
-		Gameid: gid,
-	})
+// change owner
+func (sdb *ServerDB) ChangeOwner(grpid, owner int64) error {
+	return sdb.Update(Group{GroupID: grpid, Owner: owner})
 }
-*/
+
+// close db
+func (sdb *ServerDB) Close() error {
+	sqlDB, err := (*gorm.DB)(sdb).DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
+}
+
+// IsAdmin
+func (sdb *ServerDB) IsAdmin(grpid, qid int64) (bool, error) {
+	d, err := sdb.Find(grpid)
+	if err != nil {
+		return false, err
+	}
+	for _, v := range d.Admins {
+		if v.QQid == qid {
+			return true, nil
+		}
+		continue
+	}
+	return d.Owner == qid, nil
+}
+
+// IsOwner
+func (sdb *ServerDB) IsOwner(grpid, qid int64) (bool, error) {
+	d, err := sdb.Find(grpid)
+	if err != nil {
+		return false, err
+	}
+	return d.Owner == qid, nil
+}

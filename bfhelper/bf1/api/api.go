@@ -17,6 +17,7 @@ const (
 	NativeAPI    string = "https://sparta-gw.battlelog.com/jsonrpc/pc/api"
 	SessionAPI   string = "https://battlefield-api.sakurakooi.cyou/account/login"
 	OperationAPI string = "https://sparta-gw.battlelog.com/jsonrpc/ps4/api" //交换和行动包查询
+	EASBAPI      string = "https://delivery.easb.cc/games/get_server_status"
 )
 
 // error code
@@ -215,7 +216,7 @@ func GetPersonalID(name string) (string, error) {
 	cli.Use(headers.Set("Host", "gateway.ea.com"))
 	res, err := cli.Request().Send()
 	if err != nil {
-		return "", err
+		return "", errors.New("获取玩家pid失败")
 	}
 	info := gjson.Get(res.String(), "error").Str
 	if info == "invalid_access_token" || info == "invalid_oauth_info" {

@@ -2,6 +2,7 @@ package bf1rsp
 
 import (
 	"errors"
+	"fmt"
 
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	"github.com/tidwall/gjson"
@@ -24,6 +25,7 @@ func NewServer(sid, gid, pgid string) *server {
 
 // kick player, reason needs BIG5, return reason and err
 func (s *server) Kick(pid, reason string) (string, error) {
+	reason = fmt.Sprintf("%s%s", "RemiliaBot:", reason)
 	post := NewPostKick(pid, s.Gid, reason)
 	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
 	if err != nil {
@@ -60,7 +62,7 @@ func (s *server) Unban(pid string) error {
 
 // choose level
 func (s *server) ChangeMap(index int) error {
-	post := NewPostChangeMap(s.PGid,index)
+	post := NewPostChangeMap(s.PGid, index)
 	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
 	if err != nil {
 		return err
