@@ -20,7 +20,7 @@ require (
 	github.com/RomiChan/syncx v0.0.0-20220404072119-d7ea0ae15a4c // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/ericpauley/go-quantize v0.0.0-20200331213906-ae555eb2afa4 // indirect
-	github.com/fumiama/cron v1.3.0 // indirect
+	github.com/fumiama/cron v1.3.0
 	github.com/fumiama/go-base16384 v1.5.4 // indirect
 	github.com/fumiama/go-registry v0.1.6 // indirect
 	github.com/fumiama/gofastTEA v0.0.10 // indirect

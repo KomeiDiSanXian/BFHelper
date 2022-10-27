@@ -25,7 +25,10 @@ func NewServer(sid, gid, pgid string) *server {
 
 // kick player, reason needs BIG5, return reason and err
 func (s *server) Kick(pid, reason string) (string, error) {
-	reason = fmt.Sprintf("%s%s", "RemiliaBot:", reason)
+	reason = fmt.Sprintf("%s%s", "Remi:", reason)
+	if len(reason) > 32 {
+		return "", errors.New("理由过长")
+	}
 	post := NewPostKick(pid, s.Gid, reason)
 	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
 	if err != nil {
@@ -35,7 +38,7 @@ func (s *server) Kick(pid, reason string) (string, error) {
 }
 
 // ban player, check returned id
-func (s *server) Ban(pid, reason string) error {
+func (s *server) Ban(pid string) error {
 	post := NewPostBan(pid, s.Sid)
 	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
 	if err != nil {
