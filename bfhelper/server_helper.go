@@ -56,7 +56,7 @@ func init() {
 			Txt2Img(ctx, msg)
 		})
 
-	engine.OnPrefix(".绑定服务器", zero.OnlyGroup, ServerOwnerPermission).SetBlock(true).
+	engine.OnPrefix(".绑服", zero.OnlyGroup, ServerOwnerPermission).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			gids := strings.Split(ctx.State["args"].(string), " ")
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("正在绑定..."))
@@ -64,18 +64,41 @@ func init() {
 			defer close()
 			if err != nil {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
+				return
 			}
 			var wg sync.WaitGroup
 			for _, v := range gids {
 				wg.Add(1)
 				go func(s string) {
 					err = db.AddServer(ctx.Event.GroupID, s)
-					ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：绑定 ", s, " 时发生错误", err))
+					if err != nil {
+						ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：绑定 ", s, " 时发生错误", err))
+					}
 					wg.Done()
 				}(v)
 			}
 			wg.Wait()
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("绑定结束"))
+		})
+
+	engine.OnPrefix(".changeowner", zero.OnlyGroup, zero.SuperUserPermission).SetBlock(true).
+		Handle(func(ctx *zero.Ctx) {
+			args := strings.Split(ctx.State["args"].(string), " ")
+			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("正在修改服主信息..."))
+			db, close, err := OpenServerDB()
+			defer close()
+			if err != nil {
+				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
+				return
+			}
+			grpid, _ := strconv.ParseInt(args[0], 10, 64)
+			ownerid, _ := strconv.ParseInt(args[1], 10, 64)
+			err = db.ChangeOwner(grpid, ownerid)
+			if err != nil {
+				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
+				return
+			}
+			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("修改成功"))
 		})
 
 	engine.OnPrefixGroup([]string{".addadmin", ".添加管理"}, zero.OnlyGroup, ServerOwnerPermission).SetBlock(true).
