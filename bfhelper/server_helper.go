@@ -70,7 +70,7 @@ func init() {
 			for _, v := range gids {
 				wg.Add(1)
 				go func(s string) {
-					err = db.AddServer(ctx.Event.GroupID, s)
+					err := db.AddServer(ctx.Event.GroupID, s)
 					if err != nil {
 						ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：绑定 ", s, " 时发生错误", err))
 					}
@@ -167,31 +167,44 @@ func init() {
 			for _, v := range data.Servers {
 				wg.Add(1)
 				go func(v bf1model.Server) {
+					var mu sync.Mutex
 					srv := bf1rsp.NewServer(v.Serverid, v.Gameid, v.PGid)
 					pid, err := bf1api.GetPersonalID(args[0])
 					defer wg.Done()
 					if err != nil {
 						if v.NameInGroup != "" {
+							mu.Lock()
 							reasons = append(reasons, "在 "+v.NameInGroup+" 踢出失败："+err.Error())
+							mu.Unlock()
 							return
 						}
+						mu.Lock()
 						reasons = append(reasons, "在 "+v.ServerName+" 踢出失败："+err.Error())
+						mu.Unlock()
 						return
 					}
 					reason, err := srv.Kick(pid, args[1])
 					if err != nil {
 						if v.NameInGroup != "" {
+							mu.Lock()
 							reasons = append(reasons, "在 "+v.NameInGroup+" 踢出失败："+err.Error())
+							mu.Unlock()
 							return
 						}
+						mu.Lock()
 						reasons = append(reasons, "在 "+v.ServerName+" 踢出失败："+err.Error())
+						mu.Unlock()
 						return
 					}
 					if v.NameInGroup != "" {
+						mu.Lock()
 						reasons = append(reasons, "在 "+v.NameInGroup+" 踢出成功："+reason)
+						mu.Unlock()
 						return
 					}
+					mu.Lock()
 					reasons = append(reasons, "在 "+v.NameInGroup+" 踢出成功："+reason)
+					mu.Unlock()
 				}(v)
 			}
 			wg.Wait()
