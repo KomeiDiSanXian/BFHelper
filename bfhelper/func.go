@@ -210,16 +210,16 @@ func ServerAdminPermission(ctx *zero.Ctx) bool {
 	if zero.AdminPermission(ctx) {
 		return true
 	}
-	sdb, _ := bf1model.Open(engine.DataFolder() + "server.db")
-	db := (*bf1model.ServerDB)(sdb)
+	db, cl, _ := OpenServerDB()
+	defer cl()
 	adm, _ := db.IsAdmin(ctx.Event.GroupID, ctx.Event.UserID)
 	return adm
 }
 
 // 腐竹权限
 func ServerOwnerPermission(ctx *zero.Ctx) bool {
-	sdb, _ := bf1model.Open(engine.DataFolder() + "server.db")
-	db := (*bf1model.ServerDB)(sdb)
+	db, cl, _ := OpenServerDB()
+	defer cl()
 	p, _ := db.IsOwner(ctx.Event.GroupID, ctx.Event.UserID)
 	return p
 }
@@ -233,8 +233,5 @@ func OpenServerDB() (*bf1model.ServerDB, func() error, error) {
 		return nil, nil, errors.New("数据库错误")
 	}
 	db := (*bf1model.ServerDB)(sdb)
-	close := func() error {
-		return db.Close()
-	}
-	return db, close, nil
+	return db, db.Close, nil
 }

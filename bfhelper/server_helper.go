@@ -309,7 +309,7 @@ func init() {
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("已将 ", args[1], " 在 ", args[0], " 解封"))
 		})
 
-	engine.OnShell("自动踢出", autokick{}, ServerAdminPermission).SetBlock(true).
+	engine.OnShell("自动踢出", autokick{}, zero.OnlyGroup, ServerAdminPermission).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			info := ctx.State["flag"].(*autokick)
 			// 检查参数
@@ -372,7 +372,7 @@ func init() {
 				})
 				c.Start()
 			}()
-			next := zero.NewFutureEvent("message", 999, false, zero.OnlyGroup, ServerAdminPermission, zero.RegexRule(`^关闭自动踢出$`), zero.CheckGroup(ctx.Event.GroupID))
+			next := zero.NewFutureEvent("message", 999, false, zero.OnlyGroup, zero.RegexRule(`^关闭自动踢出$`), zero.CheckGroup(ctx.Event.GroupID), ServerAdminPermission)
 			recv, cancle := next.Repeat()
 			defer cancle()
 			for r := range recv {
@@ -382,6 +382,5 @@ func init() {
 				ctx.SendChain(message.Text(info.Server, " 的自动踢出已关闭"))
 				return
 			}
-			wg.Wait()
 		})
 }
