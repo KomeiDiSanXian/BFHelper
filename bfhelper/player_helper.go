@@ -34,8 +34,8 @@ var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 		"- .kick player [原因]\t在已绑定的服务器中踢出玩家\n" +
 		"- .ban 别名 player\t在别名为此的服务器封禁此玩家\n" +
 		"- .unban 别名 player\t在别名为此的服务器解封此玩家\n" +
-		"- .自动踢出 -s 别名 -r 等级 -p ping值\t-s 别名必填，-r 等级和-p ping值二选一，踢出大于你所填值的玩家\n" +
-		"- 关闭自动踢出\t开启后关闭，注意不要加点\n" +
+		"- .自动踢出 -s 别名 -r 等级 -p ping值 -kd kd大小 -kpm kpm大小\t-s 别名必填，踢出大于你所填值的玩家\n" +
+		"- 关闭自动踢出\t注意不要加点\n" +
 		"<-----以下是更多功能----->\n" +
 		"- .bf1stats\t查询亚服相关信息（来自水神的api）\n" +
 		"- .交换\t查询本周战地一武器皮肤\n" +

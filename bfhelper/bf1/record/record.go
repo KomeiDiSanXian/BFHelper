@@ -169,3 +169,20 @@ func GetVehicles(pid string) (*VehicleSort, error) {
 	sort.Sort(vehicle)
 	return &vehicle, err
 }
+
+// battlelog 获取kd,kpm
+func Get2k(pid string) (kd float64, kpm float64, err error) {
+	post := NewPostStats(pid)
+	data, err := rsp.ReturnJson(rsp.NativeAPI, "POST", post)
+	if err != nil {
+		return -1, -1, err
+	}
+	result := gjson.GetMany(data,
+		"result.basicStats.kills",
+		"result.basicStats.deaths",
+		"result.basicStats.kpm",
+	)
+	kd = result[0].Float() / result[1].Float()
+	kpm = result[2].Num
+	return kd, kpm, err
+}
