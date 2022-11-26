@@ -2,6 +2,7 @@ package bfhelper
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -319,7 +320,8 @@ func init() {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：未指定服务器"))
 				return
 			}
-			var msg []message.MessageSegment
+			var msg message.Message
+			msg = append(msg, message.Reply(ctx.Event.MessageID), message.Text("将在 ", info.Server, " 踢出"))
 			if info.Rank != 0 {
 				msg = append(msg, message.Text("等级大于", info.Rank, " "))
 			} else {
@@ -340,7 +342,8 @@ func init() {
 			} else {
 				info.Kpm = 999
 			}
-			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("将在 ", info.Server, " 踢出", msg, "的玩家"))
+			msg = append(msg, message.Text("的玩家"))
+			ctx.SendChain(msg...)
 			db, cl, err := OpenServerDB()
 			defer cl()
 			if err != nil {
@@ -391,7 +394,7 @@ func init() {
 								return
 							}
 							if kd > info.Kd {
-								ctx.SendChain(message.Text("正在踢出", value.Get("display_name"), "：kd过高(", kd, ")"))
+								ctx.SendChain(message.Text("正在踢出", value.Get("display_name"), "：kd过高(", fmt.Sprintf("%.2f", kd), ")"))
 								srv.Kick(pid, "Life KD limit "+strconv.FormatFloat(info.Kd, 'f', 2, 32))
 							}
 							if kpm > info.Kpm {
