@@ -22,7 +22,12 @@ const (
 
 // error code
 const (
-	ErrServerNotFound string = "-34501"
+	ErrServerNotFound int64 = -34501
+	ErrInvalidMapId   int64 = -32603
+	ErrServerOutdate  int64 = -32851
+	ErrPlayerIsAdmin  int64 = -32857
+	ErrinvalidPlayer  int64 = -32856
+	ErrServerNotStart int64 = -32858
 )
 
 /*
@@ -55,6 +60,7 @@ const (
 	VEHICLES     string = "Progression.getVehiclesByPersonaId"
 	PLAYING      string = "GameServer.getServersByPersonaIds"
 	RECENTSERVER string = "ServerHistory.mostRecentServers"
+	SERVERINFO   string = "GameServer.getServerDetails"
 	//OperationAPI
 	EXCHANGE string = "ScrapExchange.getOffers"
 	CAMPAIGN string = "CampaignOperations.getPlayerCampaignStatus"
@@ -143,7 +149,7 @@ func ReturnJson(url, method string, parms interface{}) (string, error) {
 		}
 		return ReturnJson(url, method, parms)
 	}
-	return data, nil
+	return data, Exception(code)
 }
 
 // 查询该周交换
@@ -233,4 +239,23 @@ func GetPersonalID(name string) (string, error) {
 		return "", errors.New("获取玩家pid失败")
 	}
 	return gjson.Get(res.String(), "personas.persona.0.personaId").String(), err
+}
+
+// 错误码转换
+func Exception(errcode int64) error {
+	switch errcode {
+	case ErrServerNotFound:
+		return errors.New("找不到服务器，请检查服务器信息是否正确")
+	case ErrInvalidMapId:
+		return errors.New("无效的地图id/无权限")
+	case ErrServerOutdate:
+		return errors.New("找不到服务器/服务器过期")
+	case ErrPlayerIsAdmin:
+		return errors.New("无权限处理服务器管理")
+	case ErrinvalidPlayer:
+		return errors.New("找不到该玩家")
+	case ErrServerNotStart:
+		return errors.New("服务器未开启")
+	}
+	return nil
 }

@@ -6,11 +6,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
-	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
-	bf1record "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/record"
-	bf1rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/rsp"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/record"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/rsp"
 	"github.com/fumiama/cron"
 	"github.com/tidwall/gjson"
 	zero "github.com/wdvxdr1123/ZeroBot"
@@ -310,6 +311,64 @@ func init() {
 				}
 			}()
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("已将 ", args[1], " 在 ", args[0], " 解封"))
+		})
+
+	// .map srv mapid
+	engine.OnPrefixGroup([]string{".map", ".maplist", ".切图"}, zero.OnlyGroup, ServerAdminPermission).SetBlock(true).
+		Handle(func(ctx *zero.Ctx) {
+			args := strings.Split(ctx.State["args"].(string), " ")
+			if len(args) < 2 {
+				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：非法参数！"))
+				return
+			}
+			db, cl, err := OpenServerDB()
+			defer cl()
+			if err != nil {
+				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
+				return
+			}
+			s, err := db.GetServer(args[0], ctx.Event.GroupID)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：找不到别名为 ", args[0], " 的服务器"))
+					return
+				}
+				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
+				return
+			}
+			srv := bf1rsp.NewServer(s.Serverid, s.Gameid, s.PGid)
+			maps, err := srv.GetMaps()
+			if err != nil {
+				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
+				return
+			}
+			var txt string
+			for i, m := range *maps {
+				txt += fmt.Sprintf("%d\t%s\t%s", i, m.ModeName, m.MapName)
+			}
+			txt += "--------\n请在30s内回复序号以进行切图"
+			Txt2Img(ctx, txt)
+			next := zero.NewFutureEvent("message", 999, false, zero.RegexRule(`^\d{1,2}$`), zero.OnlyGroup, ctx.CheckSession())
+			recv, cancle := next.Repeat()
+			defer cancle()
+			timeout := time.NewTimer(30 * time.Second)
+			for {
+				select {
+				case c := <-recv:
+					i := c.Event.Message.String()
+					idx, _ := strconv.Atoi(i)
+					ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("正在切换", args[0], "到", (*maps)[idx].ModeName, "\t", (*maps)[idx].MapName))
+					err := srv.ChangeMap(idx)
+					if err != nil {
+						ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("ERR：", err))
+						return
+					}
+					ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("切图完成"))
+					return
+				case <-timeout.C:
+					return
+				}
+			}
 		})
 
 	engine.OnShell("自动踢出", autokick{}, zero.OnlyGroup, ServerAdminPermission).SetBlock(true).

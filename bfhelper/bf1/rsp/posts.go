@@ -106,11 +106,32 @@ func NewPostChangeMap(pgid string, index int) *post {
 	}
 }
 
-// POST 获取服务器信息
+// POST 获取完整服务器信息
 func NewPostGetServerDetails(gid string) *post {
 	return &post{
 		Jsonrpc: "2.0",
 		Method:  bf1api.SERVERDETALS,
+		Params: struct {
+			Game       string "json:\"game\""
+			PersonaID  string "json:\"personaId\""
+			GameId     string `json:"gameId"`
+			ServerId   string `json:"serverId"`
+			PGid       string `json:"persistedGameId"`
+			LevelIndex int    `json:"levelIndex"`
+			Reason     string `json:"reason"`
+		}{
+			Game:   bf1api.BF1,
+			GameId: gid,
+		},
+		ID: "ed26fa43-816d-4f7b-a9d8-de9785ae1bb6",
+	}
+}
+
+// POST 获取服务器部分信息
+func NewPostGetServerInfo(gid string) *post {
+	return &post{
+		Jsonrpc: "2.0",
+		Method:  bf1api.SERVERINFO,
 		Params: struct {
 			Game       string "json:\"game\""
 			PersonaID  string "json:\"personaId\""

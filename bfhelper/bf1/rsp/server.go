@@ -14,6 +14,13 @@ type server struct {
 	PGid string
 }
 
+type m struct {
+	MapName  string
+	ModeName string
+}
+
+type maps []m
+
 // New server info
 func NewServer(sid, gid, pgid string) *server {
 	return &server{
@@ -74,4 +81,25 @@ func (s *server) ChangeMap(index int) error {
 		return errors.New("服务器未发出正确的响应，请稍后再试")
 	}
 	return nil
+}
+
+// get level
+func (s *server) GetMaps() (*maps, error) {
+	post := NewPostGetServerInfo(s.Gid)
+	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
+	if err != nil {
+		return nil, err
+	}
+	if gjson.Get(data, "result").String() == "" {
+		return nil, errors.New("服务器gameid可能无效，请更新服务器信息")
+	}
+	result := gjson.Get(data, "result.rotation").Array()
+	if result == nil {
+		return nil, errors.New("获取到的地图池为空")
+	}
+	var mp maps
+	for _, v := range result {
+		mp = append(mp, m{MapName: v.Get("mapPrettyName").Str, ModeName: v.Get("modePrettyName").Str})
+	}
+	return &mp, nil
 }

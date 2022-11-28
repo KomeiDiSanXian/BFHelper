@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/record"
 	"github.com/tidwall/gjson"
 	zero "github.com/wdvxdr1123/ZeroBot"

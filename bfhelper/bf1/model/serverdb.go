@@ -1,7 +1,6 @@
 package bf1model
 
-import (
-	"errors"
+import (	
 	"time"
 
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
@@ -52,8 +51,9 @@ func (sdb *ServerDB) Create(groupid, ownerid int64, gameid string) error {
 	if err != nil {
 		return err
 	}
-	if gjson.Get(data, "error.code").String() == bf1api.ErrServerNotFound {
-		return errors.New("找不到服务器，请检查gid")
+	err = bf1api.Exception(gjson.Get(data, "error.code").Int())
+	if err != nil {
+		return err
 	}
 	// put in database
 	// read needed info from data
@@ -111,8 +111,9 @@ func (sdb *ServerDB) AddServer(grpid int64, gid string) error {
 	if err != nil {
 		return err
 	}
-	if gjson.Get(data, "error.code").String() == bf1api.ErrServerNotFound {
-		return errors.New("找不到服务器，请检查gid")
+	err = bf1api.Exception(gjson.Get(data, "error.code").Int())
+	if err != nil {
+		return err
 	}
 	// put in database
 	// read needed info from data
