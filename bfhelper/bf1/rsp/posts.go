@@ -147,3 +147,24 @@ func NewPostGetServerInfo(gid string) *post {
 		ID: "ed26fa43-816d-4f7b-a9d8-de9785ae1bb6",
 	}
 }
+
+// POST 获取服务器rsp信息
+func NewPostRSPInfo(sid string) *post {
+	return &post{
+		Jsonrpc: "2.0",
+		Method:  bf1api.SERVERRSP,
+		Params: struct {
+			Game       string "json:\"game\""
+			PersonaID  string "json:\"personaId\""
+			GameId     string `json:"gameId"`
+			ServerId   string `json:"serverId"`
+			PGid       string `json:"persistedGameId"`
+			LevelIndex int    `json:"levelIndex"`
+			Reason     string `json:"reason"`
+		}{
+			Game:   bf1api.BF1,
+			ServerId: sid,
+		},
+		ID: "ed26fa43-816d-4f7b-a9d8-de9785ae1bb6",
+	}
+}

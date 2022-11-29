@@ -61,6 +61,7 @@ const (
 	PLAYING      string = "GameServer.getServersByPersonaIds"
 	RECENTSERVER string = "ServerHistory.mostRecentServers"
 	SERVERINFO   string = "GameServer.getServerDetails"
+	SERVERRSP    string = "RSP.getServerDetails"
 	//OperationAPI
 	EXCHANGE string = "ScrapExchange.getOffers"
 	CAMPAIGN string = "CampaignOperations.getPlayerCampaignStatus"

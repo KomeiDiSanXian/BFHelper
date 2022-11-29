@@ -25,12 +25,14 @@ type autokick struct {
 	Kpm    float64 `flag:"kpm"`
 }
 
+// 白名单pid数组
+type whitelists []string
+
 var en = control.Register("bf1自动踢出", &ctrl.Options[*zero.Ctx]{
 	DisableOnDefault: false,
 	Help: "bf1autokick\n" +
 		"- .自动踢出 -s 别名 -r 等级 -p ping值 -kd kd大小 -kpm kpm大小\t-s 别名必填，踢出大于你所填值的玩家\n" +
 		"- 关闭自动踢出\t注意不要加点\n",
-	PrivateDataFolder: "battlefield",
 }).ApplySingle(single.New(
 	single.WithKeyFn(func(ctx *zero.Ctx) int64 { return ctx.Event.GroupID }),
 	single.WithPostFn[int64](func(ctx *zero.Ctx) {
@@ -93,8 +95,17 @@ func init() {
 				GameIds: []string{s.Gameid},
 			}
 			var sym chan bool
+			var wl whitelists
 			srv := bf1rsp.NewServer(s.Serverid, s.Gameid, s.PGid)
+			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("正在获取服务器管理员名单..."))
+			admins, err := srv.GetAdminspid()
+			if err != nil {
+				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
+				return
+			}
+			wl.AddWhitelist(admins...)
 			c := cron.New()
+			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("已添加服务器管理员到白名单，开始自动踢出"))
 			go func() {
 				c.AddFunc("@every 60s", func() {
 					data, err := bf1api.ReturnJson(bf1api.EASBAPI, "POST", &post)
@@ -112,6 +123,9 @@ func init() {
 					players.ForEach(func(_, value gjson.Result) bool {
 						go func(value gjson.Result) {
 							pid := strconv.FormatInt(value.Get("pid").Int(), 10)
+							if wl.IsInWhitelist(pid) {
+								return
+							}
 							if value.Get("rank").Int() > int64(info.Rank) {
 								ctx.SendChain(message.Text("正在踢出", value.Get("display_name"), "：等级过高(", value.Get("rank"), ")"))
 								srv.Kick(pid, "Rank limit "+strconv.Itoa(info.Rank))
@@ -155,4 +169,17 @@ func init() {
 				}
 			}
 		})
+}
+
+func (wl *whitelists) AddWhitelist(pids ...string) {
+	*wl = append(*wl, pids...)
+}
+
+func (wl *whitelists) IsInWhitelist(pid string) bool {
+	for _, v := range *wl {
+		if pid == v {
+			return true
+		}
+	}
+	return false
 }

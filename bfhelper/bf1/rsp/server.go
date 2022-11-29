@@ -103,3 +103,18 @@ func (s *server) GetMaps() (*maps, error) {
 	}
 	return &mp, nil
 }
+
+func (s *server) GetAdminspid() ([]string, error) {
+	post := NewPostRSPInfo(s.Sid)
+	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
+	if err != nil {
+		return nil, err
+	}
+	result := gjson.Get(data, "result.adminList.#.personaId").Array()
+	result = append(result, gjson.Get(data, "result.owner.personaId"))
+	var strs []string
+	for _, v := range result {
+		strs = append(strs, v.Str)
+	}
+	return strs, bf1api.Exception(gjson.Get(data, "error.code").Int())
+}
