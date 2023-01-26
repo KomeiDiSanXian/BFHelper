@@ -2,11 +2,9 @@ package bfhelper
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
@@ -302,10 +300,11 @@ func init() {
 		})
 
 	// .map srv mapid
+	/* not complete yet
 	engine.OnPrefixGroup([]string{".map", ".maplist", ".切图"}, zero.OnlyGroup, ServerAdminPermission).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			args := strings.Split(ctx.State["args"].(string), " ")
-			if len(args) < 2 {
+			if len(args) < 1 {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：非法参数！"))
 				return
 			}
@@ -325,6 +324,12 @@ func init() {
 				return
 			}
 			srv := bf1rsp.NewServer(s.Serverid, s.Gameid, s.PGid)
+			if len(args) > 1 {
+				mapid, err := strconv.Atoi(args[1])
+				if err != nil {
+
+				}
+			}
 			maps, err := srv.GetMaps()
 			if err != nil {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
@@ -332,7 +337,7 @@ func init() {
 			}
 			var txt string
 			for i, m := range *maps {
-				txt += fmt.Sprintf("%d\t%s\t%s", i, m.ModeName, m.MapName)
+				txt += fmt.Sprintf("%3d\t%s\t%s\n", i, m.ModeName, m.MapName)
 			}
 			txt += "--------\n请在30s内回复序号以进行切图"
 			Txt2Img(ctx, txt)
@@ -358,4 +363,5 @@ func init() {
 				}
 			}
 		})
+	*/
 }

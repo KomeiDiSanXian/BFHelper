@@ -131,6 +131,7 @@ func Session(username, password string, refreshToken bool) error {
 }
 
 // NativeAPI 返回json
+// need refactor
 func ReturnJson(url, method string, parms interface{}) (string, error) {
 	var client = gentleman.New()
 	client.URL(url)

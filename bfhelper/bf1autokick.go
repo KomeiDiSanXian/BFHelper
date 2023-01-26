@@ -45,6 +45,7 @@ var en = control.Register("bf1自动踢出", &ctrl.Options[*zero.Ctx]{
 ))
 
 func init() {
+	// need refactor
 	en.OnShell("自动踢出", autokick{}, zero.OnlyGroup, ServerAdminPermission).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			info := ctx.State["flag"].(*autokick)
@@ -129,10 +130,12 @@ func init() {
 							if value.Get("rank").Int() > int64(info.Rank) {
 								ctx.SendChain(message.Text("正在踢出", value.Get("display_name"), "：等级过高(", value.Get("rank"), ")"))
 								srv.Kick(pid, "Rank limit "+strconv.Itoa(info.Rank))
+								return
 							}
 							if value.Get("ping").Int() > int64(info.Ping) {
 								ctx.SendChain(message.Text("正在踢出", value.Get("display_name"), "：ping值过高(", value.Get("ping"), ")"))
 								srv.Kick(pid, "Ping limit "+strconv.Itoa(info.Ping))
+								return
 							}
 							kd, kpm, err := bf1record.Get2k(pid)
 							if err != nil {
@@ -141,10 +144,12 @@ func init() {
 							if kd > info.Kd {
 								ctx.SendChain(message.Text("正在踢出", value.Get("display_name"), "：kd过高(", fmt.Sprintf("%.2f", kd), ")"))
 								srv.Kick(pid, "Life KD limit "+strconv.FormatFloat(info.Kd, 'f', 2, 32))
+								return
 							}
 							if kpm > info.Kpm {
 								ctx.SendChain(message.Text("正在踢出", value.Get("display_name"), "：kpm过高(", kpm, ")"))
 								srv.Kick(pid, "Life KPM limit "+strconv.FormatFloat(info.Kpm, 'f', 2, 32))
+								return
 							}
 						}(value)
 						return true

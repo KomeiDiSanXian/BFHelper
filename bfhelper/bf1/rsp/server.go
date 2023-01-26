@@ -118,3 +118,12 @@ func (s *server) GetAdminspid() ([]string, error) {
 	}
 	return strs, bf1api.Exception(gjson.Get(data, "error.code").Int())
 }
+
+// input keywords for map id
+/* not compiled
+func (s *server) GetMapidByKeywords(keyword string) (int, error) {
+	switch keyword{
+		case 
+	}
+}
+*/
