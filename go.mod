@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/FloatTech/zbpctrl v1.5.3-0.20230109124217-41203036b80a
 	github.com/FloatTech/zbputils v1.6.2-0.20230113162508-c8966fa17745
-	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/sirupsen/logrus v1.9.0
 	github.com/tidwall/gjson v1.14.4
 	github.com/wdvxdr1123/ZeroBot v1.6.7
 	gopkg.in/h2non/gentleman.v2 v2.0.5

@@ -1,10 +1,17 @@
 package bf1api
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net"
+	"net/http"
 	"sync"
+	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 	"gopkg.in/h2non/gentleman.v2"
 	"gopkg.in/h2non/gentleman.v2/plugins/body"
@@ -74,11 +81,12 @@ const (
 	BF4 string = "bf4"
 )
 
-// 设置session
-var SESSION string = ""
-
-// bearerAccessToken
-var TOKEN string = ""
+var (
+	Session string = "" // gatewaysession
+	Token   string = "" // bearerAccessToken
+	Sid     string = "" // cookie sid
+	Remid   string = "" // cookie rid
+)
 
 // post operation struct
 type post struct {
@@ -100,16 +108,16 @@ type Pack struct {
 	Op2Name    string
 }
 
-// Session 获取
-func Session(username, password string, refreshToken bool) error {
+// Session token cookies 获取
+func Login(username, password string, refreshToken bool) error {
 	if username == "" || password == "" {
 		return errors.New("账号信息不完整！")
 	}
-	login := map[string]interface{}{"username": username, "password": password, "refreshToken": refreshToken}
+	user := map[string]interface{}{"username": username, "password": password, "refreshToken": refreshToken}
 	//requesting..
 	var client = gentleman.New()
 	client.URL(SessionAPI)
-	client.Use(body.JSON(login))
+	client.Use(body.JSON(user))
 	//寻找SakuraKooi申请APIKey...
 	client.Use(headers.Set("Sakura-Instance-Id", SakuraID))
 	client.Use(headers.Set("Sakura-Access-Token", SakuraToken))
@@ -123,35 +131,32 @@ func Session(username, password string, refreshToken bool) error {
 	}
 	var mu sync.Mutex
 	mu.Lock()
-	SESSION = gjson.Get(res.String(), "data.gatewaySession").Str
-	tk := gjson.Get(res.String(), "data.bearerAccessToken").Str
-	TOKEN = fmt.Sprintf("%s%s", "Bearer ", tk)
+	datas := gjson.GetMany(res.String(), "data.gatewaySession", "data.bearerAccessToken", "data.sid", "data.remid")
+	Session = datas[0].Str
+	Token = fmt.Sprintf("%s%s", "Bearer ", datas[1].Str)
+	Sid = datas[2].Str
+	Remid = datas[3].Str
 	defer mu.Unlock()
 	return nil
 }
 
 // NativeAPI 返回json
-// need refactor
-func ReturnJson(url, method string, parms interface{}) (string, error) {
-	var client = gentleman.New()
-	client.URL(url)
-	client.Use(body.JSON(parms))
-	client.Use(headers.Set("X-Gatewaysession", SESSION))
-	res, err := client.Request().Method(method).Send()
-	if err != nil {
-		return "", errors.New("请求失败")
-	}
-	data := res.String()
-	code := gjson.Get(data, "error.code").Int()
-	//如果session过期，重新请求
-	if code == -32501 {
-		err := Session(UserName, Password, true)
-		if err != nil {
-			return "", err
+func ReturnJson(url, method string, body interface{}) (string, error) {
+	for i := 0; i < 3; i++ { // 3次重试
+		data, err := HttpTry(url, method, body)
+		code := gjson.GetBytes(data, "error.code").Int()
+		if code == -32501 {
+			if err := Login(UserName, Password, true); err != nil {
+				logrus.Errorln("[battlefield]", err)
+				return "", err
+			}
+			continue
 		}
-		return ReturnJson(url, method, parms)
+		if err == nil {
+			return string(data), Exception(code)
+		}
 	}
-	return data, Exception(code)
+	return "", errors.New("请求超时，可能是session更新失败")
 }
 
 // 查询该周交换
@@ -220,7 +225,7 @@ func GetPersonalID(name string) (string, error) {
 	cli := gentleman.New()
 	cli.URL("https://gateway.ea.com/proxy/identity/personas?namespaceName=cem_ea_id&displayName=" + name)
 	cli.Use(headers.Set("X-Expand-Results", "true"))
-	cli.Use(headers.Set("Authorization", TOKEN))
+	cli.Use(headers.Set("Authorization", Token))
 	cli.Use(headers.Set("Host", "gateway.ea.com"))
 	res, err := cli.Request().Send()
 	if err != nil {
@@ -228,7 +233,7 @@ func GetPersonalID(name string) (string, error) {
 	}
 	info := gjson.Get(res.String(), "error").Str
 	if info == "invalid_access_token" || info == "invalid_oauth_info" {
-		err := Session(UserName, Password, true)
+		err := Login(UserName, Password, true)
 		if err != nil {
 			return "", err
 		}
@@ -260,4 +265,61 @@ func Exception(errcode int64) error {
 		return errors.New("服务器未开启")
 	}
 	return nil
+}
+
+// any to Reader
+func ToJSON(data any) (io.Reader, error) {
+	buf := &bytes.Buffer{}
+	switch data := data.(type) {
+	case string:
+		buf.WriteString(data)
+	case []byte:
+		buf.Write(data)
+	default:
+		if err := json.NewEncoder(buf).Encode(data); err != nil {
+			return nil, errors.New("JSON encoding error")
+		}
+	}
+	return io.NopCloser(buf), nil
+}
+
+// http请求
+func HttpTry(url, method string, body interface{}) ([]byte, error) {
+	cli := &http.Client{
+		Transport: &http.Transport{
+			Dial: func(network, addr string) (net.Conn, error) {
+				conn, err := net.DialTimeout(network, addr, 5*time.Second) // 5秒连接超时
+				if err != nil {
+					return nil, err
+				}
+				conn.SetDeadline(time.Now().Add(5 * time.Second)) // 5秒接收数据超时
+				return conn, nil
+			},
+		},
+	}
+	// body is json
+	bodyjson, err := ToJSON(body)
+	if err != nil {
+		logrus.Errorln("[battlefield]", err)
+		return nil, err
+	}
+
+	req, err := http.NewRequest(method, url, bodyjson)
+	req.Header.Set("X-Gatewaysession", Session)
+	if err != nil {
+		logrus.Errorln("[battlefield] newreq err: ", err)
+		return nil, errors.New("请求失败")
+	}
+	res, err := cli.Do(req)
+	if err != nil {
+		logrus.Errorln("[battlefield] resp err: ", err)
+		return nil, errors.New("请求失败，可能是超时了")
+	}
+	defer res.Body.Close()
+	resbody, err := io.ReadAll(res.Body)
+	if err != nil {
+		logrus.Errorln("[battlefield]", err)
+		return nil, errors.New("解析JSON时发生错误")
+	}
+	return resbody, nil
 }
