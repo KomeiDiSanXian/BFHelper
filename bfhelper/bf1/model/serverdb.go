@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	bf1rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/rsp"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/request/bf1"
 )
 
 // Group 群绑定服务器
@@ -48,7 +48,7 @@ type ServerDB gorm.DB
 // Create new server bind
 func (sdb *ServerDB) Create(groupid, ownerid int64, gameid string) error {
 	// check gameid
-	post := bf1rsp.NewPostGetServerDetails(gameid)
+	post := request.NewPostGetServerDetails(gameid)
 	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func (sdb *ServerDB) AddAdmin(grpid, qid int64) error {
 // AddServer 添加服务器到指定群
 func (sdb *ServerDB) AddServer(grpid int64, gid string) error {
 	// check gameid
-	post := bf1rsp.NewPostGetServerDetails(gid)
+	post := request.NewPostGetServerDetails(gid)
 	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
 	if err != nil {
 		return err

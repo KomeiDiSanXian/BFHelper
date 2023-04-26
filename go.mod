@@ -20,13 +20,13 @@ require (
 	github.com/RomiChan/syncx v0.0.0-20221202055724-5f842c53020e // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/ericpauley/go-quantize v0.0.0-20200331213906-ae555eb2afa4 // indirect
-	github.com/fumiama/cron v1.3.0
+	github.com/fumiama/cron v1.3.0 // indirect
 	github.com/fumiama/go-base16384 v1.6.4 // indirect
 	github.com/fumiama/go-registry v0.2.5 // indirect
 	github.com/fumiama/gofastTEA v0.0.10 // indirect
 	github.com/glebarez/go-sqlite v1.17.3 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/google/uuid v1.3.0
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/nbio/st v0.0.0-20140626010706-e9e8d9816f32 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect

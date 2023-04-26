@@ -9,6 +9,7 @@ import (
 	"github.com/tidwall/gjson"
 
 	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/request/bf1"
 )
 
 // GetStats 获取战绩信息
@@ -79,7 +80,7 @@ func GetStats(name string) (*Stat, error) {
 
 // GetWeapons 获取武器
 func GetWeapons(pid string, class string) (*WeaponSort, error) {
-	post := NewPostWeapon(pid)
+	post := request.NewPostWeapon(pid)
 	data, err := rsp.ReturnJSON(rsp.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
@@ -140,7 +141,7 @@ func SortWeapon(weapons []gjson.Result) *WeaponSort {
 
 // GetVehicles 获取载具信息
 func GetVehicles(pid string) (*VehicleSort, error) {
-	post := NewPostVehicle(pid)
+	post := request.NewPostVehicle(pid)
 	data, err := rsp.ReturnJSON(rsp.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
@@ -174,7 +175,7 @@ func GetVehicles(pid string) (*VehicleSort, error) {
 
 // Get2k battlelog 获取kd,kpm
 func Get2k(pid string) (kd float64, kpm float64, err error) {
-	post := NewPostStats(pid)
+	post := request.NewPostStats(pid)
 	data, err := rsp.ReturnJSON(rsp.NativeAPI, "POST", post)
 	if err != nil {
 		return -1, -1, err

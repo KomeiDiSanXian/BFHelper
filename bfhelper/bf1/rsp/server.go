@@ -8,6 +8,7 @@ import (
 	"github.com/tidwall/gjson"
 
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/request/bf1"
 )
 
 // Server 服务器结构体
@@ -40,7 +41,7 @@ func (s *Server) Kick(pid, reason string) (string, error) {
 	if len(reason) > 32 {
 		return "", errors.New("理由过长")
 	}
-	post := NewPostKick(pid, s.GID, reason)
+	post := request.NewPostKick(pid, s.GID, reason)
 	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
 	if err != nil {
 		return "", err
@@ -50,7 +51,7 @@ func (s *Server) Kick(pid, reason string) (string, error) {
 
 // Ban player, check returned id
 func (s *Server) Ban(pid string) error {
-	post := NewPostBan(pid, s.SID)
+	post := request.NewPostBan(pid, s.SID)
 	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
 	if err != nil {
 		return err
@@ -63,7 +64,7 @@ func (s *Server) Ban(pid string) error {
 
 // Unban player
 func (s *Server) Unban(pid string) error {
-	post := NewPostRemoveBan(pid, s.SID)
+	post := request.NewPostRemoveBan(pid, s.SID)
 	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
 	if err != nil {
 		return err
@@ -76,7 +77,7 @@ func (s *Server) Unban(pid string) error {
 
 // ChangeMap will change the map for players
 func (s *Server) ChangeMap(index int) error {
-	post := NewPostChangeMap(s.PGID, index)
+	post := request.NewPostChangeMap(s.PGID, index)
 	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
 	if err != nil {
 		return err
@@ -89,7 +90,7 @@ func (s *Server) ChangeMap(index int) error {
 
 // GetMaps returns maps
 func (s *Server) GetMaps() (*Maps, error) {
-	post := NewPostGetServerInfo(s.GID)
+	post := request.NewPostGetServerInfo(s.GID)
 	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
@@ -110,7 +111,7 @@ func (s *Server) GetMaps() (*Maps, error) {
 
 // GetAdminspid returns pids of admins
 func (s *Server) GetAdminspid() ([]string, error) {
-	post := NewPostRSPInfo(s.SID)
+	post := request.NewPostRSPInfo(s.SID)
 	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
