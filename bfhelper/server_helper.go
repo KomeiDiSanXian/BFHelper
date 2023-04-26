@@ -1,3 +1,4 @@
+// Package bfhelper 战地服务器操作
 package bfhelper
 
 import (
@@ -6,16 +7,17 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/rsp"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
 	"gorm.io/gorm"
+
+	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
+	bf1rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/rsp"
 )
 
 func init() {
-	bf1model.InitDB(engine.DataFolder()+"server.db", &bf1model.Group{}, &bf1model.Server{}, &bf1model.Admin{})
+	_ = bf1model.InitDB(engine.DataFolder()+"server.db", &bf1model.Group{}, &bf1model.Server{}, &bf1model.Admin{})
 
 	engine.OnPrefix(".init", zero.SuperUserPermission).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
@@ -24,8 +26,7 @@ func init() {
 			// args[2] gameid
 			args := strings.Split(ctx.State["args"].(string), " ")
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("正在新建..."))
-			db, close, err := OpenServerDB()
-			defer close()
+			db, cl, err := OpenServerDB()
 			if err != nil {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
 				return
@@ -39,6 +40,7 @@ func init() {
 			}
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("绑定完成"))
 			srv, _ := db.Find(grpid)
+			_ = cl()
 			msg := "群号：" + args[0] + "\n"
 			msg += "腐竹qq：" + args[1] + "\n"
 			msg += "服务器1数据：" + "\n" + "\t服务器名：" + srv.Servers[0].ServerName + "\n"
@@ -50,8 +52,7 @@ func init() {
 		Handle(func(ctx *zero.Ctx) {
 			gids := strings.Split(ctx.State["args"].(string), " ")
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("正在绑定..."))
-			db, close, err := OpenServerDB()
-			defer close()
+			db, cl, err := OpenServerDB()
 			if err != nil {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
 				return
@@ -68,6 +69,7 @@ func init() {
 				}(v)
 			}
 			wg.Wait()
+			_ = cl()
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("绑定结束"))
 		})
 
@@ -75,8 +77,7 @@ func init() {
 		Handle(func(ctx *zero.Ctx) {
 			args := strings.Split(ctx.State["args"].(string), " ")
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("正在修改服主信息..."))
-			db, close, err := OpenServerDB()
-			defer close()
+			db, cl, err := OpenServerDB()
 			if err != nil {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
 				return
@@ -84,6 +85,7 @@ func init() {
 			grpid, _ := strconv.ParseInt(args[0], 10, 64)
 			ownerid, _ := strconv.ParseInt(args[1], 10, 64)
 			err = db.ChangeOwner(grpid, ownerid)
+			_ = cl()
 			if err != nil {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
 				return
@@ -95,8 +97,7 @@ func init() {
 		Handle(func(ctx *zero.Ctx) {
 			qids := strings.Split(ctx.State["args"].(string), " ")
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("正在添加..."))
-			db, close, err := OpenServerDB()
-			defer close()
+			db, cl, err := OpenServerDB()
 			if err != nil {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
 				return
@@ -108,6 +109,7 @@ func init() {
 					ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：添加", v, "为管理时发生错误：", err))
 				}
 			}
+			_ = cl()
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("添加结束"))
 		})
 
@@ -119,13 +121,13 @@ func init() {
 				return
 			}
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("将", args[0], "的别名设置为", args[1]))
-			db, close, err := OpenServerDB()
-			defer close()
+			db, cl, err := OpenServerDB()
 			if err != nil {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
 				return
 			}
-			db.SetAlias(ctx.Event.GroupID, args[0], args[1])
+			_ = db.SetAlias(ctx.Event.GroupID, args[0], args[1])
+			_ = cl()
 		})
 
 	// .kick name [reason]
@@ -138,8 +140,7 @@ func init() {
 			}
 			// 踢出理由转为繁体
 			args[1] = S2tw(args[1])
-			db, close, err := OpenServerDB()
-			defer close()
+			db, cl, err := OpenServerDB()
 			if err != nil {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
 			}
@@ -198,6 +199,7 @@ func init() {
 				}(v)
 			}
 			wg.Wait()
+			_ = cl()
 			msg := "踢出 " + args[0] + "：\n"
 			for _, v := range reasons {
 				msg += "\t" + v + "\n"
@@ -215,7 +217,6 @@ func init() {
 			}
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("正在将 ", args[1], " 加入到 ", args[0], " 的ban列中"))
 			db, cl, err := OpenServerDB()
-			defer cl()
 			if err != nil {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
 				return
@@ -249,6 +250,7 @@ func init() {
 					return
 				}
 			}()
+			_ = cl()
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("已将 ", args[1], " 加入 ", args[0], " 的ban列"))
 		})
 
@@ -262,7 +264,6 @@ func init() {
 			}
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("正在将 ", args[1], " 从 ", args[0], " 的ban列中删除"))
 			db, cl, err := OpenServerDB()
-			defer cl()
 			if err != nil {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("ERR：", err))
 				return
@@ -296,6 +297,7 @@ func init() {
 					return
 				}
 			}()
+			_ = cl()
 			ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("已将 ", args[1], " 在 ", args[0], " 解封"))
 		})
 

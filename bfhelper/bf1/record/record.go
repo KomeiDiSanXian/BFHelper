@@ -1,3 +1,4 @@
+// Package bf1record 战地相关战绩查询
 package bf1record
 
 import (
@@ -5,16 +6,17 @@ import (
 	"fmt"
 	"sort"
 
-	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	"github.com/tidwall/gjson"
+
+	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 )
 
-// 获取战绩信息
+// GetStats 获取战绩信息
 func GetStats(name string) (*Stat, error) {
 	if name == "" {
 		return nil, errors.New("ID cannot be empty")
 	}
-	data, err := rsp.ReturnJson("https://battlefieldtracker.com/api/appStats?platform=3&name="+name, "GET", nil)
+	data, err := rsp.ReturnJSON("https://battlefieldtracker.com/api/appStats?platform=3&name="+name, "GET", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -75,10 +77,10 @@ func GetStats(name string) (*Stat, error) {
 	return stat, err
 }
 
-// 获取武器
+// GetWeapons 获取武器
 func GetWeapons(pid string, class string) (*WeaponSort, error) {
 	post := NewPostWeapon(pid)
-	data, err := rsp.ReturnJson(rsp.NativeAPI, "POST", post)
+	data, err := rsp.ReturnJSON(rsp.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +93,7 @@ func GetWeapons(pid string, class string) (*WeaponSort, error) {
 	return SortWeapon(result), err
 }
 
-// 武器排序
+// SortWeapon 武器排序
 func SortWeapon(weapons []gjson.Result) *WeaponSort {
 	wp := WeaponSort{}
 	for i := range weapons {
@@ -136,10 +138,10 @@ func SortWeapon(weapons []gjson.Result) *WeaponSort {
 	return &wp
 }
 
-// 获取载具信息
+// GetVehicles 获取载具信息
 func GetVehicles(pid string) (*VehicleSort, error) {
 	post := NewPostVehicle(pid)
-	data, err := rsp.ReturnJson(rsp.NativeAPI, "POST", post)
+	data, err := rsp.ReturnJSON(rsp.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +156,7 @@ func GetVehicles(pid string) (*VehicleSort, error) {
 		)
 		kills := res[1].Float()
 		seconds := res[3].Float()
-		var kpm float64 = 0
+		var kpm float64
 		if seconds != 0 {
 			kpm = kills / seconds * 60
 		}
@@ -170,10 +172,10 @@ func GetVehicles(pid string) (*VehicleSort, error) {
 	return &vehicle, err
 }
 
-// battlelog 获取kd,kpm
+// Get2k battlelog 获取kd,kpm
 func Get2k(pid string) (kd float64, kpm float64, err error) {
 	post := NewPostStats(pid)
-	data, err := rsp.ReturnJson(rsp.NativeAPI, "POST", post)
+	data, err := rsp.ReturnJSON(rsp.NativeAPI, "POST", post)
 	if err != nil {
 		return -1, -1, err
 	}

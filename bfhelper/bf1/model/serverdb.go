@@ -1,16 +1,18 @@
+// Package bf1model 战地服务器相关数据库操作
 package bf1model
 
-import (	
+import (
 	"time"
 
-	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/rsp"
 	"github.com/tidwall/gjson"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	bf1rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/rsp"
 )
 
-// 群绑定服务器
+// Group 群绑定服务器
 type Group struct {
 	GroupID   int64    `gorm:"primaryKey"`
 	Owner     int64    `gorm:"not null"`
@@ -20,19 +22,19 @@ type Group struct {
 	UpdatedAt time.Time
 }
 
-// 服务器 表
+// Server 表
 type Server struct {
 	GroupID     int64  `gorm:"primaryKey"`
-	Gameid      string `gorm:"primaryKey"` //gid
-	Serverid    string //sid
-	PGid        string //also guid
-	NameInGroup string //群内对该服务器起的别名
-	ServerName  string //服务器名
+	Gameid      string `gorm:"primaryKey"` // gid
+	Serverid    string // sid
+	PGid        string // also guid
+	NameInGroup string // 群内对该服务器起的别名
+	ServerName  string // 服务器名
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
 
-// 服务器管理
+// Admin 服务器管理
 type Admin struct {
 	GroupID   int64
 	QQid      int64
@@ -40,14 +42,14 @@ type Admin struct {
 	UpdatedAt time.Time
 }
 
+// ServerDB 服务器数据
 type ServerDB gorm.DB
 
-// curd
 // Create new server bind
 func (sdb *ServerDB) Create(groupid, ownerid int64, gameid string) error {
 	// check gameid
 	post := bf1rsp.NewPostGetServerDetails(gameid)
-	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
+	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
 	if err != nil {
 		return err
 	}
@@ -80,14 +82,14 @@ func (sdb *ServerDB) Create(groupid, ownerid int64, gameid string) error {
 	return (*gorm.DB)(sdb).Create(grp).Error
 }
 
-// update
+// Update 更新群组数据
 func (sdb *ServerDB) Update(grp Group) error {
 	rmu.Lock()
 	defer rmu.Unlock()
 	return (*gorm.DB)(sdb).Session(&gorm.Session{FullSaveAssociations: true}).Updates(&grp).Error
 }
 
-// read
+// Find 寻找群组
 func (sdb *ServerDB) Find(grpid int64) (*Group, error) {
 	var result Group
 	rmu.Lock()
@@ -96,18 +98,18 @@ func (sdb *ServerDB) Find(grpid int64) (*Group, error) {
 	return &result, err
 }
 
-// add admin to group
+// AddAdmin 添加管理员到指定群
 func (sdb *ServerDB) AddAdmin(grpid, qid int64) error {
 	rmu.Lock()
 	defer rmu.Unlock()
 	return (*gorm.DB)(sdb).Model(&Group{GroupID: grpid}).Association("Admins").Append(&Admin{QQid: qid})
 }
 
-// add server to group
+// AddServer 添加服务器到指定群
 func (sdb *ServerDB) AddServer(grpid int64, gid string) error {
 	// check gameid
 	post := bf1rsp.NewPostGetServerDetails(gid)
-	data, err := bf1api.ReturnJson(bf1api.NativeAPI, "POST", post)
+	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
 	if err != nil {
 		return err
 	}
@@ -134,14 +136,14 @@ func (sdb *ServerDB) AddServer(grpid int64, gid string) error {
 		})
 }
 
-// set alias
+// SetAlias 设置服务器别名
 func (sdb *ServerDB) SetAlias(grpid int64, gid, alias string) error {
 	rmu.Lock()
 	defer rmu.Unlock()
 	return (*gorm.DB)(sdb).Where("group_id = ? AND gameid = ?", grpid, gid).Updates(&Server{NameInGroup: alias}).Error
 }
 
-// Get Server by alias
+// GetServer 由别名获取服务器信息
 func (sdb *ServerDB) GetServer(alias string, grpid int64) (*Server, error) {
 	var s Server
 	rmu.Lock()
@@ -150,26 +152,26 @@ func (sdb *ServerDB) GetServer(alias string, grpid int64) (*Server, error) {
 	return &s, err
 }
 
-// remove admin
+// DelAdmin 删除群管理
 func (sdb *ServerDB) DelAdmin(grpid, qid int64) error {
 	rmu.Lock()
 	defer rmu.Unlock()
 	return (*gorm.DB)(sdb).Where("group_id = ? AND q_qid = ?", grpid, qid).Delete(&Admin{}).Error
 }
 
-// remove server
+// DelServer 删除群服务器
 func (sdb *ServerDB) DelServer(grpid int64, gid string) error {
 	rmu.Lock()
 	defer rmu.Unlock()
 	return (*gorm.DB)(sdb).Where("group_id = ? AND gameid = ?", grpid, gid).Delete(&Server{}).Error
 }
 
-// change owner
+// ChangeOwner 更改群拥有人
 func (sdb *ServerDB) ChangeOwner(grpid, owner int64) error {
 	return sdb.Update(Group{GroupID: grpid, Owner: owner})
 }
 
-// close db
+// Close 关闭数据库连接
 func (sdb *ServerDB) Close() error {
 	sqlDB, err := (*gorm.DB)(sdb).DB()
 	if err != nil {
@@ -178,7 +180,7 @@ func (sdb *ServerDB) Close() error {
 	return sqlDB.Close()
 }
 
-// IsAdmin
+// IsAdmin 是否为群管理
 func (sdb *ServerDB) IsAdmin(grpid, qid int64) (bool, error) {
 	d, err := sdb.Find(grpid)
 	if err != nil {
@@ -193,7 +195,7 @@ func (sdb *ServerDB) IsAdmin(grpid, qid int64) (bool, error) {
 	return d.Owner == qid, nil
 }
 
-// IsOwner
+// IsOwner 是否为群主
 func (sdb *ServerDB) IsOwner(grpid, qid int64) (bool, error) {
 	d, err := sdb.Find(grpid)
 	if err != nil {

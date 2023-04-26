@@ -1,3 +1,4 @@
+// Package bf1api 战地相关api库
 package bf1api
 
 import (
@@ -23,14 +24,14 @@ const (
 	AuthAPI      string = "https://api.s-wg.net/ServersCollection/getPlayerAll?DisplayName="
 	NativeAPI    string = "https://sparta-gw.battlelog.com/jsonrpc/pc/api"
 	SessionAPI   string = "https://battlefield-api.sakurakooi.cyou/account/login"
-	OperationAPI string = "https://sparta-gw.battlelog.com/jsonrpc/ps4/api" //交换和行动包查询
+	OperationAPI string = "https://sparta-gw.battlelog.com/jsonrpc/ps4/api" // 交换和行动包查询
 	EASBAPI      string = "https://delivery.easb.cc/games/get_server_status"
 )
 
 // error code
 const (
 	ErrServerNotFound int64 = -34501
-	ErrInvalidMapId   int64 = -32603
+	ErrInvalidMapID   int64 = -32603
 	ErrServerOutdate  int64 = -32851
 	ErrPlayerIsAdmin  int64 = -32857
 	ErrinvalidPlayer  int64 = -32856
@@ -42,7 +43,7 @@ const (
 */
 // ea账密
 const (
-	UserName string = "" //邮箱
+	UserName string = "" // 邮箱
 	Password string = ""
 )
 
@@ -54,7 +55,7 @@ const (
 
 // 原生API 方法名常量
 const (
-	//NativeAPI
+	// NativeAPI
 	ADDVIP       string = "RSP.addServerVip"
 	REMOVEVIP    string = "RSP.removeServerVip"
 	ADDBAN       string = "RSP.addServerBan"
@@ -69,7 +70,7 @@ const (
 	RECENTSERVER string = "ServerHistory.mostRecentServers"
 	SERVERINFO   string = "GameServer.getServerDetails"
 	SERVERRSP    string = "RSP.getServerDetails"
-	//OperationAPI
+	// OperationAPI
 	EXCHANGE string = "ScrapExchange.getOffers"
 	CAMPAIGN string = "CampaignOperations.getPlayerCampaignStatus"
 )
@@ -82,10 +83,10 @@ const (
 )
 
 var (
-	Session string = "" // gatewaysession
-	Token   string = "" // bearerAccessToken
-	Sid     string = "" // cookie sid
-	Remid   string = "" // cookie rid
+	Session string // Session gatewaysession
+	Token   string // Token bearerAccessToken
+	Sid     string // Sid cookie sid
+	Remid   string // Remid cookie rid
 )
 
 // post operation struct
@@ -98,7 +99,7 @@ type post struct {
 	ID string `json:"id"`
 }
 
-// unmarshal json
+// Pack unmarshal json
 type Pack struct {
 	RemainTime int64
 	ResetTime  int64
@@ -108,17 +109,17 @@ type Pack struct {
 	Op2Name    string
 }
 
-// Session token cookies 获取
+// Login 获取 Session token cookies
 func Login(username, password string, refreshToken bool) error {
 	if username == "" || password == "" {
 		return errors.New("账号信息不完整！")
 	}
 	user := map[string]interface{}{"username": username, "password": password, "refreshToken": refreshToken}
-	//requesting..
+	// requesting..
 	var client = gentleman.New()
 	client.URL(SessionAPI)
 	client.Use(body.JSON(user))
-	//寻找SakuraKooi申请APIKey...
+	// 寻找SakuraKooi申请APIKey...
 	client.Use(headers.Set("Sakura-Instance-Id", SakuraID))
 	client.Use(headers.Set("Sakura-Access-Token", SakuraToken))
 
@@ -140,10 +141,10 @@ func Login(username, password string, refreshToken bool) error {
 	return nil
 }
 
-// NativeAPI 返回json
-func ReturnJson(url, method string, body interface{}) (string, error) {
+// ReturnJSON NativeAPI 返回json
+func ReturnJSON(url, method string, body interface{}) (string, error) {
 	for i := 0; i < 3; i++ { // 3次重试
-		data, err := HttpTry(url, method, body)
+		data, err := HTTPTry(url, method, body)
 		code := gjson.GetBytes(data, "error.code").Int()
 		if code == -32501 {
 			if err := Login(UserName, Password, true); err != nil {
@@ -159,7 +160,7 @@ func ReturnJson(url, method string, body interface{}) (string, error) {
 	return "", errors.New("请求超时，可能是session更新失败")
 }
 
-// 查询该周交换
+// GetExchange 查询该周交换
 func GetExchange() (map[string][]string, error) {
 	post := &post{
 		Jsonrpc: "2.0",
@@ -171,13 +172,13 @@ func GetExchange() (map[string][]string, error) {
 		},
 		ID: "ed26fa43-816d-4f7b-a9d8-de9785ae1bb6",
 	}
-	data, err := ReturnJson(OperationAPI, "POST", post)
+	data, err := ReturnJSON(OperationAPI, "POST", post)
 	if err != nil {
 		return nil, errors.New("获取交换失败")
 	}
-	var exmap map[string][]string = make(map[string][]string)
+	var exmap = make(map[string][]string)
 	for _, v := range gjson.Get(data, "result.items.#.item").Array() {
-		var wpname string = v.Get("parentName").Str
+		var wpname = v.Get("parentName").Str
 		if wpname == "" {
 			wpname = "其他"
 		}
@@ -186,7 +187,7 @@ func GetExchange() (map[string][]string, error) {
 	return exmap, err
 }
 
-// 查询本周行动包
+// GetCampaignPacks 查询本周行动包
 func GetCampaignPacks() (*Pack, error) {
 	post := &post{
 		Jsonrpc: "2.0",
@@ -198,7 +199,7 @@ func GetCampaignPacks() (*Pack, error) {
 		},
 		ID: "ed26fa43-816d-4f7b-a9d8-de9785ae1bb6",
 	}
-	data, err := ReturnJson(OperationAPI, "POST", post)
+	data, err := ReturnJSON(OperationAPI, "POST", post)
 	if err != nil {
 		return nil, errors.New("获取行动包失败")
 	}
@@ -220,7 +221,7 @@ func GetCampaignPacks() (*Pack, error) {
 	}, err
 }
 
-// 获取玩家pid
+// GetPersonalID 由name获取玩家pid
 func GetPersonalID(name string) (string, error) {
 	cli := gentleman.New()
 	cli.URL("https://gateway.ea.com/proxy/identity/personas?namespaceName=cem_ea_id&displayName=" + name)
@@ -248,12 +249,12 @@ func GetPersonalID(name string) (string, error) {
 	return gjson.Get(res.String(), "personas.persona.0.personaId").String(), err
 }
 
-// 错误码转换
+// Exception 错误码转换
 func Exception(errcode int64) error {
 	switch errcode {
 	case ErrServerNotFound:
 		return errors.New("找不到服务器，请检查服务器信息是否正确")
-	case ErrInvalidMapId:
+	case ErrInvalidMapID:
 		return errors.New("无效的地图id/无权限")
 	case ErrServerOutdate:
 		return errors.New("找不到服务器/服务器过期")
@@ -268,7 +269,7 @@ func Exception(errcode int64) error {
 }
 
 // any to Reader
-func ToJSON(data any) (io.Reader, error) {
+func toJSON(data any) (io.Reader, error) {
 	buf := &bytes.Buffer{}
 	switch data := data.(type) {
 	case string:
@@ -283,8 +284,8 @@ func ToJSON(data any) (io.Reader, error) {
 	return io.NopCloser(buf), nil
 }
 
-// http请求
-func HttpTry(url, method string, body interface{}) ([]byte, error) {
+// HTTPTry http请求
+func HTTPTry(url, method string, body interface{}) ([]byte, error) {
 	cli := &http.Client{
 		Transport: &http.Transport{
 			Dial: func(network, addr string) (net.Conn, error) {
@@ -292,13 +293,13 @@ func HttpTry(url, method string, body interface{}) ([]byte, error) {
 				if err != nil {
 					return nil, err
 				}
-				conn.SetDeadline(time.Now().Add(5 * time.Second)) // 5秒接收数据超时
+				_ = conn.SetDeadline(time.Now().Add(5 * time.Second)) // 5秒接收数据超时
 				return conn, nil
 			},
 		},
 	}
 	// body is json
-	bodyjson, err := ToJSON(body)
+	bodyjson, err := toJSON(body)
 	if err != nil {
 		logrus.Errorln("[battlefield]", err)
 		return nil, err
