@@ -7,13 +7,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	ctrl "github.com/FloatTech/zbpctrl"
 	"github.com/FloatTech/zbputils/control"
-	"gorm.io/gorm"
 
-	"github.com/tidwall/gjson"
+	"github.com/jinzhu/gorm"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
 
@@ -51,30 +49,33 @@ func EngineFile() string {
 	return engine.DataFolder()
 }
 
+var dbname = engine.DataFolder() + "battlefield.db"
+
 func init() {
 	// 初始化数据库
-	_ = bf1model.InitDB(engine.DataFolder()+"player.db", &bf1model.Player{})
+	_ = bf1model.Init(dbname)
 	// 查询在线玩家数
-	engine.OnFullMatchGroup([]string{".bf1stats", "战地1人数", "bf1人数"}).SetBlock(true).
-		Handle(func(ctx *zero.Ctx) {
-			ctx.Send("少女折寿中...")
-			data, err := api.ReturnJSON("https://api.s-wg.net/ServersCollection/getStatus", "GET", nil)
-			if err != nil {
-				ctx.Send("ERROR:" + err.Error())
-				return
-			}
-			ctx.SendChain(
-				message.At(ctx.Event.UserID),
-				message.Text(
-					"\n更新时间：", gjson.Get(data, "updateTime").Str, "\n",
-					"亚服私服总数：", gjson.Get(data, "quantity"), "\n",
-					"在线人数：", gjson.Get(data, "totalPeople"), "[", gjson.Get(data, "totalQueue"), "]", "\n",
-					"小模式服：", gjson.Get(data, "mode.smallMode.full"), "/", gjson.Get(data, "mode.smallMode.amount"), "\n",
-					"前线：", gjson.Get(data, "mode.frontLine.full"), "/", gjson.Get(data, "mode.frontLine.amount"), "\n",
-					"征服：", gjson.Get(data, "mode.conquer.full"), "/", gjson.Get(data, "mode.conquer.amount"), "\n",
-					"行动：", gjson.Get(data, "mode.operation.full"), "/", gjson.Get(data, "mode.operation.amount"),
-				))
-		})
+	// 现失效
+	// engine.OnFullMatchGroup([]string{".bf1stats", "战地1人数", "bf1人数"}).SetBlock(true).
+	// 	Handle(func(ctx *zero.Ctx) {
+	// 		ctx.Send("少女折寿中...")
+	// 		data, err := api.ReturnJSON("https://api.s-wg.net/ServersCollection/getStatus", "GET", nil)
+	// 		if err != nil {
+	// 			ctx.Send("ERROR:" + err.Error())
+	// 			return
+	// 		}
+	// 		ctx.SendChain(
+	// 			message.At(ctx.Event.UserID),
+	// 			message.Text(
+	// 				"\n更新时间：", gjson.Get(data, "updateTime").Str, "\n",
+	// 				"亚服私服总数：", gjson.Get(data, "quantity"), "\n",
+	// 				"在线人数：", gjson.Get(data, "totalPeople"), "[", gjson.Get(data, "totalQueue"), "]", "\n",
+	// 				"小模式服：", gjson.Get(data, "mode.smallMode.full"), "/", gjson.Get(data, "mode.smallMode.amount"), "\n",
+	// 				"前线：", gjson.Get(data, "mode.frontLine.full"), "/", gjson.Get(data, "mode.frontLine.amount"), "\n",
+	// 				"征服：", gjson.Get(data, "mode.conquer.full"), "/", gjson.Get(data, "mode.conquer.amount"), "\n",
+	// 				"行动：", gjson.Get(data, "mode.operation.full"), "/", gjson.Get(data, "mode.operation.amount"),
+	// 			))
+	// 	})
 	// Bind QQ绑定ID
 	engine.OnPrefixGroup([]string{".绑定", ".bind"}).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
@@ -88,19 +89,21 @@ func init() {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("id无效，请检查id..."))
 				return
 			}
-			gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
+			db, cl, err := bf1model.Open(dbname)
+			defer func() {
+				_ = cl()
+			}()
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，打开数据库时出错！"))
 				return
 			}
-			db := (*bf1model.PlayerDB)(gdb)
-			defer db.Close()
 			// 先绑定再查询pid和是否实锤
 			// 检查是否已经绑定
-			if data, err := db.FindByQid(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
+			playerRepo := bf1model.NewPlayerRepository(db)
+			if data, err := playerRepo.GetByQID(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
 				// 未绑定...
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("正在绑定id为 ", id))
-				err := db.Create(bf1model.Player{
+				err := playerRepo.Create(&bf1model.Player{
 					Qid:         ctx.Event.UserID,
 					DisplayName: id,
 				})
@@ -116,7 +119,7 @@ func init() {
 					return
 				}
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("将原绑定id为 ", data.DisplayName, " 改绑为 ", id))
-				err := db.Update(bf1model.Player{
+				err := playerRepo.Update(&bf1model.Player{
 					Qid:         ctx.Event.UserID,
 					DisplayName: id,
 				})
@@ -126,26 +129,10 @@ func init() {
 				}
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定成功！"))
 			}
-			hack := false
-			pid := ""
-			var wg sync.WaitGroup
-			wg.Add(2)
-			go func() {
-				hack = IsGetBan(id)
-				if hack {
-					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("你刚才绑定id: ", id, " 已被联ban实锤！"))
-				}
-				wg.Done()
-			}()
-			go func() {
-				pid, _ = api.GetPersonalID(id) //TODO:err写入日志
-				wg.Done()
-			}()
-			wg.Wait()
-			_ = db.Update(bf1model.Player{
+			pid, _ := api.GetPersonalID(id) //TODO:err写入日志
+			_ = playerRepo.Update(&bf1model.Player{
 				PersonalID: pid,
 				Qid:        ctx.Event.UserID,
-				IsHack:     hack,
 			})
 		})
 	// bf1个人战绩

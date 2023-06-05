@@ -1,205 +1,197 @@
-// Package bf1model 战地服务器相关数据库操作
 package bf1model
 
 import (
 	"time"
 
-	"github.com/tidwall/gjson"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
-
-	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/request/bf1"
+	"github.com/jinzhu/gorm"
 )
 
-// Group 群绑定服务器
 type Group struct {
-	GroupID   int64    `gorm:"primaryKey"`
-	Owner     int64    `gorm:"not null"`
-	Servers   []Server `gorm:"foreignkey:GroupID;references:GroupID"`
-	Admins    []Admin  `gorm:"foreignkey:GroupID;references:GroupID"`
+	GroupID   int64 `gorm:"primary_key;auto_increment:false"`
+	Owner     int64
+	Servers   []Server `gorm:"many2many:group_servers;cascade:delete"`
+	Admins    []Admin  `gorm:"many2many:group_admins;cascade:delete"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-// Server 表
 type Server struct {
-	GroupID     int64  `gorm:"primaryKey"`
-	Gameid      string `gorm:"primaryKey"` // gid
-	Serverid    string // sid
-	PGid        string // also guid
-	NameInGroup string // 群内对该服务器起的别名
-	ServerName  string // 服务器名
+	GameID      string `gorm:"primary_key"`
+	ServerID    string
+	PGID        string
+	NameInGroup string
+	ServerName  string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
 
-// Admin 服务器管理
 type Admin struct {
-	GroupID   int64
-	QQid      int64
+	QQID      int64 `gorm:"primary_key;auto_increment:false"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-// ServerDB 服务器数据
-type ServerDB gorm.DB
+// GroupRepository 定义 Group 表的存储库
+type GroupRepository struct {
+	db *gorm.DB
+}
 
-// Create new server bind
-func (sdb *ServerDB) Create(groupid, ownerid int64, gameid string) error {
-	// check gameid
-	post := request.NewPostGetServerDetails(gameid)
-	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
+// NewGroupRepository 创建 GroupRepository 实例
+func NewGroupRepository(db *gorm.DB) *GroupRepository {
+	return &GroupRepository{db: db}
+}
+
+// CreateGroup 创建一个新的 Group 记录
+func (r *GroupRepository) CreateGroup(group *Group) error {
+	return r.db.Create(group).Error
+}
+
+// GetGroupByID 根据 GroupID 获取 Group 记录
+func (r *GroupRepository) GetGroupByID(groupID int64) (*Group, error) {
+	var group Group
+	err := r.db.Preload("Servers").Preload("Admins").First(&group, groupID).Error
 	if err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// UpdateGroup 更新 Group 记录
+//
+// 注意不能修改为各类型零值
+func (r *GroupRepository) UpdateGroup(group *Group) error {
+	// 开始事务
+	tx := r.db.Begin()
+	if err := tx.Model(group).Updates(group).Error; err != nil {
+		tx.Rollback()
 		return err
 	}
-	err = bf1api.Exception(gjson.Get(data, "error.code").Int())
-	if err != nil {
+	// 添加关联
+	if err := tx.Model(group).Association("Servers").Append(group.Servers).Error; err != nil {
+		tx.Rollback()
 		return err
 	}
-	// put in database
-	// read needed info from data
-	result := gjson.GetMany(
-		data,
-		"result.rspInfo.server.serverId",
-		"result.rspInfo.server.persistedGameId",
-		"result.rspInfo.server.name",
-	)
-	grp := &Group{
-		GroupID: groupid,
-		Owner:   ownerid,
-		Servers: []Server{
-			{
-				Gameid:     gameid,
-				Serverid:   result[0].Str,
-				PGid:       result[1].Str,
-				ServerName: result[2].Str,
-			},
-		},
-	}
-	rmu.Lock()
-	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Create(grp).Error
-}
-
-// Update 更新群组数据
-func (sdb *ServerDB) Update(grp Group) error {
-	rmu.Lock()
-	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Session(&gorm.Session{FullSaveAssociations: true}).Updates(&grp).Error
-}
-
-// Find 寻找群组
-func (sdb *ServerDB) Find(grpid int64) (*Group, error) {
-	var result Group
-	rmu.Lock()
-	defer rmu.Unlock()
-	err := (*gorm.DB)(sdb).Model(&Group{}).Where("group_id = ?", grpid).Preload(clause.Associations).First(&result).Error
-	return &result, err
-}
-
-// AddAdmin 添加管理员到指定群
-func (sdb *ServerDB) AddAdmin(grpid, qid int64) error {
-	rmu.Lock()
-	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Model(&Group{GroupID: grpid}).Association("Admins").Append(&Admin{QQid: qid})
-}
-
-// AddServer 添加服务器到指定群
-func (sdb *ServerDB) AddServer(grpid int64, gid string) error {
-	// check gameid
-	post := request.NewPostGetServerDetails(gid)
-	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
-	if err != nil {
+	if err := tx.Model(group).Association("Admins").Append(group.Admins).Error; err != nil {
+		tx.Rollback()
 		return err
 	}
-	err = bf1api.Exception(gjson.Get(data, "error.code").Int())
-	if err != nil {
+	// 提交
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback() // 回滚事务
 		return err
 	}
-	// put in database
-	// read needed info from data
-	result := gjson.GetMany(
-		data,
-		"result.rspInfo.server.serverId",
-		"result.rspInfo.server.persistedGameId",
-		"result.rspInfo.server.name",
-	)
-	rmu.Lock()
-	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Model(&Group{GroupID: grpid}).Association("Servers").
-		Append(&Server{
-			Gameid:     gid,
-			Serverid:   result[0].Str,
-			PGid:       result[1].Str,
-			ServerName: result[2].Str,
-		})
+
+	return nil
 }
 
-// SetAlias 设置服务器别名
-func (sdb *ServerDB) SetAlias(grpid int64, gid, alias string) error {
-	rmu.Lock()
-	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Where("group_id = ? AND gameid = ?", grpid, gid).Updates(&Server{NameInGroup: alias}).Error
-}
-
-// GetServer 由别名获取服务器信息
-func (sdb *ServerDB) GetServer(alias string, grpid int64) (*Server, error) {
-	var s Server
-	rmu.Lock()
-	defer rmu.Unlock()
-	err := (*gorm.DB)(sdb).Where("group_id = ? AND name_in_group = ?", grpid, alias).First(&s).Error
-	return &s, err
-}
-
-// DelAdmin 删除群管理
-func (sdb *ServerDB) DelAdmin(grpid, qid int64) error {
-	rmu.Lock()
-	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Where("group_id = ? AND q_qid = ?", grpid, qid).Delete(&Admin{}).Error
-}
-
-// DelServer 删除群服务器
-func (sdb *ServerDB) DelServer(grpid int64, gid string) error {
-	rmu.Lock()
-	defer rmu.Unlock()
-	return (*gorm.DB)(sdb).Where("group_id = ? AND gameid = ?", grpid, gid).Delete(&Server{}).Error
-}
-
-// ChangeOwner 更改群拥有人
-func (sdb *ServerDB) ChangeOwner(grpid, owner int64) error {
-	return sdb.Update(Group{GroupID: grpid, Owner: owner})
-}
-
-// Close 关闭数据库连接
-func (sdb *ServerDB) Close() error {
-	sqlDB, err := (*gorm.DB)(sdb).DB()
-	if err != nil {
+// DeleteGroupByID 根据 GroupID 删除 Group 记录
+func (r *GroupRepository) DeleteGroupByID(groupID int64) error {
+	// 删除 Group 表中的记录
+	if err := r.db.Delete(&Group{GroupID: groupID}).Error; err != nil {
 		return err
 	}
-	return sqlDB.Close()
+
+	// 删除关联表中的数据
+	if err := r.db.Exec("DELETE FROM group_servers WHERE group_group_id = ?", groupID).Error; err != nil {
+		return err
+	}
+
+	if err := r.db.Exec("DELETE FROM group_admins WHERE group_group_id = ?", groupID).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// IsAdmin 是否为群管理
-func (sdb *ServerDB) IsAdmin(grpid, qid int64) (bool, error) {
-	d, err := sdb.Find(grpid)
+// IsGroupAdmin 检查是否为该服务器群管理
+func (r *GroupRepository) IsGroupAdmin(groupID, qid int64) bool {
+	grpdb, err := r.GetGroupByID(groupID)
 	if err != nil {
-		return false, err
+		return false
 	}
-	for _, v := range d.Admins {
-		if v.QQid == qid {
-			return true, nil
+	for _, admin := range grpdb.Admins {
+		if qid == admin.QQID {
+			return true
 		}
-		continue
 	}
-	return d.Owner == qid, nil
+	return qid == grpdb.Owner
 }
 
-// IsOwner 是否为群主
-func (sdb *ServerDB) IsOwner(grpid, qid int64) (bool, error) {
-	d, err := sdb.Find(grpid)
+// IsGroupOwner 检查是否为服务器拥有者
+func (r *GroupRepository) IsGroupOwner(groupID, qid int64) bool {
+	grpdb, err := r.GetGroupByID(groupID)
 	if err != nil {
-		return false, err
+		return false
 	}
-	return d.Owner == qid, nil
+	return grpdb.Owner == qid
+}
+
+// ServerRepository 定义 Server 表的存储库
+type ServerRepository struct {
+	db *gorm.DB
+}
+
+// NewServerRepository 创建 ServerRepository 实例
+func NewServerRepository(db *gorm.DB) *ServerRepository {
+	return &ServerRepository{db: db}
+}
+
+// CreateServer 创建一个新的 Server 记录
+func (r *ServerRepository) CreateServer(server *Server) error {
+	return r.db.Create(server).Error
+}
+
+// GetServerByGameID 根据 GameID 获取 Server 记录
+func (r *ServerRepository) GetServerByGameID(gameID string) (*Server, error) {
+	var server Server
+	err := r.db.First(&server, gameID).Error
+	if err != nil {
+		return nil, err
+	}
+	return &server, nil
+}
+
+// UpdateServer 更新 Server 记录
+func (r *ServerRepository) UpdateServer(server *Server) error {
+	return r.db.Save(server).Error
+}
+
+// DeleteServerByGameID 根据 GameID 删除 Server 记录
+func (r *ServerRepository) DeleteServerByGameID(gameID string) error {
+	return r.db.Delete(&Server{GameID: gameID}).Error
+}
+
+// AdminRepository 定义 Admin 表的存储库
+type AdminRepository struct {
+	db *gorm.DB
+}
+
+// NewAdminRepository 创建 AdminRepository 实例
+func NewAdminRepository(db *gorm.DB) *AdminRepository {
+	return &AdminRepository{db: db}
+}
+
+// CreateAdmin 创建一个新的 Admin 记录
+func (r *AdminRepository) CreateAdmin(admin *Admin) error {
+	return r.db.Create(admin).Error
+}
+
+// GetAdminByQQID 根据 QQID 获取 Admin 记录
+func (r *AdminRepository) GetAdminByQQID(qqid int64) (*Admin, error) {
+	var admin Admin
+	err := r.db.First(&admin, qqid).Error
+	if err != nil {
+		return nil, err
+	}
+	return &admin, nil
+}
+
+// UpdateAdmin 更新 Admin 记录
+func (r *AdminRepository) UpdateAdmin(admin *Admin) error {
+	return r.db.Save(admin).Error
+}
+
+// DeleteAdminByQQID 根据 QQID 删除 Admin 记录
+func (r *AdminRepository) DeleteAdminByQQID(qqid int64) error {
+	return r.db.Delete(&Admin{QQID: qqid}).Error
 }

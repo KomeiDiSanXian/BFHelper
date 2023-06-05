@@ -1,76 +1,85 @@
-// Package bf1model 战地玩家相关数据库操作
 package bf1model
 
-import "gorm.io/gorm"
+import (
+	"errors"
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 // Player 玩家表
 type Player struct {
-	gorm.Model
-	PersonalID  string `gorm:"primaryKey"` // pid
-	Qid         int64  `gorm:"primaryKey"` // QQ号
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	PersonalID  string // pid
+	Qid         int64  `gorm:"primary_key;auto_increment:false"` // QQ号
 	DisplayName string // 玩家id
-	IsHack      bool   // 是否实锤开挂
-	BanReason   string
 }
 
-// PlayerDB 玩家数据库
-type PlayerDB gorm.DB
-
-// CURD...
-
-// Create 创建玩家数据
-func (pdb *PlayerDB) Create(player Player) error {
-	rmu.Lock()
-	defer rmu.Unlock()
-	return (*gorm.DB)(pdb).Create(&player).Error
+type PlayerRepository struct {
+	db *gorm.DB
 }
 
-// Update 根据qid来更新数据
-func (pdb *PlayerDB) Update(player Player) error {
-	rmu.Lock()
-	defer rmu.Unlock()
-	return (*gorm.DB)(pdb).Model(&Player{}).Where("qid = ?", player.Qid).Updates(&player).Error
+func NewPlayerRepository(db *gorm.DB) *PlayerRepository {
+	return &PlayerRepository{
+		db: db,
+	}
 }
 
-// FindByPid 根据pid寻找玩家
-func (pdb *PlayerDB) FindByPid(pid uint) (*Player, error) {
-	var player Player
-	rmu.Lock()
-	defer rmu.Unlock()
-	err := (*gorm.DB)(pdb).Model(&Player{}).First(&player, "personal_id = ?", pid).Error
-	return &player, err
-}
-
-// FindByName 根据name寻找玩家
-func (pdb *PlayerDB) FindByName(name string) (*Player, error) {
-	var player Player
-	rmu.Lock()
-	defer rmu.Unlock()
-	err := (*gorm.DB)(pdb).Model(&Player{}).First(&player, "display_name = ?", name).Error
-	return &player, err
-}
-
-// FindByQid 根据qid寻找玩家
-func (pdb *PlayerDB) FindByQid(qid int64) (*Player, error) {
-	var player Player
-	rmu.Lock()
-	defer rmu.Unlock()
-	err := (*gorm.DB)(pdb).Model(&Player{}).First(&player, "qid = ?", qid).Error
-	return &player, err
-}
-
-// Delete 由pid删除玩家数据
-func (pdb *PlayerDB) Delete(pid uint) error {
-	rmu.Lock()
-	defer rmu.Unlock()
-	return (*gorm.DB)(pdb).Delete(&Player{}, "personal_id = ?", pid).Error
-}
-
-// Close the database
-func (pdb *PlayerDB) Close() error {
-	sqlDB, err := (*gorm.DB)(pdb).DB()
-	if err != nil {
+func (r *PlayerRepository) Create(player *Player) error {
+	if err := r.db.Create(player).Error; err != nil {
 		return err
 	}
-	return sqlDB.Close()
+	return nil
+}
+
+func (r *PlayerRepository) Update(player *Player) error {
+	if player.Qid == 0 {
+		return errors.New("qid cannot be empty")
+	}
+
+	if err := r.db.Model(&Player{}).Updates(player).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *PlayerRepository) Delete(qid int64) error {
+	if qid == 0 {
+		return errors.New("qid cannot be empty")
+	}
+
+	if err := r.db.Where("qid = ?", qid).Delete(&Player{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *PlayerRepository) GetByQID(qid int64) (*Player, error) {
+	if qid == 0 {
+		return nil, errors.New("qid cannot be empty")
+	}
+
+	var player Player
+	if err := r.db.Where("qid = ?", qid).First(&player).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, errors.New("Player not found")
+		}
+		return nil, err
+	}
+	return &player, nil
+}
+
+func (r *PlayerRepository) GetByName(name string) (*Player, error) {
+	if name == "" {
+		return nil, errors.New("name cannot be empty")
+	}
+	var player Player
+	if err := r.db.Where("display_name = ?", name).First(&player).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, errors.New("Player not found")
+		}
+		return nil, err
+	}
+	return &player, nil
 }

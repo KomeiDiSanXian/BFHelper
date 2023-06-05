@@ -12,13 +12,13 @@ import (
 	"sync"
 
 	"github.com/FloatTech/zbputils/img/text"
+	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
 	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 	"gopkg.in/h2non/gentleman.v2"
-	"gorm.io/gorm"
 
 	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
@@ -86,15 +86,17 @@ func Txt2Img(ctx *zero.Ctx, txt string) {
 // ReturnBindID 检查是否绑定，返回id
 func ReturnBindID(ctx *zero.Ctx, id string) (string, error) {
 	if id == "" {
-		gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
+		db, cl, err := bf1model.Open(dbname)
 		if err != nil {
 			return "", errors.New("打开数据库错误")
 		}
-		db := (*bf1model.PlayerDB)(gdb)
-		defer db.Close()
+		defer func() {
+			_ = cl()
+		}()
+		playerRepo := bf1model.NewPlayerRepository(db)
 		// 检查是否已经绑定
 		var data *bf1model.Player
-		if data, err = db.FindByQid(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
+		if data, err = playerRepo.GetByQID(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", errors.New("账号未绑定，请使用 .绑定 id 来绑定")
 		}
 		id = data.DisplayName
@@ -104,16 +106,18 @@ func ReturnBindID(ctx *zero.Ctx, id string) (string, error) {
 
 // ID2PID 返回pid和id
 func ID2PID(qid int64, id string) (string, string, error) {
-	gdb, err := bf1model.Open(engine.DataFolder() + "player.db")
-	var rmu sync.RWMutex
+	db, cl, err := bf1model.Open(dbname)
 	if err != nil {
 		return "", "", errors.New("打开数据库错误")
 	}
-	db := (*bf1model.PlayerDB)(gdb)
+	defer func() {
+		_ = cl()
+	}()
+	var rmu sync.RWMutex
+	playerRepo := bf1model.NewPlayerRepository(db)
 	var data *bf1model.Player
-	defer db.Close()
 	if id == "" {
-		if data, err = db.FindByQid(qid); errors.Is(err, gorm.ErrRecordNotFound) {
+		if data, err = playerRepo.GetByQID(qid); errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", "", errors.New("账号未绑定，请使用 .绑定 id 来绑定")
 		}
 		// 若绑定账号时未获取到pid,重新获取并写入数据库
@@ -123,7 +127,7 @@ func ID2PID(qid int64, id string) (string, string, error) {
 				return "", id, errors.New("获取pid失败，请重试")
 			}
 			rmu.Lock()
-			_ = db.Update(bf1model.Player{
+			_ = playerRepo.Update(&bf1model.Player{
 				Qid:        qid,
 				PersonalID: pid,
 			})
@@ -133,7 +137,7 @@ func ID2PID(qid int64, id string) (string, string, error) {
 		return data.PersonalID, data.DisplayName, err
 	}
 	// 检查数据库内是否存在该id
-	if data, err = db.FindByName(id); errors.Is(err, gorm.ErrRecordNotFound) {
+	if data, err = playerRepo.GetByName(id); errors.Is(err, gorm.ErrRecordNotFound) {
 		pid, err := api.GetPersonalID(id)
 		if err != nil {
 			return "", id, errors.New("获取pid失败，请检查id是否有误")
@@ -217,28 +221,24 @@ func ServerAdminPermission(ctx *zero.Ctx) bool {
 	if zero.AdminPermission(ctx) {
 		return true
 	}
-	db, cl, _ := OpenServerDB()
-	adm, _ := db.IsAdmin(ctx.Event.GroupID, ctx.Event.UserID)
+	db, cl, err := bf1model.Open(dbname)
+	if err != nil {
+		return false
+	}
+	groupRepo := bf1model.NewGroupRepository(db)
+	adm := groupRepo.IsGroupAdmin(ctx.Event.GroupID, ctx.Event.UserID)
 	_ = cl()
 	return adm
 }
 
 // ServerOwnerPermission 腐竹权限
 func ServerOwnerPermission(ctx *zero.Ctx) bool {
-	db, cl, _ := OpenServerDB()
-	p, _ := db.IsOwner(ctx.Event.GroupID, ctx.Event.UserID)
+	db, cl, err := bf1model.Open(dbname)
+	if err != nil {
+		return false
+	}
+	groupRepo := bf1model.NewGroupRepository(db)
+	p := groupRepo.IsGroupOwner(ctx.Event.GroupID, ctx.Event.UserID)
 	_ = cl()
 	return p
-}
-
-// OpenServerDB 打开服务器数据库，返回数据库及close方法,需要调用close
-func OpenServerDB() (*bf1model.ServerDB, func() error, error) {
-	sdb, err := bf1model.Open(engine.DataFolder() + "server.db")
-	if err != nil {
-		sql, _ := sdb.DB()
-		sql.Close()
-		return nil, nil, errors.New("数据库错误")
-	}
-	db := (*bf1model.ServerDB)(sdb)
-	return db, db.Close, nil
 }
