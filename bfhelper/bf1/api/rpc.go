@@ -12,11 +12,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
-	"gopkg.in/h2non/gentleman.v2"
-	"gopkg.in/h2non/gentleman.v2/plugins/body"
-	"gopkg.in/h2non/gentleman.v2/plugins/headers"
 )
 
 // APIs
@@ -25,7 +23,6 @@ const (
 	NativeAPI    string = "https://sparta-gw.battlelog.com/jsonrpc/pc/api"
 	SessionAPI   string = "https://battlefield-api.sakurakooi.cyou/account/login"
 	OperationAPI string = "https://sparta-gw.battlelog.com/jsonrpc/ps4/api" // 交换和行动包查询
-	EASBAPI      string = "https://delivery.easb.cc/games/get_server_status"
 )
 
 // error code
@@ -43,7 +40,7 @@ const (
 */
 // ea账密
 const (
-	UserName string = "" // 邮箱
+	UserName string = "" //邮箱
 	Password string = ""
 )
 
@@ -83,6 +80,7 @@ const (
 )
 
 var (
+	mutex   sync.Mutex
 	Session string // Session gatewaysession
 	Token   string // Token bearerAccessToken
 	Sid     string // Sid cookie sid
@@ -97,6 +95,19 @@ type post struct {
 		Game string `json:"game"`
 	} `json:"params"`
 	ID string `json:"id"`
+}
+
+func newpost(method string) *post {
+	return &post{
+		Jsonrpc: "2.0",
+		Method:  method,
+		Params: struct {
+			Game string "json:\"game\""
+		}{
+			Game: BF1,
+		},
+		ID: uuid.NewUUID(),
+	}
 }
 
 // Pack unmarshal json
@@ -115,29 +126,40 @@ func Login(username, password string, refreshToken bool) error {
 		return errors.New("账号信息不完整！")
 	}
 	user := map[string]interface{}{"username": username, "password": password, "refreshToken": refreshToken}
+	bodyJSON, err := toJSON(user)
+	if err != nil {
+		return errors.New("更新session时出错: json marshal error")
+	}
 	// requesting..
-	var client = gentleman.New()
-	client.URL(SessionAPI)
-	client.Use(body.JSON(user))
+	cli := http.DefaultClient
+	req, err := http.NewRequest("POST", SessionAPI, bodyJSON)
+	if err != nil {
+		return errors.New("更新session时出错: New request failed")
+	}
 	// 寻找SakuraKooi申请APIKey...
-	client.Use(headers.Set("Sakura-Instance-Id", SakuraID))
-	client.Use(headers.Set("Sakura-Access-Token", SakuraToken))
+	req.Header.Add("Sakura-Instance-Id", SakuraID)
+	req.Header.Add("Sakura-Access-Token", SakuraToken)
 
-	res, err := client.Request().Method("POST").Send()
+	res, err := cli.Do(req)
 	if err != nil {
 		return errors.New("更新session时出错")
 	}
-	if gjson.Get(res.String(), "code").Int() != 0 {
-		return errors.New("更新session时出错：" + gjson.Get(res.String(), "message").Str)
+	defer res.Body.Close()
+	resBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return errors.New("更新session时出错: read body error")
 	}
-	var mu sync.Mutex
-	mu.Lock()
-	datas := gjson.GetMany(res.String(), "data.gatewaySession", "data.bearerAccessToken", "data.sid", "data.remid")
+
+	if gjson.GetBytes(resBody, "code").Int() != 0 {
+		return errors.New("更新session时出错：" + gjson.GetBytes(resBody, "message").Str)
+	}
+	datas := gjson.GetManyBytes(resBody, "data.gatewaySession", "data.bearerAccessToken", "data.sid", "data.remid")
+	mutex.Lock()
 	Session = datas[0].Str
 	Token = fmt.Sprintf("%s%s", "Bearer ", datas[1].Str)
 	Sid = datas[2].Str
 	Remid = datas[3].Str
-	defer mu.Unlock()
+	mutex.Unlock()
 	return nil
 }
 
@@ -162,16 +184,7 @@ func ReturnJSON(url, method string, body interface{}) (string, error) {
 
 // GetExchange 查询该周交换
 func GetExchange() (map[string][]string, error) {
-	post := &post{
-		Jsonrpc: "2.0",
-		Method:  EXCHANGE,
-		Params: struct {
-			Game string "json:\"game\""
-		}{
-			Game: BF1,
-		},
-		ID: "ed26fa43-816d-4f7b-a9d8-de9785ae1bb6",
-	}
+	post := newpost(EXCHANGE)
 	data, err := ReturnJSON(OperationAPI, "POST", post)
 	if err != nil {
 		return nil, errors.New("获取交换失败")
@@ -189,16 +202,7 @@ func GetExchange() (map[string][]string, error) {
 
 // GetCampaignPacks 查询本周行动包
 func GetCampaignPacks() (*Pack, error) {
-	post := &post{
-		Jsonrpc: "2.0",
-		Method:  CAMPAIGN,
-		Params: struct {
-			Game string "json:\"game\""
-		}{
-			Game: BF1,
-		},
-		ID: "ed26fa43-816d-4f7b-a9d8-de9785ae1bb6",
-	}
+	post := newpost(CAMPAIGN)
 	data, err := ReturnJSON(OperationAPI, "POST", post)
 	if err != nil {
 		return nil, errors.New("获取行动包失败")
@@ -223,16 +227,25 @@ func GetCampaignPacks() (*Pack, error) {
 
 // GetPersonalID 由name获取玩家pid
 func GetPersonalID(name string) (string, error) {
-	cli := gentleman.New()
-	cli.URL("https://gateway.ea.com/proxy/identity/personas?namespaceName=cem_ea_id&displayName=" + name)
-	cli.Use(headers.Set("X-Expand-Results", "true"))
-	cli.Use(headers.Set("Authorization", Token))
-	cli.Use(headers.Set("Host", "gateway.ea.com"))
-	res, err := cli.Request().Send()
+	cli := http.DefaultClient
+	url := "https://gateway.ea.com/proxy/identity/personas?namespaceName=cem_ea_id&displayName=" + name
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.New("获取玩家pid失败")
 	}
-	info := gjson.Get(res.String(), "error").Str
+	req.Header.Add("X-Expand-Results", "true")
+	req.Header.Add("Authorization", Token)
+
+	res, err := cli.Do(req)
+	if err != nil {
+		return "", errors.New("获取玩家pid失败")
+	}
+	defer res.Body.Close()
+	resBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", errors.New("获取玩家pid失败")
+	}
+	info := gjson.GetBytes(resBody, "error").Str
 	if info == "invalid_access_token" || info == "invalid_oauth_info" {
 		err := Login(UserName, Password, true)
 		if err != nil {
@@ -243,10 +256,11 @@ func GetPersonalID(name string) (string, error) {
 	if info != "" {
 		return "", errors.New(info)
 	}
-	if gjson.Get(res.String(), "personas.persona.0.personaId").String() == "" {
+	pid := gjson.GetBytes(resBody, "personas.persona.0.personaId").String()
+	if pid == "" {
 		return "", errors.New("获取玩家pid失败")
 	}
-	return gjson.Get(res.String(), "personas.persona.0.personaId").String(), err
+	return pid, err
 }
 
 // Exception 错误码转换

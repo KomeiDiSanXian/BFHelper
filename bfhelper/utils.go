@@ -18,7 +18,6 @@ import (
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
 	"github.com/wdvxdr1123/ZeroBot/utils/helper"
-	"gopkg.in/h2non/gentleman.v2"
 
 	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
@@ -47,17 +46,6 @@ func init() {
 		logrus.Errorf("unmarshal dictionary file failed: %v", err)
 		return
 	}
-}
-
-// IsGetBan 查询是否被实锤为外挂
-func IsGetBan(id string) bool {
-	cli := gentleman.New()
-	cli.URL("https://api.gametools.network/bfban/checkban?names=" + id)
-	res, err := cli.Request().Send()
-	if err != nil {
-		return false
-	}
-	return gjson.Get(res.String(), "names."+strings.ToLower(id)+".hacker").Bool()
 }
 
 // S2tw 简体转繁体
