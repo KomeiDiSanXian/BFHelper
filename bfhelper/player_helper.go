@@ -61,11 +61,11 @@ func init() {
 				return
 			}
 			db, err := bf1model.Open(dbname)
-			defer db.Close()
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，打开数据库时出错！"))
 				return
 			}
+			defer db.Close()
 			// 先绑定再查询pid和是否实锤
 			// 检查是否已经绑定
 			playerRepo := bf1model.NewPlayerRepository(db)
