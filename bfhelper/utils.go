@@ -74,13 +74,11 @@ func Txt2Img(ctx *zero.Ctx, txt string) {
 // ReturnBindID 检查是否绑定，返回id
 func ReturnBindID(ctx *zero.Ctx, id string) (string, error) {
 	if id == "" {
-		db, cl, err := bf1model.Open(dbname)
+		db, err := bf1model.Open(dbname)
 		if err != nil {
 			return "", errors.New("打开数据库错误")
 		}
-		defer func() {
-			_ = cl()
-		}()
+		defer db.Close()
 		playerRepo := bf1model.NewPlayerRepository(db)
 		// 检查是否已经绑定
 		var data *bf1model.Player
@@ -94,13 +92,11 @@ func ReturnBindID(ctx *zero.Ctx, id string) (string, error) {
 
 // ID2PID 返回pid和id
 func ID2PID(qid int64, id string) (string, string, error) {
-	db, cl, err := bf1model.Open(dbname)
+	db, err := bf1model.Open(dbname)
 	if err != nil {
 		return "", "", errors.New("打开数据库错误")
 	}
-	defer func() {
-		_ = cl()
-	}()
+	defer db.Close()
 	var rmu sync.RWMutex
 	playerRepo := bf1model.NewPlayerRepository(db)
 	var data *bf1model.Player
@@ -209,24 +205,24 @@ func ServerAdminPermission(ctx *zero.Ctx) bool {
 	if zero.AdminPermission(ctx) {
 		return true
 	}
-	db, cl, err := bf1model.Open(dbname)
+	db, err := bf1model.Open(dbname)
 	if err != nil {
 		return false
 	}
 	groupRepo := bf1model.NewGroupRepository(db)
 	adm := groupRepo.IsGroupAdmin(ctx.Event.GroupID, ctx.Event.UserID)
-	_ = cl()
+	db.Close()
 	return adm
 }
 
 // ServerOwnerPermission 腐竹权限
 func ServerOwnerPermission(ctx *zero.Ctx) bool {
-	db, cl, err := bf1model.Open(dbname)
+	db, err := bf1model.Open(dbname)
 	if err != nil {
 		return false
 	}
 	groupRepo := bf1model.NewGroupRepository(db)
 	p := groupRepo.IsGroupOwner(ctx.Event.GroupID, ctx.Event.UserID)
-	_ = cl()
+	db.Close()
 	return p
 }

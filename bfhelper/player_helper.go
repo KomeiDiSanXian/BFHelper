@@ -60,10 +60,8 @@ func init() {
 				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("id无效，请检查id..."))
 				return
 			}
-			db, cl, err := bf1model.Open(dbname)
-			defer func() {
-				_ = cl()
-			}()
+			db, err := bf1model.Open(dbname)
+			defer db.Close()
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，打开数据库时出错！"))
 				return
