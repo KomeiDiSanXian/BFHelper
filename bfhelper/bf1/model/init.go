@@ -1,7 +1,9 @@
+// Package bf1model bf1数据库操作
 package bf1model
 
 import "github.com/jinzhu/gorm"
 
+// Init 数据库初始化
 func Init(path string) error {
 	db, err := gorm.Open("sqlite3", path)
 	if err != nil {

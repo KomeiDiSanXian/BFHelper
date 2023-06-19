@@ -17,7 +17,7 @@ type Post struct {
 // Param parameters
 type Param struct {
 	Game       string   `json:"game"`
-	PersonaID  string   `json:"personaID"`
+	PersonaID  string   `json:"personaId"`
 	PersonaIds []string `json:"personaIds"`
 	GameID     string   `json:"gameID"`
 	ServerID   string   `json:"serverID"`

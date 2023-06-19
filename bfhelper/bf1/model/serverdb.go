@@ -1,3 +1,4 @@
+// Package bf1model bf1服务器数据操作
 package bf1model
 
 import (
@@ -6,15 +7,17 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// Group 群组表
 type Group struct {
 	GroupID   int64 `gorm:"primary_key;auto_increment:false"`
 	Owner     int64
-	Servers   []Server `gorm:"many2many:group_servers;cascade:delete"`
-	Admins    []Admin  `gorm:"many2many:group_admins;cascade:delete"`
+	Servers   []Server `gorm:"many2many:group_servers"`
+	Admins    []Admin  `gorm:"many2many:group_admins"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
+// Server 服务器表
 type Server struct {
 	GameID      string `gorm:"primary_key"`
 	ServerID    string
@@ -25,6 +28,7 @@ type Server struct {
 	UpdatedAt   time.Time
 }
 
+// Admin 管理表
 type Admin struct {
 	QQID      int64 `gorm:"primary_key;auto_increment:false"`
 	CreatedAt time.Time
@@ -96,11 +100,7 @@ func (r *GroupRepository) DeleteGroupByID(groupID int64) error {
 		return err
 	}
 
-	if err := r.db.Exec("DELETE FROM group_admins WHERE group_group_id = ?", groupID).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return r.db.Exec("DELETE FROM group_admins WHERE group_group_id = ?", groupID).Error
 }
 
 // IsGroupAdmin 检查是否为该服务器群管理

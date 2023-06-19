@@ -23,19 +23,12 @@ import (
 // 引擎注册
 var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 	DisableOnDefault: false,
+	Brief:            "战地相关查询功能",
 	Help: "battlefield\n" +
 		"<-----以下是玩家查询----->\n" +
 		"- .武器 [武器类型] [id]\t不填武器武器类型默认查询全部\n" +
 		"- .载具 [id]\n" +
-		"<-----以下是服务器管理----->\n" +
-		"- .绑服 gameid1 gameid2...\t仅服主权限可以绑定服务器\n" +
-		"- .别名 gameid 别名\t服主权限，需要设置别名，否则部分功能无法使用，注意不要设置相同的别名\n" +
-		"- .添加管理 qq1 qq2 qq3...\t仅服主权限可以添加群机器人管理\n" +
-		"- .kick player [原因]\t在已绑定的服务器中踢出玩家\n" +
-		"- .ban 别名 player\t在别名为此的服务器封禁此玩家\n" +
-		"- .unban 别名 player\t在别名为此的服务器解封此玩家\n" +
 		"<-----以下是更多功能----->\n" +
-		"- .bf1stats\t查询亚服相关信息（来自水神的api）\n" +
 		"- .交换\t查询本周战地一武器皮肤\n" +
 		"- .行动\t查询战地一行动箱子\n" +
 		"- .战绩 [id]\t查询生涯的战绩\n" +
@@ -54,28 +47,6 @@ var dbname = engine.DataFolder() + "battlefield.db"
 func init() {
 	// 初始化数据库
 	_ = bf1model.Init(dbname)
-	// 查询在线玩家数
-	// 现失效
-	// engine.OnFullMatchGroup([]string{".bf1stats", "战地1人数", "bf1人数"}).SetBlock(true).
-	// 	Handle(func(ctx *zero.Ctx) {
-	// 		ctx.Send("少女折寿中...")
-	// 		data, err := api.ReturnJSON("https://api.s-wg.net/ServersCollection/getStatus", "GET", nil)
-	// 		if err != nil {
-	// 			ctx.Send("ERROR:" + err.Error())
-	// 			return
-	// 		}
-	// 		ctx.SendChain(
-	// 			message.At(ctx.Event.UserID),
-	// 			message.Text(
-	// 				"\n更新时间：", gjson.Get(data, "updateTime").Str, "\n",
-	// 				"亚服私服总数：", gjson.Get(data, "quantity"), "\n",
-	// 				"在线人数：", gjson.Get(data, "totalPeople"), "[", gjson.Get(data, "totalQueue"), "]", "\n",
-	// 				"小模式服：", gjson.Get(data, "mode.smallMode.full"), "/", gjson.Get(data, "mode.smallMode.amount"), "\n",
-	// 				"前线：", gjson.Get(data, "mode.frontLine.full"), "/", gjson.Get(data, "mode.frontLine.amount"), "\n",
-	// 				"征服：", gjson.Get(data, "mode.conquer.full"), "/", gjson.Get(data, "mode.conquer.amount"), "\n",
-	// 				"行动：", gjson.Get(data, "mode.operation.full"), "/", gjson.Get(data, "mode.operation.amount"),
-	// 			))
-	// 	})
 	// Bind QQ绑定ID
 	engine.OnPrefixGroup([]string{".绑定", ".bind"}).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {

@@ -1,3 +1,4 @@
+// Package uuid uuid生成
 package uuid
 
 import "github.com/google/uuid"

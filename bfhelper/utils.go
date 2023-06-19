@@ -122,7 +122,7 @@ func ID2PID(qid int64, id string) (string, string, error) {
 		}
 		// 若绑定账号时未获取到pid,重新获取并写入数据库
 		if data.PersonalID == "" {
-			pid, err := api.GetPersonalID(id)
+			pid, err := api.GetPersonalID(data.DisplayName)
 			if err != nil {
 				return "", id, errors.New("获取pid失败，请重试")
 			}

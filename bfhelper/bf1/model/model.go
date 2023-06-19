@@ -1,3 +1,4 @@
+// Package bf1model bf1数据库操作
 package bf1model
 
 import "github.com/jinzhu/gorm"
