@@ -40,7 +40,7 @@ const (
 */
 // ea账密
 const (
-	UserName string = "" //邮箱
+	UserName string = "" // 邮箱
 	Password string = ""
 )
 

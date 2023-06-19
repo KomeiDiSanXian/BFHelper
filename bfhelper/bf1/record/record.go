@@ -9,7 +9,7 @@ import (
 	"github.com/tidwall/gjson"
 
 	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/request/bf1"
+	request "github.com/KomeiDiSanXian/BFHelper/bfhelper/request/bf1"
 )
 
 // GetStats 获取战绩信息

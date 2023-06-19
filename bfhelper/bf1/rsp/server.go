@@ -8,7 +8,7 @@ import (
 	"github.com/tidwall/gjson"
 
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/request/bf1"
+	request "github.com/KomeiDiSanXian/BFHelper/bfhelper/request/bf1"
 )
 
 // Server 服务器结构体
