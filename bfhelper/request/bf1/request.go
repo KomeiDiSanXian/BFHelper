@@ -2,7 +2,7 @@
 package request
 
 import (
-	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/uuid"
 )
 
@@ -30,9 +30,9 @@ type Param struct {
 func NewPostKick(pid, gid, reason string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.KICK,
+		Method:  global.Kick,
 		Params: Param{
-			Game:      rsp.BF1,
+			Game:      global.BF1,
 			PersonaID: pid,
 			GameID:    gid,
 			Reason:    reason,
@@ -45,9 +45,9 @@ func NewPostKick(pid, gid, reason string) *Post {
 func NewPostBan(pid, sid string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.ADDBAN,
+		Method:  global.AddBan,
 		Params: Param{
-			Game:      rsp.BF1,
+			Game:      global.BF1,
 			PersonaID: pid,
 			ServerID:  sid,
 		},
@@ -59,9 +59,9 @@ func NewPostBan(pid, sid string) *Post {
 func NewPostRemoveBan(pid, sid string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.REMOVEBAN,
+		Method:  global.RemoveBan,
 		Params: Param{
-			Game:      rsp.BF1,
+			Game:      global.BF1,
 			PersonaID: pid,
 			ServerID:  sid,
 		},
@@ -73,9 +73,9 @@ func NewPostRemoveBan(pid, sid string) *Post {
 func NewPostChangeMap(pgid string, index int) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.MAPS,
+		Method:  global.ChooseMap,
 		Params: Param{
-			Game:       rsp.BF1,
+			Game:       global.BF1,
 			PGid:       pgid,
 			LevelIndex: index,
 		},
@@ -87,9 +87,9 @@ func NewPostChangeMap(pgid string, index int) *Post {
 func NewPostGetServerDetails(gid string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.SERVERDETALS,
+		Method:  global.ServerDetals,
 		Params: Param{
-			Game:   rsp.BF1,
+			Game:   global.BF1,
 			GameID: gid,
 		},
 		ID: uuid.NewUUID(),
@@ -100,9 +100,9 @@ func NewPostGetServerDetails(gid string) *Post {
 func NewPostGetServerInfo(gid string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.SERVERINFO,
+		Method:  global.ServerInfo,
 		Params: Param{
-			Game:   rsp.BF1,
+			Game:   global.BF1,
 			GameID: gid,
 		},
 		ID: uuid.NewUUID(),
@@ -113,9 +113,9 @@ func NewPostGetServerInfo(gid string) *Post {
 func NewPostRSPInfo(sid string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.SERVERRSP,
+		Method:  global.ServerRSP,
 		Params: Param{
-			Game:     rsp.BF1,
+			Game:     global.BF1,
 			ServerID: sid,
 		},
 		ID: uuid.NewUUID(),
@@ -126,9 +126,9 @@ func NewPostRSPInfo(sid string) *Post {
 func NewPostWeapon(pid string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.WEAPONS,
+		Method:  global.Weapons,
 		Params: Param{
-			Game:      rsp.BF1,
+			Game:      global.BF1,
 			PersonaID: pid,
 		},
 		ID: uuid.NewUUID(),
@@ -139,9 +139,9 @@ func NewPostWeapon(pid string) *Post {
 func NewPostVehicle(pid string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.VEHICLES,
+		Method:  global.Vehicles,
 		Params: Param{
-			Game:      rsp.BF1,
+			Game:      global.BF1,
 			PersonaID: pid,
 		},
 		ID: uuid.NewUUID(),
@@ -152,9 +152,9 @@ func NewPostVehicle(pid string) *Post {
 func NewPostRecent(pid string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.RECENTSERVER,
+		Method:  global.RecentServer,
 		Params: Param{
-			Game:      rsp.BF1,
+			Game:      global.BF1,
 			PersonaID: pid,
 		},
 		ID: uuid.NewUUID(),
@@ -165,9 +165,9 @@ func NewPostRecent(pid string) *Post {
 func NewPostPlaying(pid string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.PLAYING,
+		Method:  global.Playing,
 		Params: Param{
-			Game:       rsp.BF1,
+			Game:       global.BF1,
 			PersonaIds: []string{pid},
 		},
 		ID: uuid.NewUUID(),
@@ -178,9 +178,9 @@ func NewPostPlaying(pid string) *Post {
 func NewPostStats(pid string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  rsp.STATS,
+		Method:  global.Stats,
 		Params: Param{
-			Game:      rsp.BF1,
+			Game:      global.BF1,
 			PersonaID: pid,
 		},
 		ID: uuid.NewUUID(),

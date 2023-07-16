@@ -1,0 +1,7 @@
+Account:
+  UserName: your_ea_account@example.com
+  Password: yourpassword
+# 这个API key 请去联系SakuraKooi 本人获取，或者等什么时候我自己写
+SakuraKooi:
+  SakuraID: yourid
+  SakuraToken: yourtoken

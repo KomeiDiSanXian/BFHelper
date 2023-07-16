@@ -1,0 +1,8 @@
+// Package global 游戏代号
+package global
+
+const (
+	BF1 string = "tunguska" 
+	BFV string = "casablanca"
+	BF4 string = "bf4"
+)

@@ -11,6 +11,7 @@ import (
 	ctrl "github.com/FloatTech/zbpctrl"
 	"github.com/FloatTech/zbputils/control"
 
+	fcext "github.com/FloatTech/floatbox/ctxext"
 	"github.com/jinzhu/gorm"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
@@ -18,6 +19,8 @@ import (
 	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
 	bf1record "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/record"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/setting"
 )
 
 // 引擎注册
@@ -42,13 +45,41 @@ func EngineFile() string {
 	return engine.DataFolder()
 }
 
+func setupSetting() error {
+	setting, err := setting.NewSetting()
+	if err != nil {
+		return err
+	}
+	if err := setting.ReadSection("Account", &global.Account.LoginedUser); err != nil {
+		return err
+	}
+	if err := setting.ReadSection("SakuraKooi", &global.SakuraAPI); err != nil {
+		return err
+	}
+	return nil
+}
+
 var dbname = engine.DataFolder() + "battlefield.db"
 
 func init() {
-	// 初始化数据库
-	_ = bf1model.Init(dbname)
+	pluginInitSuccess := fcext.DoOnceOnSuccess(func(ctx *zero.Ctx) bool {
+		// 初始化数据库
+		if err := bf1model.Init(dbname); err != nil {
+			ctx.SendChain(message.Text("ERROR: 数据库初始化失败, 请联系机器人管理员重启"))
+			return false
+		}
+		// 读取配置文件
+		if err := setupSetting(); err != nil {
+			ctx.SendChain(message.Text("ERROR: 读取插件配置失败, 请联系机器人管理员重启"))
+			return false
+		}
+		// 刷新Session
+		_ = api.Login(global.Account.LoginedUser.Username, global.Account.LoginedUser.Password, true)
+		return true
+	})
+
 	// Bind QQ绑定ID
-	engine.OnPrefixGroup([]string{".绑定", ".bind"}).SetBlock(true).
+	engine.OnPrefixGroup([]string{".绑定", ".bind"}, pluginInitSuccess).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["args"].(string)
 			// 验证id是否有效
@@ -105,7 +136,7 @@ func init() {
 			})
 		})
 	// bf1个人战绩
-	engine.OnRegex(`\. *1?战绩 *(.*)$`).SetBlock(true).
+	engine.OnRegex(`\. *1?战绩 *(.*)$`, pluginInitSuccess).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["regex_matched"].([]string)[1]
 			ctx.Send("少女折寿中...")
@@ -147,7 +178,7 @@ func init() {
 			Txt2Img(ctx, txt)
 		})
 	// 武器查询，只展示前五个
-	engine.OnRegex(`^\. *1?武器 *(.*)$`).SetBlock(true).
+	engine.OnRegex(`^\. *1?武器 *(.*)$`, pluginInitSuccess).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			str := strings.Split(ctx.State["regex_matched"].([]string)[1], " ")
 			id := ""
@@ -187,11 +218,10 @@ func init() {
 					id = str[0]
 					RequestWeapon(ctx, id, bf1record.ALL)
 				}
-				ctx.Send(message.ReplyWithMessage(ctx.Event.MessageID, message.Text("请检查输入格式是否有误...")))
 			}
 		})
 	// 最近战绩
-	engine.OnRegex(`^\. *1?最近 *(.*)$`).SetBlock(true).
+	engine.OnRegex(`^\. *1?最近 *(.*)$`, pluginInitSuccess).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["regex_matched"].([]string)[1]
 			ctx.Send("少女折寿中...")
@@ -217,7 +247,7 @@ func init() {
 			Txt2Img(ctx, msg)
 		})
 	// 获取所有种类的载具信息
-	engine.OnRegex(`^\. *1?载具 *(.*)$`).SetBlock(true).
+	engine.OnRegex(`^\. *1?载具 *(.*)$`, pluginInitSuccess).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["regex_matched"].([]string)[1]
 			ctx.Send("少女折寿中...")
@@ -243,7 +273,7 @@ func init() {
 			Txt2Img(ctx, msg)
 		})
 	// 交换查询
-	engine.OnFullMatchGroup([]string{".交换", ".exchange"}).SetBlock(true).
+	engine.OnFullMatchGroup([]string{".交换", ".exchange"}, pluginInitSuccess).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			exchange, err := api.GetExchange()
 			if err != nil {
@@ -260,7 +290,7 @@ func init() {
 			Txt2Img(ctx, msg)
 		})
 	// 行动包查询
-	engine.OnFullMatchGroup([]string{".行动", ".行动包", ".pack"}).SetBlock(true).
+	engine.OnFullMatchGroup([]string{".行动", ".行动包", ".pack"}, pluginInitSuccess).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			pack, err := api.GetCampaignPacks()
 			if err != nil {

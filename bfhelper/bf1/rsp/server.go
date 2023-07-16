@@ -8,6 +8,7 @@ import (
 	"github.com/tidwall/gjson"
 
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
 	request "github.com/KomeiDiSanXian/BFHelper/bfhelper/request/bf1"
 )
 
@@ -42,7 +43,7 @@ func (s *Server) Kick(pid, reason string) (string, error) {
 		return "", errors.New("理由过长")
 	}
 	post := request.NewPostKick(pid, s.GID, reason)
-	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
+	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return "", err
 	}
@@ -52,7 +53,7 @@ func (s *Server) Kick(pid, reason string) (string, error) {
 // Ban player, check returned id
 func (s *Server) Ban(pid string) error {
 	post := request.NewPostBan(pid, s.SID)
-	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
+	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return err
 	}
@@ -65,7 +66,7 @@ func (s *Server) Ban(pid string) error {
 // Unban player
 func (s *Server) Unban(pid string) error {
 	post := request.NewPostRemoveBan(pid, s.SID)
-	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
+	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func (s *Server) Unban(pid string) error {
 // ChangeMap will change the map for players
 func (s *Server) ChangeMap(index int) error {
 	post := request.NewPostChangeMap(s.PGID, index)
-	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
+	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return err
 	}
@@ -91,7 +92,7 @@ func (s *Server) ChangeMap(index int) error {
 // GetMaps returns maps
 func (s *Server) GetMaps() (*Maps, error) {
 	post := request.NewPostGetServerInfo(s.GID)
-	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
+	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +113,7 @@ func (s *Server) GetMaps() (*Maps, error) {
 // GetAdminspid returns pids of admins
 func (s *Server) GetAdminspid() ([]string, error) {
 	post := request.NewPostRSPInfo(s.SID)
-	data, err := bf1api.ReturnJSON(bf1api.NativeAPI, "POST", post)
+	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
 	}

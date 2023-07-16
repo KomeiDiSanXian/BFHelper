@@ -9,23 +9,17 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"sync"
 	"time"
 
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 )
 
-// APIs
-const (
-	AuthAPI      string = "https://api.s-wg.net/ServersCollection/getPlayerAll?DisplayName="
-	NativeAPI    string = "https://sparta-gw.battlelog.com/jsonrpc/pc/api"
-	SessionAPI   string = "https://battlefield-api.sakurakooi.cyou/account/login"
-	OperationAPI string = "https://sparta-gw.battlelog.com/jsonrpc/ps4/api" // 交换和行动包查询
-)
-
 // error code
+//
+// TODO: refactor this
 const (
 	ErrServerNotFound int64 = -34501
 	ErrInvalidMapID   int64 = -32603
@@ -33,58 +27,6 @@ const (
 	ErrPlayerIsAdmin  int64 = -32857
 	ErrinvalidPlayer  int64 = -32856
 	ErrServerNotStart int64 = -32858
-)
-
-/*
-	下面两个必填
-*/
-// ea账密
-const (
-	UserName string = "" // 邮箱
-	Password string = ""
-)
-
-// Sakura API info, contacts to SakuraKooi to get it
-const (
-	SakuraID    string = ""
-	SakuraToken string = ""
-)
-
-// 原生API 方法名常量
-const (
-	// NativeAPI
-	ADDVIP       string = "RSP.addServerVip"
-	REMOVEVIP    string = "RSP.removeServerVip"
-	ADDBAN       string = "RSP.addServerBan"
-	REMOVEBAN    string = "RSP.removeServerBan"
-	KICK         string = "RSP.kickPlayer"
-	MAPS         string = "RSP.chooseLeve"
-	SERVERDETALS string = "GameServer.getFullServerDetails"
-	STATS        string = "Stats.detailedStatsByPersonaId"
-	WEAPONS      string = "Progression.getWeaponsByPersonaId"
-	VEHICLES     string = "Progression.getVehiclesByPersonaId"
-	PLAYING      string = "GameServer.getServersByPersonaIds"
-	RECENTSERVER string = "ServerHistory.mostRecentServers"
-	SERVERINFO   string = "GameServer.getServerDetails"
-	SERVERRSP    string = "RSP.getServerDetails"
-	// OperationAPI
-	EXCHANGE string = "ScrapExchange.getOffers"
-	CAMPAIGN string = "CampaignOperations.getPlayerCampaignStatus"
-)
-
-// 游戏代号
-const (
-	BF1 string = "tunguska"
-	BFV string = "casablanca"
-	BF4 string = "bf4"
-)
-
-var (
-	mutex   sync.Mutex
-	Session string // Session gatewaysession
-	Token   string // Token bearerAccessToken
-	Sid     string // Sid cookie sid
-	Remid   string // Remid cookie rid
 )
 
 // post operation struct
@@ -104,7 +46,7 @@ func newpost(method string) *post {
 		Params: struct {
 			Game string "json:\"game\""
 		}{
-			Game: BF1,
+			Game: global.BF1,
 		},
 		ID: uuid.NewUUID(),
 	}
@@ -132,13 +74,13 @@ func Login(username, password string, refreshToken bool) error {
 	}
 	// requesting..
 	cli := http.DefaultClient
-	req, err := http.NewRequest("POST", SessionAPI, bodyJSON)
+	req, err := http.NewRequest("POST", global.SessionAPI, bodyJSON)
 	if err != nil {
 		return errors.New("更新session时出错: New request failed")
 	}
 	// 寻找SakuraKooi申请APIKey...
-	req.Header.Add("Sakura-Instance-Id", SakuraID)
-	req.Header.Add("Sakura-Access-Token", SakuraToken)
+	req.Header.Add("Sakura-Instance-Id", global.SakuraAPI.SakuraID)
+	req.Header.Add("Sakura-Access-Token", global.SakuraAPI.SakuraToken)
 
 	res, err := cli.Do(req)
 	if err != nil {
@@ -154,12 +96,10 @@ func Login(username, password string, refreshToken bool) error {
 		return errors.New("更新session时出错：" + gjson.GetBytes(resBody, "message").Str)
 	}
 	datas := gjson.GetManyBytes(resBody, "data.gatewaySession", "data.bearerAccessToken", "data.sid", "data.remid")
-	mutex.Lock()
-	Session = datas[0].Str
-	Token = fmt.Sprintf("%s%s", "Bearer ", datas[1].Str)
-	Sid = datas[2].Str
-	Remid = datas[3].Str
-	mutex.Unlock()
+	global.Account.Info.Session = datas[0].Str
+	global.Account.Info.Token = fmt.Sprintf("%s%s", "Bearer ", datas[1].Str)
+	global.Account.Info.SID = datas[2].Str
+	global.Account.Info.Remid = datas[3].Str
 	return nil
 }
 
@@ -169,7 +109,7 @@ func ReturnJSON(url, method string, body interface{}) (string, error) {
 		data, err := HTTPTry(url, method, body)
 		code := gjson.GetBytes(data, "error.code").Int()
 		if code == -32501 {
-			if err := Login(UserName, Password, true); err != nil {
+			if err := Login(global.Account.LoginedUser.Username, global.Account.LoginedUser.Password, true); err != nil {
 				logrus.Errorln("[battlefield]", err)
 				return "", err
 			}
@@ -184,8 +124,8 @@ func ReturnJSON(url, method string, body interface{}) (string, error) {
 
 // GetExchange 查询该周交换
 func GetExchange() (map[string][]string, error) {
-	post := newpost(EXCHANGE)
-	data, err := ReturnJSON(OperationAPI, "POST", post)
+	post := newpost(global.Exchange)
+	data, err := ReturnJSON(global.OperationAPI, "POST", post)
 	if err != nil {
 		return nil, errors.New("获取交换失败")
 	}
@@ -202,8 +142,8 @@ func GetExchange() (map[string][]string, error) {
 
 // GetCampaignPacks 查询本周行动包
 func GetCampaignPacks() (*Pack, error) {
-	post := newpost(CAMPAIGN)
-	data, err := ReturnJSON(OperationAPI, "POST", post)
+	post := newpost(global.Campaign)
+	data, err := ReturnJSON(global.OperationAPI, "POST", post)
 	if err != nil {
 		return nil, errors.New("获取行动包失败")
 	}
@@ -234,7 +174,7 @@ func GetPersonalID(name string) (string, error) {
 		return "", errors.New("获取玩家pid失败")
 	}
 	req.Header.Add("X-Expand-Results", "true")
-	req.Header.Add("Authorization", Token)
+	req.Header.Add("Authorization", global.Account.Info.Token)
 
 	res, err := cli.Do(req)
 	if err != nil {
@@ -247,7 +187,7 @@ func GetPersonalID(name string) (string, error) {
 	}
 	info := gjson.GetBytes(resBody, "error").Str
 	if info == "invalid_access_token" || info == "invalid_oauth_info" {
-		err := Login(UserName, Password, true)
+		err := Login(global.Account.LoginedUser.Username, global.Account.LoginedUser.Password, true)
 		if err != nil {
 			return "", err
 		}
@@ -320,7 +260,7 @@ func HTTPTry(url, method string, body interface{}) ([]byte, error) {
 	}
 
 	req, err := http.NewRequest(method, url, bodyjson)
-	req.Header.Set("X-Gatewaysession", Session)
+	req.Header.Set("X-Gatewaysession", global.Account.Info.Session)
 	if err != nil {
 		logrus.Errorln("[battlefield] newreq err: ", err)
 		return nil, errors.New("请求失败")
