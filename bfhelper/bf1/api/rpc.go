@@ -80,6 +80,9 @@ func Login(username, password string, refreshToken bool) error {
 		},
 		Body: bodyJSON,
 	}.GetRespBodyJSON()
+	if err != nil {
+		return err
+	}
 	global.Account.Info.Session = result.Get("data.gatewaySession").Str
 	global.Account.Info.Token = fmt.Sprintf("%s%s", "Bearer ", result.Get("data.bearerAccessToken").Str)
 	global.Account.Info.SID = result.Get("data.sid").Str

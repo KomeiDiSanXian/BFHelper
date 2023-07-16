@@ -1,3 +1,4 @@
+// Package netreq 网络请求相关
 package netreq
 
 import (
