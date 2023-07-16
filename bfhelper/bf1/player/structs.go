@@ -1,5 +1,5 @@
-// Package bf1record 战地相关战绩查询结构体
-package bf1record
+// Package player 战地相关战绩查询结构体
+package player
 
 // 武器种类
 const (

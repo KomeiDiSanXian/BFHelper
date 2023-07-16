@@ -18,7 +18,7 @@ import (
 
 	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
-	bf1record "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/record"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/player"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/setting"
 )
@@ -142,7 +142,7 @@ func init() {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 				return
 			}
-			stat, err := bf1record.GetStats(id)
+			stat, err := player.GetStats(id)
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("获取失败：", err))
 				return
@@ -180,7 +180,7 @@ func init() {
 			str := strings.Split(ctx.State["regex_matched"].([]string)[1], " ")
 			id := ""
 			if str[0] == "" {
-				RequestWeapon(ctx, id, bf1record.ALL)
+				RequestWeapon(ctx, id, player.ALL)
 				return
 			}
 			// 检查str长度
@@ -189,31 +189,31 @@ func init() {
 			}
 			switch str[0] {
 			case "半自动", "semi":
-				RequestWeapon(ctx, id, bf1record.Semi)
+				RequestWeapon(ctx, id, player.Semi)
 			case "冲锋枪", "冲锋":
-				RequestWeapon(ctx, id, bf1record.SMG)
+				RequestWeapon(ctx, id, player.SMG)
 			case "轻机枪", "机枪":
-				RequestWeapon(ctx, id, bf1record.LMG)
+				RequestWeapon(ctx, id, player.LMG)
 			case "步枪", "狙击枪", "狙击":
-				RequestWeapon(ctx, id, bf1record.Bolt)
+				RequestWeapon(ctx, id, player.Bolt)
 			case "霰弹枪", "散弹枪", "霰弹", "散弹":
-				RequestWeapon(ctx, id, bf1record.Shotgun)
+				RequestWeapon(ctx, id, player.Shotgun)
 			case "配枪", "手枪", "副手":
-				RequestWeapon(ctx, id, bf1record.Sidearm)
+				RequestWeapon(ctx, id, player.Sidearm)
 			case "近战", "刀":
-				RequestWeapon(ctx, id, bf1record.Melee)
+				RequestWeapon(ctx, id, player.Melee)
 			case "手榴弹", "手雷", "雷":
-				RequestWeapon(ctx, id, bf1record.Grenade)
+				RequestWeapon(ctx, id, player.Grenade)
 			case "驾驶员", "坦克兵", "载具":
-				RequestWeapon(ctx, id, bf1record.Dirver)
+				RequestWeapon(ctx, id, player.Dirver)
 			case "配备", "装备":
-				RequestWeapon(ctx, id, bf1record.Gadget)
+				RequestWeapon(ctx, id, player.Gadget)
 			case "精英", "精英兵":
-				RequestWeapon(ctx, id, bf1record.Elite)
+				RequestWeapon(ctx, id, player.Elite)
 			default:
 				if regexp.MustCompile(`\w+`).MatchString(str[0]) {
 					id = str[0]
-					RequestWeapon(ctx, id, bf1record.ALL)
+					RequestWeapon(ctx, id, player.ALL)
 				}
 			}
 		})
@@ -253,7 +253,7 @@ func init() {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 				return
 			}
-			car, err := bf1record.GetVehicles(pid)
+			car, err := player.GetVehicles(pid)
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 				return

@@ -1,5 +1,5 @@
-// Package bf1record 战地相关战绩查询
-package bf1record
+// Package player 战地相关战绩查询
+package player
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 
 	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
-	request "github.com/KomeiDiSanXian/BFHelper/bfhelper/request/bf1"
+	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq/bf1"
 )
 
 // GetStats 获取战绩信息
@@ -22,75 +22,48 @@ func GetStats(name string) (*Stat, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := gjson.GetMany(data,
-		"stats.2.value",
-		"stats.4.value",
-		"stats.5.value",
-		"stats.6.value",
-		"stats.7.value",
-		"stats.9.value",
-		"stats.10.value",
-		"stats.11.value",
-		"stats.12.value",
-		"stats.13.value",
-		"stats.14.value",
-		"stats.15.value",
-		"stats.16.value",
-		"stats.17.value",
-		"stats.18.value",
-		"stats.19.value",
-		"stats.20.displayValue",
-		"stats.26.value",
-		"stats.27.value",
-		"stats.31.value",
-		"stats.32.value",
-		"stats.35.value",
-		"stats.37.value",
-		"stats.41.value",
-		"stats.54.value",
-	)
 	stat := &Stat{
-		SPM:               result[0].Str,
-		TotalKD:           result[1].Str,
-		WinPercent:        result[2].Str,
-		KillsPerGame:      result[3].Str,
-		Kills:             result[4].Str,
-		Deaths:            result[5].Str,
-		KPM:               result[6].Str,
-		Losses:            result[7].Str,
-		Wins:              result[8].Str,
-		InfantryKills:     result[9].Str,
-		InfantryKPM:       result[10].Str,
-		InfantryKD:        result[11].Str,
-		VehicleKills:      result[12].Str,
-		VehicleKPM:        result[13].Str,
-		Rank:              result[14].Str,
-		Skill:             result[15].Str,
-		TimePlayed:        result[16].Str,
-		MVP:               result[17].Str,
-		Accuracy:          result[18].Str,
-		DogtagsTaken:      result[19].Str,
-		Headshots:         result[20].Str,
-		HighestKillStreak: result[21].Str,
-		LongestHeadshot:   result[22].Str,
-		Revives:           result[23].Str,
-		CarriersKills:     result[24].Str,
+		SPM:               data.Get("stats.2.value").Str,
+		TotalKD:           data.Get("stats.4.value").Str,
+		WinPercent:        data.Get("stats.5.value").Str,
+		KillsPerGame:      data.Get("stats.6.value").Str,
+		Kills:             data.Get("stats.7.value").Str,
+		Deaths:            data.Get("stats.9.value").Str,
+		KPM:               data.Get("stats.10.value").Str,
+		Losses:            data.Get("stats.11.value").Str,
+		Wins:              data.Get("stats.12.value").Str,
+		InfantryKills:     data.Get("stats.13.value").Str,
+		InfantryKPM:       data.Get("stats.14.value").Str,
+		InfantryKD:        data.Get("stats.15.value").Str,
+		VehicleKills:      data.Get("stats.16.value").Str,
+		VehicleKPM:        data.Get("stats.17.value").Str,
+		Rank:              data.Get("stats.18.value").Str,
+		Skill:             data.Get("stats.19.value").Str,
+		TimePlayed:        data.Get("stats.20.displayValue").Str,
+		MVP:               data.Get("stats.26.value").Str,
+		Accuracy:          data.Get("stats.27.value").Str,
+		DogtagsTaken:      data.Get("stats.31.value").Str,
+		Headshots:         data.Get("stats.32.value").Str,
+		HighestKillStreak: data.Get("stats.35.value").Str,
+		LongestHeadshot:   data.Get("stats.37.value").Str,
+		Revives:           data.Get("stats.41.value").Str,
+		CarriersKills:     data.Get("stats.54.value").Str,
 	}
 	return stat, err
 }
 
 // GetWeapons 获取武器
 func GetWeapons(pid string, class string) (*WeaponSort, error) {
-	post := request.NewPostWeapon(pid)
+	post := bf1reqbody.NewPostWeapon(pid)
 	data, err := rsp.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
 	}
 	var result []gjson.Result
 	if class == ALL {
-		result = gjson.Get(data, "result.#.weapons|@flatten").Array()
+		result = data.Get( "result.#.weapons|@flatten").Array()
 	} else {
-		result = gjson.Get(data, "result.#(categoryId=\""+class+"\").weapons").Array()
+		result = data.Get("result.#(categoryId=\""+class+"\").weapons").Array()
 	}
 	return SortWeapon(result), err
 }
@@ -142,12 +115,12 @@ func SortWeapon(weapons []gjson.Result) *WeaponSort {
 
 // GetVehicles 获取载具信息
 func GetVehicles(pid string) (*VehicleSort, error) {
-	post := request.NewPostVehicle(pid)
+	post := bf1reqbody.NewPostVehicle(pid)
 	data, err := rsp.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
 	}
-	gets := gjson.Get(data, "result").Array()
+	gets := data.Get("result").Array()
 	var vehicle VehicleSort
 	for i := range gets {
 		res := gjson.GetMany(gets[i].Raw,
@@ -176,17 +149,12 @@ func GetVehicles(pid string) (*VehicleSort, error) {
 
 // Get2k battlelog 获取kd,kpm
 func Get2k(pid string) (kd float64, kpm float64, err error) {
-	post := request.NewPostStats(pid)
+	post := bf1reqbody.NewPostStats(pid)
 	data, err := rsp.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return -1, -1, err
 	}
-	result := gjson.GetMany(data,
-		"result.basicStats.kills",
-		"result.basicStats.deaths",
-		"result.basicStats.kpm",
-	)
-	kd = result[0].Float() / result[1].Float()
-	kpm = result[2].Num
+	kd = data.Get("result.basicStats.kills").Float() / data.Get("result.basicStats.deaths").Float()
+	kpm = data.Get("result.basicStats.kpm").Float()
 	return kd, kpm, err
 }

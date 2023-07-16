@@ -1,15 +1,13 @@
-// Package bf1rsp 战地服务器操作
-package bf1rsp
+// Package server 战地1服务器操作
+package server
 
 import (
 	"errors"
 	"fmt"
 
-	"github.com/tidwall/gjson"
-
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
-	request "github.com/KomeiDiSanXian/BFHelper/bfhelper/request/bf1"
+	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq/bf1"
 )
 
 // Server 服务器结构体
@@ -42,22 +40,22 @@ func (s *Server) Kick(pid, reason string) (string, error) {
 	if len(reason) > 32 {
 		return "", errors.New("理由过长")
 	}
-	post := request.NewPostKick(pid, s.GID, reason)
+	post := bf1reqbody.NewPostKick(pid, s.GID, reason)
 	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return "", err
 	}
-	return gjson.Get(data, "result.reason").Str, err
+	return data.Get("result.reason").Str, err
 }
 
 // Ban player, check returned id
 func (s *Server) Ban(pid string) error {
-	post := request.NewPostBan(pid, s.SID)
+	post := bf1reqbody.NewPostBan(pid, s.SID)
 	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return err
 	}
-	if gjson.Get(data, "id").Str == "" {
+	if data.Get("id").Str == "" {
 		return errors.New("服务器未发出正确的响应，请稍后再试")
 	}
 	return nil
@@ -65,12 +63,12 @@ func (s *Server) Ban(pid string) error {
 
 // Unban player
 func (s *Server) Unban(pid string) error {
-	post := request.NewPostRemoveBan(pid, s.SID)
+	post := bf1reqbody.NewPostRemoveBan(pid, s.SID)
 	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return err
 	}
-	if gjson.Get(data, "id").Str == "" {
+	if data.Get("id").Str == "" {
 		return errors.New("服务器未发出正确的响应，请稍后再试")
 	}
 	return nil
@@ -78,12 +76,12 @@ func (s *Server) Unban(pid string) error {
 
 // ChangeMap will change the map for players
 func (s *Server) ChangeMap(index int) error {
-	post := request.NewPostChangeMap(s.PGID, index)
+	post := bf1reqbody.NewPostChangeMap(s.PGID, index)
 	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return err
 	}
-	if gjson.Get(data, "id").Str == "" {
+	if data.Get("id").Str == "" {
 		return errors.New("服务器未发出正确的响应，请稍后再试")
 	}
 	return nil
@@ -91,15 +89,15 @@ func (s *Server) ChangeMap(index int) error {
 
 // GetMaps returns maps
 func (s *Server) GetMaps() (*Maps, error) {
-	post := request.NewPostGetServerInfo(s.GID)
+	post := bf1reqbody.NewPostGetServerInfo(s.GID)
 	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
 	}
-	if gjson.Get(data, "result").String() == "" {
+	if data.Get("result").String() == "" {
 		return nil, errors.New("服务器gameid可能无效，请更新服务器信息")
 	}
-	result := gjson.Get(data, "result.rotation").Array()
+	result := data.Get("result.rotation").Array()
 	if result == nil {
 		return nil, errors.New("获取到的地图池为空")
 	}
@@ -112,18 +110,18 @@ func (s *Server) GetMaps() (*Maps, error) {
 
 // GetAdminspid returns pids of admins
 func (s *Server) GetAdminspid() ([]string, error) {
-	post := request.NewPostRSPInfo(s.SID)
+	post := bf1reqbody.NewPostRSPInfo(s.SID)
 	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
 	}
-	result := gjson.Get(data, "result.adminList.#.personaId").Array()
-	result = append(result, gjson.Get(data, "result.owner.personaId"))
+	result := data.Get("result.adminList.#.personaId").Array()
+	result = append(result, data.Get("result.owner.personaId"))
 	strs := make([]string, len(result))
 	for i, v := range result {
 		strs[i] = v.Str
 	}
-	return strs, bf1api.Exception(gjson.Get(data, "error.code").Int())
+	return strs, bf1api.Exception(data.Get("error.code").Int())
 }
 
 // input keywords for map id

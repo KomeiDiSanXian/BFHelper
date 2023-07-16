@@ -2,26 +2,26 @@
 package bfhelper
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/FloatTech/zbputils/img/text"
 	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
-	"github.com/tidwall/gjson"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
 	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 
 	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
-	bf1record "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/record"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/player"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq"
 )
 
 // 简转繁 字典
@@ -153,13 +153,13 @@ func RequestWeapon(ctx *zero.Ctx, id, class string) {
 		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 		return
 	}
-	weapon, err := bf1record.GetWeapons(pid, class)
+	weapon, err := player.GetWeapons(pid, class)
 	if err != nil {
 		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 		return
 	}
 	txt := "id：" + id + "\n"
-	wp := ([]bf1record.Weapons)(*weapon)
+	wp := ([]player.Weapons)(*weapon)
 	for i := 0; i < 5; i++ {
 		txt += fmt.Sprintf("%s\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s\n",
 			"---------------",
@@ -175,13 +175,13 @@ func RequestWeapon(ctx *zero.Ctx, id, class string) {
 }
 
 // GetBF1Recent 获取bf1最近战绩
-func GetBF1Recent(id string) (result *bf1record.Recent, err error) {
+func GetBF1Recent(id string) (result *player.Recent, err error) {
 	u := "https://api.bili22.me/bf1/recent?name=" + id
-	data, err := api.ReturnJSON(u, "GET", nil)
+	data, err := netreq.Request{URL: u}.GetRespBodyBytes()
 	if err != nil {
 		return nil, err
 	}
-	err = json.NewDecoder(strings.NewReader(data)).Decode(&result)
+	err = json.NewDecoder(bytes.NewReader(data)).Decode(&result)
 	if err != nil {
 		return nil, errors.New("ERR: JSON decode failed")
 	}
@@ -194,7 +194,7 @@ func IsValidID(id string) (bool, error) {
 	if err != nil {
 		return true, errors.New("验证id有效性失败，将继续绑定，请自行检查id是否正确")
 	}
-	if gjson.Get(vld, "message").Str != "origin_id_duplicated" {
+	if vld.Get("message").Str != "origin_id_duplicated" {
 		return false, nil
 	}
 	return true, nil

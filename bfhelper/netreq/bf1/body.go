@@ -1,5 +1,5 @@
-// Package request 战地服务器操作请求
-package request
+// Package bf1reqbody 战地服务器操作请求body
+package bf1reqbody
 
 import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
