@@ -29,7 +29,7 @@ func (r Request) do() (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	for k, v := range r.Header {
 		req.Header.Set(k, v)
 	}

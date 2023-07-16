@@ -61,9 +61,9 @@ func GetWeapons(pid string, class string) (*WeaponSort, error) {
 	}
 	var result []gjson.Result
 	if class == ALL {
-		result = data.Get( "result.#.weapons|@flatten").Array()
+		result = data.Get("result.#.weapons|@flatten").Array()
 	} else {
-		result = data.Get("result.#(categoryId=\""+class+"\").weapons").Array()
+		result = data.Get("result.#(categoryId=\"" + class + "\").weapons").Array()
 	}
 	return SortWeapon(result), err
 }
