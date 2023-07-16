@@ -13,7 +13,7 @@ func (s *Setting) ReadSection(k string, v any) error {
 	return nil
 }
 
-// ReloadAllSection 重载所有键值对
+// ReloadAllSections 重载所有键值对
 func (s *Setting) ReloadAllSections() error {
 	for k, v := range sections {
 		err := s.ReadSection(k, v)
@@ -30,7 +30,7 @@ type Account struct {
 	Password string
 }
 
-// SakuraAPI 
+// SakuraAPI apikey 和api id
 type SakuraAPI struct {
 	SakuraID    string
 	SakuraToken string

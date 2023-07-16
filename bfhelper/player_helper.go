@@ -53,10 +53,7 @@ func setupSetting() error {
 	if err := setting.ReadSection("Account", &global.Account.LoginedUser); err != nil {
 		return err
 	}
-	if err := setting.ReadSection("SakuraKooi", &global.SakuraAPI); err != nil {
-		return err
-	}
-	return nil
+	return setting.ReadSection("SakuraKooi", &global.SakuraAPI)
 }
 
 var dbname = engine.DataFolder() + "battlefield.db"

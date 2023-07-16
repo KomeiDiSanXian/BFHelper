@@ -87,7 +87,7 @@ func NewPostChangeMap(pgid string, index int) *Post {
 func NewPostGetServerDetails(gid string) *Post {
 	return &Post{
 		Jsonrpc: "2.0",
-		Method:  global.ServerDetals,
+		Method:  global.ServerDetails,
 		Params: Param{
 			Game:   global.BF1,
 			GameID: gid,

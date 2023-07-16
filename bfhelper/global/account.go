@@ -20,7 +20,5 @@ type account struct {
 // 存有 session, token, sid, remid
 var Account *account
 
-// SakuraAPI
-//
-// 含有api id, api key
+// SakuraAPI 含有api id, api key
 var SakuraAPI *setting.SakuraAPI

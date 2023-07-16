@@ -30,7 +30,7 @@ func (s *Setting) WatchSettingChange() {
 	go func() {
 		s.vp.WatchConfig()
 		s.vp.OnConfigChange(func(in fsnotify.Event) {
-			s.ReloadAllSections()
+			_ = s.ReloadAllSections()
 		})
 	}()
 }
