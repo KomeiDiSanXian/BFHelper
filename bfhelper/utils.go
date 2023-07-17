@@ -146,7 +146,7 @@ func RequestWeapon(ctx *zero.Ctx, id, class string) {
 		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 		return
 	}
-	info := &player.PlayerInfo{Name: id, PersonalID: pid}
+	info := &player.Info{Name: id, PersonalID: pid}
 	weapon, err := info.GetWeapons(class)
 	if err != nil {
 		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))

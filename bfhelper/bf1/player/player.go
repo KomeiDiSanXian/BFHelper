@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 
-	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
@@ -14,33 +13,33 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// Player 玩家信息结构体
-type PlayerInfo struct {
+// Info 玩家信息结构体
+type Info struct {
 	Name       string
 	PersonalID string
 }
 
-// NewPlayerInfoByQID 根据qq 生成Player
-func NewPlayerInfoByQID(qid int64) *PlayerInfo {
+// NewInfoByQID 根据qq 生成Info
+func NewInfoByQID(qid int64) *Info {
 	// 先在数据库中查询
 	p, err := bf1model.NewPlayerRepository(global.DB).GetByQID(qid)
 	// 找不到直接返回nil
 	if err != nil {
 		return nil
 	}
-	return &PlayerInfo{
+	return &Info{
 		Name:       p.DisplayName,
 		PersonalID: p.PersonalID,
 	}
 }
 
-// NewPlayerInfoByName 根据给定的玩家名生成Player
-func NewPlayerInfoByName(name string) *PlayerInfo {
-	player := &PlayerInfo{Name: name}
+// NewInfoByName 根据给定的玩家名生成Player
+func NewInfoByName(name string) *Info {
+	player := &Info{Name: name}
 	p, err := bf1model.NewPlayerRepository(global.DB).GetByName(name)
 	if err != nil {
 		// 找不到就查pid
-		player.PersonalID, err = bf1api.GetPersonalID(name)
+		player.PersonalID, err = rsp.GetPersonalID(name)
 		if err != nil {
 			return nil
 		}
@@ -51,7 +50,7 @@ func NewPlayerInfoByName(name string) *PlayerInfo {
 }
 
 // GetStats 获取战绩信息
-func (p *PlayerInfo) GetStats() (*Stat, error) {
+func (p *Info) GetStats() (*Stat, error) {
 	if p == nil {
 		return nil, errors.New("找不到查询的玩家")
 	}
@@ -90,7 +89,7 @@ func (p *PlayerInfo) GetStats() (*Stat, error) {
 }
 
 // GetWeapons 获取武器
-func (p *PlayerInfo) GetWeapons(class string) (*WeaponSort, error) {
+func (p *Info) GetWeapons(class string) (*WeaponSort, error) {
 	if p == nil {
 		return nil, errors.New("找不到查询的玩家")
 	}
@@ -109,7 +108,7 @@ func (p *PlayerInfo) GetWeapons(class string) (*WeaponSort, error) {
 }
 
 // GetVehicles 获取载具信息
-func (p *PlayerInfo) GetVehicles() (*VehicleSort, error) {
+func (p *Info) GetVehicles() (*VehicleSort, error) {
 	if p == nil {
 		return nil, errors.New("找不到查询的玩家")
 	}
@@ -146,7 +145,7 @@ func (p *PlayerInfo) GetVehicles() (*VehicleSort, error) {
 }
 
 // Get2k battlelog 获取kd,kpm
-func (p *PlayerInfo) Get2k() (kd float64, kpm float64, err error) {
+func (p *Info) Get2k() (kd float64, kpm float64, err error) {
 	if p == nil {
 		return -1, -1, errors.New("找不到查询的玩家")
 	}

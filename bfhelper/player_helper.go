@@ -132,7 +132,7 @@ func init() {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 				return
 			}
-			player := player.NewPlayerInfoByName(id)
+			player := player.NewInfoByName(id)
 			stat, err := player.GetStats()
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("获取失败：", err))
@@ -244,7 +244,7 @@ func init() {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 				return
 			}
-			player := &player.PlayerInfo{Name: id, PersonalID: pid}
+			player := &player.Info{Name: id, PersonalID: pid}
 			car, err := player.GetVehicles()
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
