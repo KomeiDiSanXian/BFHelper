@@ -21,6 +21,7 @@ import (
 	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/player"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq"
 )
 
@@ -74,14 +75,10 @@ func Txt2Img(ctx *zero.Ctx, txt string) {
 // ReturnBindID 检查是否绑定，返回id
 func ReturnBindID(ctx *zero.Ctx, id string) (string, error) {
 	if id == "" {
-		db, err := bf1model.Open(dbname)
-		if err != nil {
-			return "", errors.New("打开数据库错误")
-		}
-		defer db.Close()
-		playerRepo := bf1model.NewPlayerRepository(db)
+		playerRepo := bf1model.NewPlayerRepository(global.DB)
 		// 检查是否已经绑定
 		var data *bf1model.Player
+		var err error
 		if data, err = playerRepo.GetByQID(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", errors.New("账号未绑定，请使用 .绑定 id 来绑定")
 		}
@@ -92,14 +89,10 @@ func ReturnBindID(ctx *zero.Ctx, id string) (string, error) {
 
 // ID2PID 返回pid和id
 func ID2PID(qid int64, id string) (string, string, error) {
-	db, err := bf1model.Open(dbname)
-	if err != nil {
-		return "", "", errors.New("打开数据库错误")
-	}
-	defer db.Close()
 	var rmu sync.RWMutex
-	playerRepo := bf1model.NewPlayerRepository(db)
+	playerRepo := bf1model.NewPlayerRepository(global.DB)
 	var data *bf1model.Player
+	var err error
 	if id == "" {
 		if data, err = playerRepo.GetByQID(qid); errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", "", errors.New("账号未绑定，请使用 .绑定 id 来绑定")
@@ -135,7 +128,7 @@ func ID2PID(qid int64, id string) (string, string, error) {
 			return "", id, errors.New("获取pid失败，请重试")
 		}
 		rmu.Lock()
-		_ = db.Update(bf1model.Player{
+		_ = global.DB.Update(bf1model.Player{
 			Qid:        qid,
 			PersonalID: pid,
 		})
@@ -153,7 +146,8 @@ func RequestWeapon(ctx *zero.Ctx, id, class string) {
 		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 		return
 	}
-	weapon, err := player.GetWeapons(pid, class)
+	info := &player.PlayerInfo{Name: id, PersonalID: pid}
+	weapon, err := info.GetWeapons(class)
 	if err != nil {
 		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 		return
@@ -205,24 +199,14 @@ func ServerAdminPermission(ctx *zero.Ctx) bool {
 	if zero.AdminPermission(ctx) {
 		return true
 	}
-	db, err := bf1model.Open(dbname)
-	if err != nil {
-		return false
-	}
-	groupRepo := bf1model.NewGroupRepository(db)
+	groupRepo := bf1model.NewGroupRepository(global.DB)
 	adm := groupRepo.IsGroupAdmin(ctx.Event.GroupID, ctx.Event.UserID)
-	db.Close()
 	return adm
 }
 
 // ServerOwnerPermission 腐竹权限
 func ServerOwnerPermission(ctx *zero.Ctx) bool {
-	db, err := bf1model.Open(dbname)
-	if err != nil {
-		return false
-	}
-	groupRepo := bf1model.NewGroupRepository(db)
+	groupRepo := bf1model.NewGroupRepository(global.DB)
 	p := groupRepo.IsGroupOwner(ctx.Event.GroupID, ctx.Event.UserID)
-	db.Close()
 	return p
 }

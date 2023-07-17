@@ -56,18 +56,24 @@ func setupSetting() error {
 	return setting.ReadSection("SakuraKooi", &global.SakuraAPI)
 }
 
-var dbname = engine.DataFolder() + "battlefield.db"
-
 func init() {
 	pluginInitSuccess := fcext.DoOnceOnSuccess(func(ctx *zero.Ctx) bool {
+		var err error
+		dbname := engine.DataFolder() + "battlefield.db"
 		// 初始化数据库
-		if err := bf1model.Init(dbname); err != nil {
+		if err = bf1model.Init(dbname); err != nil {
 			ctx.SendChain(message.Text("ERROR: 数据库初始化失败, 请联系机器人管理员重启"))
 			return false
 		}
 		// 读取配置文件
-		if err := setupSetting(); err != nil {
+		if err = setupSetting(); err != nil {
 			ctx.SendChain(message.Text("ERROR: 读取插件配置失败, 请联系机器人管理员重启"))
+			return false
+		}
+		// 建立数据库连接
+		global.DB, err = bf1model.Open(dbname)
+		if err != nil {
+			ctx.SendChain(message.Text("ERROR: 插件数据库连接失败, 请联系机器人管理员重启"))
 			return false
 		}
 		// 刷新Session
@@ -79,24 +85,8 @@ func init() {
 	engine.OnPrefixGroup([]string{".绑定", ".bind"}, pluginInitSuccess).SetBlock(true).
 		Handle(func(ctx *zero.Ctx) {
 			id := ctx.State["args"].(string)
-			// 验证id是否有效
-			if vld, err := IsValidID(id); vld {
-				if err != nil {
-					ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
-				}
-			} else {
-				ctx.SendChain(message.Reply(ctx.Event.MessageID), message.Text("id无效，请检查id..."))
-				return
-			}
-			db, err := bf1model.Open(dbname)
-			if err != nil {
-				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("绑定失败，打开数据库时出错！"))
-				return
-			}
-			defer db.Close()
-			// 先绑定再查询pid和是否实锤
 			// 检查是否已经绑定
-			playerRepo := bf1model.NewPlayerRepository(db)
+			playerRepo := bf1model.NewPlayerRepository(global.DB)
 			if data, err := playerRepo.GetByQID(ctx.Event.UserID); errors.Is(err, gorm.ErrRecordNotFound) {
 				// 未绑定...
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("正在绑定id为 ", id))
@@ -142,7 +132,8 @@ func init() {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 				return
 			}
-			stat, err := player.GetStats(id)
+			player := player.NewPlayerInfoByName(id)
+			stat, err := player.GetStats()
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("获取失败：", err))
 				return
@@ -253,7 +244,8 @@ func init() {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 				return
 			}
-			car, err := player.GetVehicles(pid)
+			player := &player.PlayerInfo{Name: id, PersonalID: pid}
+			car, err := player.GetVehicles()
 			if err != nil {
 				ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERR：", err))
 				return
