@@ -1,3 +1,4 @@
+// Package renderer 图片和卡片绘制api
 package renderer
 
 import (
