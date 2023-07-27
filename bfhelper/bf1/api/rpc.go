@@ -4,7 +4,6 @@ package bf1api
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/uuid"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 )
@@ -85,7 +85,7 @@ func Login(username, password string) error {
 	}
 	code := result.Get("code").Int()
 	if code != 0 {
-		return errors.New(fmt.Sprintf("更新session时出错: code: %d, msg: %s", code, result.Get("message").Str))
+		return errors.Errorf("更新session时出错: code: %d, msg: %s", code, result.Get("message").Str)
 	}
 	global.Account.Session = result.Get("data.gatewaySession").Str
 	global.Account.Token = fmt.Sprintf("%s%s", "Bearer ", result.Get("data.bearerAccessToken").Str)
