@@ -1,7 +1,10 @@
 // Package bf1model bf1数据库操作
 package bf1model
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
+)
 
 // Init 数据库初始化
 func Init(path string) error {

@@ -5,10 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
+	"sync"
 
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/anticheat"
 	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
 	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq"
 	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq/bf1"
 	"github.com/tidwall/gjson"
 )
@@ -17,6 +21,13 @@ import (
 type Info struct {
 	Name       string
 	PersonalID string
+}
+
+// Cheater 作弊玩家结构体
+type Cheater struct {
+	Info
+	EAC   anticheat.HackEACResp
+	BFBan anticheat.HackBFBanResp
 }
 
 // NewInfoByQID 根据qq 生成Info
@@ -157,4 +168,40 @@ func (p *Info) Get2k() (kd float64, kpm float64, err error) {
 	kd = data.Get("result.basicStats.kills").Float() / data.Get("result.basicStats.deaths").Float()
 	kpm = data.Get("result.basicStats.kpm").Float()
 	return kd, kpm, err
+}
+
+// IsHacker 借助id 获取举报信息
+func (c *Cheater) IsHacker(id string) *Cheater {
+	c.Name = id
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		result, err := netreq.Request{URL: global.BFBan + "checkban/?names=" + id}.GetRespBodyJSON()
+		if err != nil || result.Get("errors").String() != "" {
+			c.BFBan.Status = "查询失败"
+			c.BFBan.URL = "无"
+			return
+		}
+		bfban := result.Get("names." + strings.ToLower(id))
+		c.BFBan.IsCheater = bfban.Get("hacker").Bool()
+		if bfban.Get("originId").Str != "" {
+			c.BFBan.Status = anticheat.BFBanHackerStatus[int(bfban.Get("status").Int())]
+			c.BFBan.URL = bfban.Get("url").Str
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		result, err := netreq.Request{URL: global.BFEAC + "case/EAID/" + id}.GetRespBodyJSON()
+		if err != nil || result.Get("error_code").Int() != 0 {
+			c.EAC.Status = "查询失败: " + result.Get("error_msg").Str
+			c.EAC.URL = "无"
+			return
+		}
+		bfeac := result.Get("data.0")
+		c.EAC.Status = anticheat.EACHackerStatus[int(bfeac.Get("current_status").Int())]
+		c.EAC.URL = "https://bfeac.com/?#/case/" + bfeac.Get("case_id").String()
+	}()
+	wg.Wait()
+	return c
 }
