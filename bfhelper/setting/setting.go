@@ -15,7 +15,7 @@ type Setting struct {
 func NewSetting() (*Setting, error) {
 	vp := viper.New()
 	vp.SetConfigName("settings")
-	vp.AddConfigPath("data/")
+	vp.AddConfigPath("data/battlefield/")
 	vp.SetConfigType("yaml")
 	if err := vp.ReadInConfig(); err != nil {
 		return nil, err

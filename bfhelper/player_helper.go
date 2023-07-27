@@ -50,7 +50,7 @@ func setupSetting() error {
 	if err != nil {
 		return err
 	}
-	if err := setting.ReadSection("Account", &global.Account.LoginedUser); err != nil {
+	if err := setting.ReadSection("Account", &global.Account); err != nil {
 		return err
 	}
 	return setting.ReadSection("SakuraKooi", &global.SakuraAPI)
@@ -77,7 +77,7 @@ func init() {
 			return false
 		}
 		// 刷新Session
-		_ = api.Login(global.Account.LoginedUser.Username, global.Account.LoginedUser.Password, true)
+		_ = api.Login(global.Account.Username, global.Account.Password, true)
 		return true
 	})
 

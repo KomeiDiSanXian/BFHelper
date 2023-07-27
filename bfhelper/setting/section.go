@@ -23,15 +23,3 @@ func (s *Setting) ReloadAllSections() error {
 	}
 	return nil
 }
-
-// Account 账号信息
-type Account struct {
-	Username string
-	Password string
-}
-
-// SakuraAPI apikey 和api id
-type SakuraAPI struct {
-	SakuraID    string
-	SakuraToken string
-}

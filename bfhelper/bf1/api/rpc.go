@@ -83,10 +83,10 @@ func Login(username, password string, refreshToken bool) error {
 	if err != nil {
 		return err
 	}
-	global.Account.Info.Session = result.Get("data.gatewaySession").Str
-	global.Account.Info.Token = fmt.Sprintf("%s%s", "Bearer ", result.Get("data.bearerAccessToken").Str)
-	global.Account.Info.SID = result.Get("data.sid").Str
-	global.Account.Info.Remid = result.Get("data.remid").Str
+	global.Account.Session = result.Get("data.gatewaySession").Str
+	global.Account.Token = fmt.Sprintf("%s%s", "Bearer ", result.Get("data.bearerAccessToken").Str)
+	global.Account.SID = result.Get("data.sid").Str
+	global.Account.Remid = result.Get("data.remid").Str
 	return nil
 }
 
@@ -102,13 +102,13 @@ func ReturnJSON(url, method string, body interface{}) (*gjson.Result, error) {
 		result, err := netreq.Request{
 			Method: method,
 			URL:    url,
-			Header: map[string]string{"X-Gatewaysession": global.Account.Info.Session},
+			Header: map[string]string{"X-Gatewaysession": global.Account.Session},
 			Body:   bodyjson,
 		}.GetRespBodyJSON()
 
 		code := result.Get("error.code").Int()
 		if code == -32501 {
-			if err := Login(global.Account.LoginedUser.Username, global.Account.LoginedUser.Password, true); err != nil {
+			if err := Login(global.Account.Username, global.Account.Password, true); err != nil {
 				logrus.Errorln("[battlefield]", err)
 				return nil, err
 			}
@@ -163,12 +163,12 @@ func GetPersonalID(name string) (string, error) {
 		URL:    "https://gateway.ea.com/proxy/identity/personas?namespaceName=cem_ea_id&displayName=" + name,
 		Header: map[string]string{
 			"X-Expand-Results": "true",
-			"Authorization":    global.Account.Info.Token,
+			"Authorization":    global.Account.Token,
 		},
 	}.GetRespBodyJSON()
 	info := result.Get("error").Str
 	if info == "invalid_access_token" || info == "invalid_oauth_info" {
-		err := Login(global.Account.LoginedUser.Username, global.Account.LoginedUser.Password, true)
+		err := Login(global.Account.Username, global.Account.Password, true)
 		if err != nil {
 			return "", err
 		}
