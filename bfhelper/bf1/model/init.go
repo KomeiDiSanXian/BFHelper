@@ -3,7 +3,7 @@ package bf1model
 
 import (
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/jinzhu/gorm/dialects/sqlite" // sqlite 启用dialect
 )
 
 // Init 数据库初始化

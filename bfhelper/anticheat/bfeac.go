@@ -1,5 +1,7 @@
+// Package anticheat BFEAC相关
 package anticheat
 
+// HackEACResp 返回案件信息
 type HackEACResp struct {
 	URL    string
 	Status string

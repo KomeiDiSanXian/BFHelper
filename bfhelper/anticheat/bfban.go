@@ -1,5 +1,7 @@
+// Package anticheat BFBan相关
 package anticheat
 
+// HackBFBanResp 返回案件信息
 type HackBFBanResp struct {
 	IsCheater bool
 	URL       string
