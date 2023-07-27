@@ -77,7 +77,7 @@ func init() {
 			return false
 		}
 		// 刷新Session
-		_ = api.Login(global.Account.Username, global.Account.Password, true)
+		_ = api.Login(global.Account.Username, global.Account.Password)
 		return true
 	})
 

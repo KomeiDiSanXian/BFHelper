@@ -62,11 +62,11 @@ type Pack struct {
 }
 
 // Login 获取 Session token cookies
-func Login(username, password string, refreshToken bool) error {
+func Login(username, password string) error {
 	if username == "" || password == "" {
 		return errors.New("账号信息不完整！")
 	}
-	user := map[string]interface{}{"username": username, "password": password, "refreshToken": refreshToken}
+	user := map[string]interface{}{"username": username, "password": password, "refreshToken": true, "allowSaveSession": false}
 	bodyJSON, err := toJSON(user)
 	if err != nil {
 		return errors.New("更新session时出错: json marshal error")
@@ -82,6 +82,10 @@ func Login(username, password string, refreshToken bool) error {
 	}.GetRespBodyJSON()
 	if err != nil {
 		return err
+	}
+	code := result.Get("code").Int()
+	if code != 0 {
+		return errors.New(fmt.Sprintf("更新session时出错: code: %d, msg: %s", code, result.Get("message").Str))
 	}
 	global.Account.Session = result.Get("data.gatewaySession").Str
 	global.Account.Token = fmt.Sprintf("%s%s", "Bearer ", result.Get("data.bearerAccessToken").Str)
@@ -108,7 +112,7 @@ func ReturnJSON(url, method string, body interface{}) (*gjson.Result, error) {
 
 		code := result.Get("error.code").Int()
 		if code == -32501 {
-			if err := Login(global.Account.Username, global.Account.Password, true); err != nil {
+			if err := Login(global.Account.Username, global.Account.Password); err != nil {
 				logrus.Errorln("[battlefield]", err)
 				return nil, err
 			}
@@ -166,9 +170,12 @@ func GetPersonalID(name string) (string, error) {
 			"Authorization":    global.Account.Token,
 		},
 	}.GetRespBodyJSON()
+	if err != nil {
+		return "", err
+	}
 	info := result.Get("error").Str
 	if info == "invalid_access_token" || info == "invalid_oauth_info" {
-		err := Login(global.Account.Username, global.Account.Password, true)
+		err := Login(global.Account.Username, global.Account.Password)
 		if err != nil {
 			return "", err
 		}

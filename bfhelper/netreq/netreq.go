@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/tidwall/gjson"
 )
@@ -18,7 +19,9 @@ type Request struct {
 }
 
 func (r Request) client() *http.Client {
-	return http.DefaultClient
+	return &http.Client{
+		Timeout: time.Minute,
+	}
 }
 
 func (r Request) do() (*http.Response, error) {
