@@ -18,7 +18,7 @@ import (
 
 // error code
 //
-// TODO: refactor this
+// TODO: #7
 const (
 	ErrServerNotFound int64 = -34501
 	ErrInvalidMapID   int64 = -32603
@@ -192,6 +192,8 @@ func GetPersonalID(name string) (string, error) {
 }
 
 // Exception 错误码转换
+//
+// TODO: #7
 func Exception(errcode int64) error {
 	switch errcode {
 	case ErrServerNotFound:
