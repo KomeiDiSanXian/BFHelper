@@ -41,8 +41,8 @@ require (
 
 require (
 	github.com/FloatTech/floatbox v0.0.0-20230331064925-9af336a84944
-	github.com/FloatTech/gg v1.1.2 // indirect
-	github.com/FloatTech/imgfactory v0.2.2-0.20230315152233-49741fc994f9 // indirect
+	github.com/FloatTech/gg v1.1.2
+	github.com/FloatTech/imgfactory v0.2.2-0.20230315152233-49741fc994f9
 	github.com/FloatTech/rendercard v0.0.10-0.20230223064326-45d29fa4ede9 // indirect
 	github.com/FloatTech/sqlite v1.6.3 // indirect
 	github.com/FloatTech/ttl v0.0.0-20230307105452-d6f7b2b647d1 // indirect
