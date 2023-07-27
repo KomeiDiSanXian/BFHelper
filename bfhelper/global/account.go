@@ -4,10 +4,10 @@ package global
 type account struct {
 	Username string
 	Password string
-	Session string // Session is X-Gatewaysession
-	Token   string // Token is bearerAccessToken
-	SID     string // SID is cookie sid
-	Remid   string // Remid is cookie remid
+	Session  string // Session is X-Gatewaysession
+	Token    string // Token is bearerAccessToken
+	SID      string // SID is cookie sid
+	Remid    string // Remid is cookie remid
 }
 
 // Sakura apikey 和api id

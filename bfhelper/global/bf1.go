@@ -2,9 +2,9 @@
 package global
 
 const (
-	NativeAPI    string = "https://sparta-gw.battlelog.com/jsonrpc/pc/api"        // NativeAPI EA JSONRPC API
+	NativeAPI    string = "https://sparta-gw.battlelog.com/jsonrpc/pc/api"       // NativeAPI EA JSONRPC API
 	SessionAPI   string = "https://battlefield-api.sakurakooi.dev/account/login" // SessionAPI 通过SakuraKooi 获取session 信息
-	OperationAPI string = "https://sparta-gw.battlelog.com/jsonrpc/ps4/api"       // OperationAPI 交换和行动包查询
+	OperationAPI string = "https://sparta-gw.battlelog.com/jsonrpc/ps4/api"      // OperationAPI 交换和行动包查询
 )
 
 const (
