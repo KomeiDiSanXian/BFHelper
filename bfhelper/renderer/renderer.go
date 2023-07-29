@@ -100,8 +100,10 @@ func (i *Image) DrawBackground(path string) error {
 }
 
 // DrawCopyright 绘制底部信息
-func (i *Image) DrawCopyright(copyright string) {
-	i.ParseFontFace(28)
+//
+// copyright: 绘制的文字  point: 字体大小
+func (i *Image) DrawCopyright(copyright string, point float64) {
+	_ = i.ParseFontFace(point)
 	i.Canvas.SetRGBA255(0, 0, 0, 255)
 	i.Canvas.DrawStringAnchored(copyright, float64(i.Canvas.W()/2+3), float64(i.Canvas.H()-70/2+3), 0.5, 0.5)
 	i.Canvas.SetRGBA255(255, 255, 255, 255)
