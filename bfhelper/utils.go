@@ -6,71 +6,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strconv"
 	"sync"
 
-	"github.com/FloatTech/zbputils/img/text"
 	"github.com/jinzhu/gorm"
-	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
-	"github.com/wdvxdr1123/ZeroBot/utils/helper"
 
-	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/player"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq"
+	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
+	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/model"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/player"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/renderer"
 )
-
-// 简转繁 字典
-var twmap map[string]string
-
-// 初始化
-func init() {
-	// 读字典
-	f, err := os.Open(engine.DataFolder() + "dic/dic.json")
-	if err != nil {
-		logrus.Errorf("open dictionary file failed: %v", err)
-		return
-	}
-	defer f.Close()
-	content, err := io.ReadAll(f)
-	if err != nil {
-		logrus.Errorf("read dictionary file failed: %v", err)
-		return
-	}
-	err = json.Unmarshal(content, &twmap)
-	if err != nil {
-		logrus.Errorf("unmarshal dictionary file failed: %v", err)
-		return
-	}
-}
-
-// S2tw 简体转繁体
-func S2tw(str string) string {
-	result := ""
-	for _, v := range str {
-		r, ok := twmap[string(v)]
-		if ok {
-			result += r
-		}
-	}
-	return result
-}
-
-// Txt2Img 文字转图片并发送
-func Txt2Img(ctx *zero.Ctx, txt string) {
-	data, err := text.RenderToBase64(txt, text.FontFile, 400, 20)
-	if err != nil {
-		ctx.Send(message.ReplyWithMessage(ctx.Event.MessageID, message.Text("将文字转换成图片时发生错误")))
-	}
-	if id := ctx.Send(message.ReplyWithMessage(ctx.Event.MessageID, message.Image("base64://"+helper.BytesToString(data)))); id.ID() == 0 {
-		ctx.SendChain(message.At(ctx.Event.UserID), message.Text("ERROR:可能被风控了"))
-	}
-}
 
 // ReturnBindID 检查是否绑定，返回id
 func ReturnBindID(ctx *zero.Ctx, id string) (string, error) {
@@ -165,7 +114,7 @@ func RequestWeapon(ctx *zero.Ctx, id, class string) {
 			"效率：", wp[i].Efficiency,
 		)
 	}
-	Txt2Img(ctx, txt)
+	renderer.Txt2Img(ctx, txt)
 }
 
 // GetBF1Recent 获取bf1最近战绩

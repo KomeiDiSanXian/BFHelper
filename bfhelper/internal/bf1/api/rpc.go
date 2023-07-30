@@ -8,9 +8,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/uuid"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"

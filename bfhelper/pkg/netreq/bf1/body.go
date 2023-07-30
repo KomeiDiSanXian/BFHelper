@@ -2,8 +2,8 @@
 package bf1reqbody
 
 import (
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/uuid"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/uuid"
 )
 
 // Post 结构体

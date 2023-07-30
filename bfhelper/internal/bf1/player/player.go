@@ -8,12 +8,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/anticheat"
-	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq"
-	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq/bf1"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/anticheat"
+	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
+	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/model"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq"
+	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq/bf1"
 	"github.com/tidwall/gjson"
 )
 

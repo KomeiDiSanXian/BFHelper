@@ -2,25 +2,30 @@
 package bfhelper
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
 	ctrl "github.com/FloatTech/zbpctrl"
 	"github.com/FloatTech/zbputils/control"
+	"github.com/sirupsen/logrus"
 
 	fcext "github.com/FloatTech/floatbox/ctxext"
 	"github.com/jinzhu/gorm"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
 
-	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/model"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/player"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/setting"
+	api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
+	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/model"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/player"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/renderer"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/setting"
 )
 
 // 引擎注册
@@ -40,11 +45,6 @@ var engine = control.Register("战地", &ctrl.Options[*zero.Ctx]{
 	PrivateDataFolder: "battlefield",
 })
 
-// EngineFile 返回 engine.DataFolder()
-func EngineFile() string {
-	return engine.DataFolder()
-}
-
 func setupSetting() error {
 	setting, err := setting.NewSetting()
 	if err != nil {
@@ -54,6 +54,23 @@ func setupSetting() error {
 		return err
 	}
 	return setting.ReadSection("SakuraKooi", &global.SakuraAPI)
+}
+
+func readDictionary() error {
+	f, err := os.Open(engine.DataFolder() + "dic/dic.json")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	content, err := io.ReadAll(f)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(content, &global.Dictionary)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func init() {
@@ -78,6 +95,11 @@ func init() {
 		}
 		// 刷新Session
 		_ = api.Login(global.Account.Username, global.Account.Password)
+		// 读字典
+		err = readDictionary()
+		if err != nil {
+			logrus.Errorf("read dictionary: %v", err)
+		}
 		return true
 	})
 
@@ -163,7 +185,7 @@ func init() {
 				"MVP数：" + stat.MVP + "\n" +
 				"作为神医拉起了 " + stat.Revives + " 人" + "\n" +
 				"开棺材车创死了 " + stat.CarriersKills + " 人"
-			Txt2Img(ctx, txt)
+			renderer.Txt2Img(ctx, txt)
 		})
 	// 武器查询，只展示前五个
 	engine.OnRegex(`^\. *1?武器 *(.*)$`, pluginInitSuccess).SetBlock(true).
@@ -232,7 +254,7 @@ func init() {
 				msg += "游玩时长：" + strconv.FormatFloat(float64((*recent)[i].Time/60), 'f', -1, 64) + "分钟"
 				msg += "\n---------------\n"
 			}
-			Txt2Img(ctx, msg)
+			renderer.Txt2Img(ctx, msg)
 		})
 	// 获取所有种类的载具信息
 	engine.OnRegex(`^\. *1?载具 *(.*)$`, pluginInitSuccess).SetBlock(true).
@@ -259,7 +281,7 @@ func init() {
 				msg += fmt.Sprintf("%s%6.0f\t", "击毁数：", (*car)[i].Destroyed)
 				msg += "游玩时间：" + (*car)[i].Time + " 小时\n"
 			}
-			Txt2Img(ctx, msg)
+			renderer.Txt2Img(ctx, msg)
 		})
 	// 交换查询
 	engine.OnFullMatchGroup([]string{".交换", ".exchange"}, pluginInitSuccess).SetBlock(true).
@@ -276,7 +298,7 @@ func init() {
 					msg += "\t" + skin + "\n"
 				}
 			}
-			Txt2Img(ctx, msg)
+			renderer.Txt2Img(ctx, msg)
 		})
 	// 行动包查询
 	engine.OnFullMatchGroup([]string{".行动", ".行动包", ".pack"}, pluginInitSuccess).SetBlock(true).
@@ -292,6 +314,6 @@ func init() {
 			msg += "箱子重置时间：" + fmt.Sprintf("%.2f", float64(pack.ResetTime)/60) + " 小时\n"
 			msg += "行动地图：" + pack.Op1Name + " 与 " + pack.Op2Name + "\n"
 			msg += "行动简介：" + pack.Desc
-			Txt2Img(ctx, msg)
+			renderer.Txt2Img(ctx, msg)
 		})
 }

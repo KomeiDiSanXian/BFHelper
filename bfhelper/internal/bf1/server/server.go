@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/bf1/api"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/global"
-	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/netreq/bf1"
+	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
+	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq/bf1"
 )
 
 // Server 服务器结构体
