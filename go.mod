@@ -7,8 +7,8 @@ require (
 	github.com/FloatTech/zbputils v1.6.2-0.20230411114057-4c71136244b2
 	github.com/jinzhu/gorm v1.9.16
 	github.com/sirupsen/logrus v1.9.3
-	github.com/tidwall/gjson v1.14.4
-	github.com/wdvxdr1123/ZeroBot v1.6.11
+	github.com/tidwall/gjson v1.15.0
+	github.com/wdvxdr1123/ZeroBot v1.7.4
 )
 
 require (
