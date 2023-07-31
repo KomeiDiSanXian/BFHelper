@@ -2,6 +2,8 @@
 package player
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -10,62 +12,21 @@ import (
 
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/anticheat"
 	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
-	bf1model "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq"
 	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq/bf1"
 	"github.com/tidwall/gjson"
 )
 
-// Info 玩家信息结构体
-type Info struct {
-	Name       string
-	PersonalID string
-}
-
 // Cheater 作弊玩家结构体
 type Cheater struct {
-	Info
 	EAC   anticheat.HackEACResp
 	BFBan anticheat.HackBFBanResp
 }
 
-// NewInfoByQID 根据qq 生成Info
-func NewInfoByQID(qid int64) *Info {
-	// 先在数据库中查询
-	p, err := bf1model.NewPlayerRepository(global.DB).GetByQID(qid)
-	// 找不到直接返回nil
-	if err != nil {
-		return nil
-	}
-	return &Info{
-		Name:       p.DisplayName,
-		PersonalID: p.PersonalID,
-	}
-}
-
-// NewInfoByName 根据给定的玩家名生成Player
-func NewInfoByName(name string) *Info {
-	player := &Info{Name: name}
-	p, err := bf1model.NewPlayerRepository(global.DB).GetByName(name)
-	if err != nil {
-		// 找不到就查pid
-		player.PersonalID, err = rsp.GetPersonalID(name)
-		if err != nil {
-			return nil
-		}
-		return player
-	}
-	player.PersonalID = p.PersonalID
-	return player
-}
-
 // GetStats 获取战绩信息
-func (p *Info) GetStats() (*Stat, error) {
-	if p == nil {
-		return nil, errors.New("找不到查询的玩家")
-	}
-	data, err := rsp.ReturnJSON("https://battlefieldtracker.com/api/appStats?platform=3&name="+p.Name, "GET", nil)
+func GetStats(id string) (*Stat, error) {
+	data, err := netreq.Request{URL: "https://battlefieldtracker.com/api/appStats?platform=3&name=" + id}.GetRespBodyJSON()
 	if err != nil {
 		return nil, err
 	}
@@ -100,11 +61,8 @@ func (p *Info) GetStats() (*Stat, error) {
 }
 
 // GetWeapons 获取武器
-func (p *Info) GetWeapons(class string) (*WeaponSort, error) {
-	if p == nil {
-		return nil, errors.New("找不到查询的玩家")
-	}
-	post := bf1reqbody.NewPostWeapon(p.PersonalID)
+func GetWeapons(pid, class string) (*WeaponSort, error) {
+	post := bf1reqbody.NewPostWeapon(pid)
 	data, err := rsp.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
@@ -119,11 +77,8 @@ func (p *Info) GetWeapons(class string) (*WeaponSort, error) {
 }
 
 // GetVehicles 获取载具信息
-func (p *Info) GetVehicles() (*VehicleSort, error) {
-	if p == nil {
-		return nil, errors.New("找不到查询的玩家")
-	}
-	post := bf1reqbody.NewPostVehicle(p.PersonalID)
+func GetVehicles(pid string) (*VehicleSort, error) {
+	post := bf1reqbody.NewPostVehicle(pid)
 	data, err := rsp.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
@@ -156,11 +111,8 @@ func (p *Info) GetVehicles() (*VehicleSort, error) {
 }
 
 // Get2k battlelog 获取kd,kpm
-func (p *Info) Get2k() (kd float64, kpm float64, err error) {
-	if p == nil {
-		return -1, -1, errors.New("找不到查询的玩家")
-	}
-	post := bf1reqbody.NewPostStats(p.PersonalID)
+func Get2k(pid string) (kd float64, kpm float64, err error) {
+	post := bf1reqbody.NewPostStats(pid)
 	data, err := rsp.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return -1, -1, err
@@ -171,10 +123,11 @@ func (p *Info) Get2k() (kd float64, kpm float64, err error) {
 }
 
 // IsHacker 借助id 获取举报信息
-func (c *Cheater) IsHacker(id string) *Cheater {
-	c.Name = id
+func IsHacker(id string) *Cheater {
+	var c *Cheater
 	var wg sync.WaitGroup
 	wg.Add(2)
+	// bfban
 	go func() {
 		defer wg.Done()
 		result, err := netreq.Request{URL: global.BFBan + "checkban/?names=" + id}.GetRespBodyJSON()
@@ -190,6 +143,7 @@ func (c *Cheater) IsHacker(id string) *Cheater {
 			c.BFBan.URL = bfban.Get("url").Str
 		}
 	}()
+	// bfeac
 	go func() {
 		defer wg.Done()
 		result, err := netreq.Request{URL: global.BFEAC + "case/EAID/" + id}.GetRespBodyJSON()
@@ -204,4 +158,18 @@ func (c *Cheater) IsHacker(id string) *Cheater {
 	}()
 	wg.Wait()
 	return c
+}
+
+// GetBF1Recent 获取bf1最近战绩
+func GetBF1Recent(id string) (result *Recent, err error) {
+	u := "https://api.bili22.me/bf1/recent?name=" + id
+	data, err := netreq.Request{URL: u}.GetRespBodyBytes()
+	if err != nil {
+		return nil, err
+	}
+	err = json.NewDecoder(bytes.NewReader(data)).Decode(&result)
+	if err != nil {
+		return nil, errors.New("ERR: JSON decode failed")
+	}
+	return result, err
 }

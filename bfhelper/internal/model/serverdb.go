@@ -1,5 +1,7 @@
-// Package bf1model bf1服务器数据操作
-package bf1model
+// Package model 服务器数据操作
+//
+// TODO: refactor
+package model
 
 import (
 	"time"

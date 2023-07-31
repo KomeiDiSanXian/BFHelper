@@ -1,5 +1,5 @@
-// Package bf1model bf1数据库操作
-package bf1model
+// Package model 数据库操作
+package model
 
 import "github.com/jinzhu/gorm"
 
