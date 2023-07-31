@@ -22,7 +22,7 @@ linters:
     #- funlen
     #- goconst
     - gocritic
-    #- gocyclo
+    - gocyclo
     - gofmt
     - goimports
     - goprintffuncname
