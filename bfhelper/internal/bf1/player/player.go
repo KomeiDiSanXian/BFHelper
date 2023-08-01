@@ -4,7 +4,6 @@ package player
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq"
 	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq/bf1"
+	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
 
@@ -29,6 +29,9 @@ func GetStats(id string) (*Stat, error) {
 	data, err := netreq.Request{URL: "https://battlefieldtracker.com/api/appStats?platform=3&name=" + id}.GetRespBodyJSON()
 	if err != nil {
 		return nil, err
+	}
+	if !data.IsObject() {
+		return nil, errors.New("invalid id")
 	}
 	stat := &Stat{
 		SPM:               data.Get("stats.2.value").Str,
@@ -117,14 +120,19 @@ func Get2k(pid string) (kd float64, kpm float64, err error) {
 	if err != nil {
 		return -1, -1, err
 	}
-	kd = data.Get("result.basicStats.kills").Float() / data.Get("result.basicStats.deaths").Float()
+	death := data.Get("result.basicStats.deaths").Float()
+	if death == 0 {
+		kd = data.Get("result.basicStats.kills").Float()
+		return kd, data.Get("result.basicStats.kpm").Float(), nil
+	}
+	kd = data.Get("result.basicStats.kills").Float() / death
 	kpm = data.Get("result.basicStats.kpm").Float()
 	return kd, kpm, err
 }
 
 // IsHacker 借助id 获取举报信息
 func IsHacker(id string) *Cheater {
-	var c *Cheater
+	var c Cheater
 	var wg sync.WaitGroup
 	wg.Add(2)
 	// bfban
@@ -157,7 +165,7 @@ func IsHacker(id string) *Cheater {
 		c.EAC.URL = "https://bfeac.com/?#/case/" + bfeac.Get("case_id").String()
 	}()
 	wg.Wait()
-	return c
+	return &c
 }
 
 // GetBF1Recent 获取bf1最近战绩

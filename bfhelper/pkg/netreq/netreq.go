@@ -2,7 +2,6 @@
 package netreq
 
 import (
-	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -44,9 +43,6 @@ func (r Request) respBody() (io.ReadCloser, error) {
 	resp, err := r.do()
 	if err != nil {
 		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("response status code is not 200")
 	}
 	return resp.Body, nil
 }

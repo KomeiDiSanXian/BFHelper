@@ -3,7 +3,7 @@ package model
 
 import (
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite" // sqlite 启用dialect，集成测试及relase需要注释掉
+	// _ "github.com/jinzhu/gorm/dialects/sqlite" // sqlite 启用dialect，集成测试及relase需要注释掉
 )
 
 // Init 数据库初始化
