@@ -20,7 +20,7 @@ import (
 func (s *Service) BindAccount() error {
 	id := s.ctx.State["args"].(string)
 	// 数据库查询是否绑定
-	player, err := s.dao.GetPlayerByName(id)
+	player, err := s.dao.GetPlayerByQID(s.ctx.Event.UserID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("正在绑定id为 ", id))
 		err = s.dao.CreatePlayer(s.ctx.Event.UserID, id)
@@ -45,6 +45,7 @@ func (s *Service) BindAccount() error {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("绑定失败, ERR: 数据库错误"))
 		return err
 	}
+	s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("绑定 ", id, " 成功"))
 	pid, err := bf1api.GetPersonalID(id)
 	if err != nil {
 		return err
