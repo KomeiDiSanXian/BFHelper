@@ -91,10 +91,7 @@ func (s *Service) getPlayer(name string) (*model.Player, error) {
 		return player, nil
 	}
 
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return &model.Player{DisplayName: name, PersonalID: pid}, nil
-	}
-	return nil, err
+	return &model.Player{DisplayName: name, PersonalID: pid}, nil
 }
 
 func (s *Service) sendWeaponInfo(id, class string) error {
@@ -109,7 +106,7 @@ func (s *Service) sendWeaponInfo(id, class string) error {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 获取武器失败"))
 		return err
 	}
-	txt := "id：" + id + "\n"
+	txt := "id：" + player.DisplayName + "\n"
 	wp := ([]bf1player.Weapons)(*weapons)
 	for i := 0; i < 5; i++ {
 		txt += fmt.Sprintf("%s\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s\n",
@@ -258,7 +255,7 @@ func (s *Service) GetPlayerVehicle() error {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 获取玩家载具失败, 请自行检查id是否正确"))
 		return err
 	}
-	msg := "id：" + id + "\n"
+	msg := "id：" + player.DisplayName + "\n"
 	for i := range *car {
 		msg += "------------\n"
 		msg += (*car)[i].Name + "\n"
