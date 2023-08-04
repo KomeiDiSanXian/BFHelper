@@ -1,6 +1,128 @@
 <div align="center">
-    <h1>BFHelper</h1>
-    BFHelper 是依赖于 [ZeroBot](https://github.com/wdvxdr1123/ZeroBot) 的插件<br><br>
+  <br>
+
+  # BFHelper
+
+  BFHelper是依赖于 [ZeroBot](https://github.com/wdvxdr1123/ZeroBot) 的插件
 </div>
 
-##文档施工ing
+<p align="center">
+    <a href=""></a>
+    <a href="https://goreportcard.com/report/github.com/KomeiDiSanXian/BFHelper">
+        <img src="https://goreportcard.com/badge/github.com/KomeiDiSanXian/BFHelper">
+    </a> 
+    <a href="https://github.com/wdvxdr1123/ZeroBot">
+        <img src="https://img.shields.io/badge/zerobot-v1.7.4-black?style=flat-square&logo=go">
+    </a>
+    <a href="https://raw.githubusercontent.com/KomeiDiSanXian/BFHelper/master/LICENSE">
+        <img alt="GitHub" src="https://img.shields.io/github/license/KomeiDiSanXian/BFHelper">
+    </a>
+    <a href="https://pkg.go.dev/github.com/KomeiDiSanXian/BFHelper">
+        <img src="https://pkg.go.dev/badge/github.com/KomeiDiSanXian/BFHelper.svg" alt="Go Reference">
+    </a>
+</p>
+
+<p align="center">
+    <a href="https://www.ea.com/games/battlefield/battlefield-1">
+        <img src="https://img.shields.io/badge/BattleField-1-yellow?logo=EA&logoColor=red">
+    </a> 
+    <a href="https://www.ea.com/games/battlefield/battlefield-5">
+        <img src="https://img.shields.io/badge/BattleField-V-blue?logo=EA&logoColor=red">
+    </a> 
+</p>
+
+---
+
+## 声明
+> 任何的查询不会导致被查询用户被EA封禁
+
+> 请注意，任何开发者都**没有义务**回答您的问题
+> 
+> 本插件仅是一个工具，开发者只是提供了这样的一个工具，并不是您攻击谩骂的对象
+
+开发者**不**负责解封
+
+开发者**不**负责解封
+
+开发者**不**负责解封
+
+如果您遭到了联合封禁，本插件不提供任何有关BFEAC及BFBan解封的实际帮助
+请前往[BFEAC申诉](https://bfeac.com/#/about)和[BFBan申诉](mailto:ban-appeals@bfban.com)
+
+如果您因本插件未来添加的功能导致被某一服务器添加进该服Ban列，请进入该服务器的QQ群，联系管理员解封
+
+---
+
+## 功能
+
+> 前往 [src](https://github.com/KomeiDiSanXian/BFHelper/tree/master/bfhelper) 查看更多
+
+- [ ] 举报作弊行为
+- [ ] 查询玩家是否被联合封禁 (在 [BFEAC](https://bfeac.com/#/) & [BFban](https://bfban.gametools.network/) 中查询)
+
+### 战地一 BattleField 1
+#### 玩家
+- [x] 查询玩家战绩 (通过 [BTR](https://battlefieldtracker.com/) 实现)
+- [x] 查询玩家武器信息 (Battlefield Gateway 实现)
+- [x] 查询玩家载具击杀信息 (Battlefield Gateway 实现)
+- [x] 查询玩家最近游玩信息 (借助 @Bili22 的api实现)
+- [x] 查询本期的交换信息 (Battlefield Gateway 实现)
+- [x] 查询本期行动包 (Battlefield Gateway 实现)
+
+#### 服务器
+- [ ] 踢出玩家
+- [ ] 封禁&解封玩家
+- [ ] 切换地图
+- [ ] 添加&删除VIP
+- [ ] 修改服务器配置
+
+### 战地五 BattleField V
+> 目前计划支持
+
+### 战地2042 BattleField 2042
+> 目前没有计划
+
+---
+
+## 如何使用
+> 中括号内可填可不填
+- [x] **.绑定 xxx** 用于将xxx绑定到发送该命令的用户, 便于以后的查询
+- [x] **.战绩 [xxx]** 用于查询xxx的战绩, 如果没有xxx将会查询发送该命令用户的战绩
+- [x] **.武器 [xxx]** 类似上者, 改为查询武器击杀数据
+- [x] **.最近 [xxx]** 类似上者, 改为查询最近战绩
+- [x] **.载具 [xxx]** 类似上者, 改为查询载具击杀数据
+- [x] **.交换** 查询战地一本期交换皮肤
+- [x] **.行动** 查询战地一本期行动包信息
+
+---
+
+## 如何安装
+
+### a. 本地编译
+
+1. 下载并安装最新的 [golang](https://studygolang.com/dl) 环境
+2. clone [FloatTech/ZeroBot-Plugin](https://github.com/FloatTech/ZeroBot-Plugin)
+3. 编辑`main.go`文件中的import, 在其中添加
+
+```go
+_ "github.com/KomeiDiSanXian/BFHelper/bfhelper"
+```
+4. 下载本项目中的data文件夹，复制进 `ZeroBot-Plugin` 并对其中的 `data/battlefield/settings.yml` 按需编辑
+5. 根据你所使用的平台进行编译
+6. 运行 OneBot 框架(如 [go-cqhttp](https://github.com/Mrs4s/go-cqhttp)) 然后运行你编译的文件
+
+### b. 使用RemiliaBot
+> [RemiliaBot](https://github.com/KomeiDiSanXian/RemiliaBot) 是 [FloatTech/ZeroBot-Plugin](https://github.com/FloatTech/ZeroBot-Plugin) 的 fork 分支
+
+1. 下载 [RemiliaBot](https://github.com/KomeiDiSanXian/RemiliaBot/releases)
+2. 编辑其中的 `data/battlefield/settings.yml`
+3. 编辑 RemiliaBot (参考 RemiliaBot 的 [README.md](https://github.com/KomeiDiSanXian/RemiliaBot/blob/master/README.md))
+4. 启动 OneBot 框架和 RemiliaBot
+
+----
+## 特别感谢
+- [ZeroBot](https://github.com/wdvxdr1123/ZeroBot)
+- [ZeroBot-Plugin](https://github.com/FloatTech/ZeroBot-Plugin)
+- [Bili22](mailto:b22lengfeng@qq.com)
+- [SakuraKooi](https://github.com/SakuraKoi)
+- [GameTools](https://github.com/Community-network)
