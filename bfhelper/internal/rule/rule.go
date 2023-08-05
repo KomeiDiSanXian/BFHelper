@@ -18,7 +18,7 @@ import (
 )
 
 func setupSetting() error {
-	setting, err := setting.NewSetting()
+	setting, err := setting.NewSetting("settings", engine.Engine.DataFolder())
 	if err != nil {
 		return err
 	}

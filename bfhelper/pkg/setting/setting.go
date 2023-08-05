@@ -12,10 +12,10 @@ type Setting struct {
 }
 
 // NewSetting 读取配置信息
-func NewSetting() (*Setting, error) {
+func NewSetting(name, path string) (*Setting, error) {
 	vp := viper.New()
-	vp.SetConfigName("settings")
-	vp.AddConfigPath("data/battlefield/")
+	vp.SetConfigName(name)
+	vp.AddConfigPath(path)
 	vp.SetConfigType("yaml")
 	if err := vp.ReadInConfig(); err != nil {
 		return nil, err
