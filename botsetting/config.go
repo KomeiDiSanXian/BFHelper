@@ -1,3 +1,4 @@
+// Package botsetting 机器人设置相关
 package botsetting
 
 import (
@@ -14,6 +15,7 @@ import (
 //go:embed default.yaml
 var defaultConfig string
 
+// Config 机器人设置
 type Config struct {
 	BotNames      []string
 	CommandPrefix string

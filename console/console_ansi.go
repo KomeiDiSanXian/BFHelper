@@ -6,7 +6,7 @@ package console
 import (
 	"fmt"
 
-	"github.com/FloatTech/ZeroBot-Plugin/kanban/banner"
+	"github.com/KomeiDiSanXian/BFHelper/kanban/banner"
 )
 
 func init() {
