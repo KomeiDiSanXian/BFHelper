@@ -2,6 +2,7 @@
 package rule
 
 import (
+	_ "embed"
 	"encoding/json"
 	"io"
 	"os"
@@ -16,6 +17,9 @@ import (
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
 )
+
+//go:embed template.yml
+var defaultConfig string
 
 func setupSetting() error {
 	setting, err := setting.NewSetting("settings", engine.Engine.DataFolder())
@@ -45,6 +49,12 @@ func readDictionary() error {
 	return nil
 }
 
+func generateConfig() {
+	logrus.Warnln("[battlefield]未找到配置或者出现错误, 正在重新生成...")
+	_ = os.WriteFile(engine.Engine.DataFolder()+"settings.yml", []byte(defaultConfig), 0o644)
+	logrus.Warnln("配置已生成! 请修改 botconfig.yaml")
+}
+
 // Initialized 需要执行后才能使用插件
 func Initialized() zero.Rule {
 	return fcext.DoOnceOnSuccess(func(ctx *zero.Ctx) bool {
@@ -57,7 +67,9 @@ func Initialized() zero.Rule {
 		}
 		// 读取配置文件
 		if err = setupSetting(); err != nil {
-			ctx.SendChain(message.Text("ERROR: 读取插件配置失败, 请联系机器人管理员重启"))
+			ctx.SendChain(message.Text("ERROR: 读取插件配置失败, 正在重新创建"))
+			generateConfig()
+			ctx.SendChain(message.Text("INFO: 插件配置已重新创建"))
 			return false
 		}
 		// 建立数据库连接
