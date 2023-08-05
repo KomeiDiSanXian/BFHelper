@@ -98,7 +98,19 @@
 
 ## 如何安装
 
-### a. 本地编译
+> **注意**: release 中的插件有且仅有本插件 
+>
+> 对于Windows 系统，仅支持win 7 (win server 2008 R2) 及以上
+### a. 使用release
+
+1. 前往 [release](https://github.com/KomeiDiSanXian/BFHelper/releases) 下载符合您系统的版本
+2. 启动应用程序
+> 第一次启动会生成配置文件 `botcongfig.yaml`，请修改该配置
+
+3. 修改配置后，重新启动应用，同时启动 OneBot 框架 (如 [go-cqhttp](https://github.com/Mrs4s/go-cqhttp))
+4. 修改 `data/battlefield` 中的 `settings.yml`
+
+### b. 本地编译
 
 1. 下载并安装最新的 [golang](https://studygolang.com/dl) 环境
 2. clone [FloatTech/ZeroBot-Plugin](https://github.com/FloatTech/ZeroBot-Plugin)
@@ -109,9 +121,9 @@ _ "github.com/KomeiDiSanXian/BFHelper/bfhelper"
 ```
 4. 下载本项目中的data文件夹，复制进 `ZeroBot-Plugin` 并对其中的 `data/battlefield/settings.yml` 按需编辑
 5. 根据你所使用的平台进行编译
-6. 运行 OneBot 框架(如 [go-cqhttp](https://github.com/Mrs4s/go-cqhttp)) 然后运行你编译的文件
+6. 运行 OneBot 框架 然后运行你编译的文件
 
-### b. 使用RemiliaBot
+### c. 使用RemiliaBot
 > [RemiliaBot](https://github.com/KomeiDiSanXian/RemiliaBot) 是 [FloatTech/ZeroBot-Plugin](https://github.com/FloatTech/ZeroBot-Plugin) 的 fork 分支
 
 1. 下载 [RemiliaBot](https://github.com/KomeiDiSanXian/RemiliaBot/releases)
