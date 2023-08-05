@@ -52,7 +52,7 @@ func readDictionary() error {
 func generateConfig() {
 	logrus.Warnln("[battlefield]未找到配置或者出现错误, 正在重新生成...")
 	_ = os.WriteFile(engine.Engine.DataFolder()+"settings.yml", []byte(defaultConfig), 0o644)
-	logrus.Warnln("配置已生成! 请修改 botconfig.yaml")
+	logrus.Warnln("配置已生成! 请修改 settings.yml")
 }
 
 // Initialized 需要执行后才能使用插件
@@ -69,7 +69,7 @@ func Initialized() zero.Rule {
 		if err = setupSetting(); err != nil {
 			ctx.SendChain(message.Text("ERROR: 读取插件配置失败, 正在重新创建"))
 			generateConfig()
-			ctx.SendChain(message.Text("INFO: 插件配置已重新创建"))
+			ctx.SendChain(message.Text("INFO: 插件配置已重新创建, 请联系机器人主人修改"))
 			return false
 		}
 		// 建立数据库连接

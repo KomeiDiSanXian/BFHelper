@@ -105,10 +105,13 @@
 
 1. 前往 [release](https://github.com/KomeiDiSanXian/BFHelper/releases) 下载符合您系统的版本
 2. 启动应用程序
-> 第一次启动会生成配置文件 `botcongfig.yaml`，请修改该配置
+> **注意**: 第一次启动会生成配置文件 `botcongfig.yaml`，请修改该配置
 
 3. 修改配置后，重新启动应用，同时启动 OneBot 框架 (如 [go-cqhttp](https://github.com/Mrs4s/go-cqhttp))
 4. 修改 `data/battlefield` 中的 `settings.yml`
+> **注意**: 如果没有该文件，请使用一次本插件, 插件将会生成一份 `settings.yml`
+>
+> 修改后无需重启
 
 ### b. 本地编译
 
