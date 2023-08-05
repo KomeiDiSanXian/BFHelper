@@ -1,0 +1,13 @@
+Bot:
+  BotNames:
+    - "蕾米"
+    - "蕾米莉亚"
+  CommandPrefix: "."
+  SuperUsers: 
+    - 123456
+    - 654321
+  RingLen: 40
+  Latency: 233
+  MarkMessage: true
+  WSClient: "ws://127.0.0.1:6700"
+  AccessToken: ""
