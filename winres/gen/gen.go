@@ -1,3 +1,4 @@
+// Package main generates winres.json
 package main
 
 import (
