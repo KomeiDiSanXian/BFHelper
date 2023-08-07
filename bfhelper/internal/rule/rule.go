@@ -106,6 +106,6 @@ func ServerOwnerPermission() zero.Rule {
 		if zero.OwnerPermission(ctx) {
 			return true
 		}
-		return dao.New(global.DB).IsServerAdmin(ctx.Event.GroupID, ctx.Event.UserID)
+		return dao.New(global.DB).IsOwner(ctx.Event.GroupID, ctx.Event.UserID)
 	}
 }
