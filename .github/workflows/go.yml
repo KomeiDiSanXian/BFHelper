@@ -1,7 +1,7 @@
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: GoBuild
+name: Bulid
 
 on:
   push:
@@ -9,17 +9,62 @@ on:
   pull_request:
     branches: [ "bot" ]
 
-jobs:
+env: 
+  BINARY_PREFIX: "BFHelper"
+  BINARY_SUFFIX: ""
+  COMMIT_ID: "${{ github.sha }}"
 
+jobs:
   build:
+    name: Prepare to build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux,windows,darwin]
+        goarch: ["386",arm,arm64,amd64]
+        # mac无需构建386和arm
+        exclude:
+          - goos: darwin
+            goarch: "386"
+          - goos: darwin
+            goarch: arm
+      fail-fast: true
+
     steps:
     - uses: actions/checkout@v3
 
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
+        cache: true
         go-version: '1.20'
 
-    - name: Build
-      run: go build -v ./...
+    - name: Cache Go Modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-${{ runner.os }}-
+
+    - name: Build binary file
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        IS_PR: ${{ !!github.head_ref }}
+      # 如果是windows, 添加.exe后缀
+      # 如果是拉取请求触发, 显示拉取请求, 不构建
+      run: |
+        if [ $GOOS = "windows" ]; then export BINARY_SUFFIX="$BINARY_SUFFIX.exe"; fi
+        if $IS_PR ; then echo $PR_PROMPT; fi
+        export BINARY_NAME="${BINARY_PREFIX}v${COMMIT_ID::5}_${GOOS}_${GOARCH}${BINARY_SUFFIX}"
+        export CGO_ENABLED=1
+        export LD_FLAGS="-w -s -X github.com/KomeiDiSanXian/BFHelper/kanban/banner.Version=${COMMIT_ID::7}"
+        go build -o "output/$BINARY_NAME" -trimpath -ldflags "$LD_FLAGS" .
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      if: ${{ !github.head_ref }}
+      with:
+        name: ${{ matrix.goos }}_${{ matrix.goarch }}
+        path: output/
