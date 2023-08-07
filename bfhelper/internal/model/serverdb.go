@@ -143,6 +143,16 @@ func (g *Group) IsOwner(db *gorm.DB, qid int64) bool {
 	return grpdb.Owner == qid
 }
 
+// DeleteServer 删除联表中的server
+func (g *Group) DeleteServer(db *gorm.DB, gameID string) error {
+	return db.Exec("DELETE FROM group_servers WHERE group_group_id = ? AND server_game_id = ?", g.GroupID, gameID).Error
+}
+
+// DeleteAdmin 删除联表中的admin
+func (g *Group) DeleteAdmin(db *gorm.DB, adminQQ int64) error {
+	return db.Exec("DELETE FROM group_admins WHERE group_group_id = ? AND admin_qq_id = ?", g.GroupID, adminQQ).Error
+}
+
 // Create 创建一个新的 Server 记录
 func (s *Server) Create(db *gorm.DB) error {
 	if s.GameID == "" {
@@ -168,7 +178,7 @@ func (s *Server) Update(db *gorm.DB) error {
 	if s.GameID == "" {
 		return errors.New("invalid GameID")
 	}
-	return db.Model(&Player{}).Updates(s).Error
+	return db.Model(&Server{}).Updates(s).Error
 }
 
 // DeleteByGameID 根据 GameID 删除 Server 记录
