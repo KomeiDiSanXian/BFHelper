@@ -10,6 +10,11 @@ func (d *Dao) CreateGroup(groupID, owner int64) error {
 	return grp.Create(d.engine)
 }
 
+// DeleteGroup 删除服务器群组
+func (d *Dao) DeleteGroup(groupID int64) error {
+	return model.NewGroup(groupID).DeleteByID(d.engine)
+}
+
 // UpdateOwner 更新服务器服主
 func (d *Dao) UpdateOwner(groupID, owner int64) error {
 	grp := model.NewGroup(groupID)
