@@ -23,10 +23,13 @@ jobs:
         goos: [linux,windows,darwin]
         goarch: ["386",arm,arm64,amd64]
         # mac无需构建386和arm
+        # windows由于libc不能构建arm
         exclude:
           - goos: darwin
             goarch: "386"
           - goos: darwin
+            goarch: arm
+          - goos: windows
             goarch: arm
       fail-fast: true
 
@@ -58,7 +61,7 @@ jobs:
         if [ $GOOS = "windows" ]; then export BINARY_SUFFIX="$BINARY_SUFFIX.exe"; fi
         if $IS_PR ; then echo $PR_PROMPT; fi
         export BINARY_NAME="${BINARY_PREFIX}v${COMMIT_ID::5}_${GOOS}_${GOARCH}${BINARY_SUFFIX}"
-        export CGO_ENABLED=1
+        export CGO_ENABLED=0
         export LD_FLAGS="-w -s -X github.com/KomeiDiSanXian/BFHelper/kanban/banner.Version=${COMMIT_ID::7}"
         go build -o "output/$BINARY_NAME" -trimpath -ldflags "$LD_FLAGS" .
 
