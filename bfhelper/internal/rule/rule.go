@@ -9,6 +9,7 @@ import (
 
 	fcext "github.com/FloatTech/floatbox/ctxext"
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/dao"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/engine"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
@@ -89,27 +90,22 @@ func Initialized() zero.Rule {
 	})
 }
 
-/* 等待数据库重构后也重构
 // ServerAdminPermission 是否拥有权限
 func ServerAdminPermission() zero.Rule {
 	return func(ctx *zero.Ctx) bool {
 		if zero.AdminPermission(ctx) {
 			return true
 		}
-			groupRepo := bf1model.NewGroupRepository(global.DB)
-			adm := groupRepo.IsGroupAdmin(ctx.Event.GroupID, ctx.Event.UserID)
-			return adm
-		return false
+		return dao.New(global.DB).IsServerAdmin(ctx.Event.GroupID, ctx.Event.UserID)
 	}
 }
 
 // ServerOwnerPermission 腐竹权限
 func ServerOwnerPermission() zero.Rule {
 	return func(ctx *zero.Ctx) bool {
-			groupRepo := bf1model.NewGroupRepository(global.DB)
-			p := groupRepo.IsGroupOwner(ctx.Event.GroupID, ctx.Event.UserID)
-			return p
-		return true
+		if zero.OwnerPermission(ctx) {
+			return true
+		}
+		return dao.New(global.DB).IsServerAdmin(ctx.Event.GroupID, ctx.Event.UserID)
 	}
 }
-*/
