@@ -101,9 +101,9 @@
 > **注意**: release 中的插件有且仅有本插件 
 >
 > 对于Windows 系统，仅支持win 7 (win server 2008 R2) 及以上
-### a. 使用release
+### a. 下载二进制程序
 
-1. 前往 [release](https://github.com/KomeiDiSanXian/BFHelper/releases) 下载符合您系统的版本
+1. 前往 [release](https://github.com/KomeiDiSanXian/BFHelper/releases) 或 [CI](https://github.com/KomeiDiSanXian/BFHelper/actions/workflows/go.yml) 下载符合您系统的版本
 2. 启动应用程序
 > **注意**: 第一次启动会生成配置文件 `botcongfig.yaml`，请修改该配置
 
