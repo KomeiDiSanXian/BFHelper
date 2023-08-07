@@ -1,12 +1,11 @@
 // Package model 服务器数据操作
-//
-// TODO: refactor
 package model
 
 import (
 	"time"
 
 	"github.com/jinzhu/gorm"
+	"github.com/pkg/errors"
 )
 
 // Group 群组表
@@ -37,47 +36,60 @@ type Admin struct {
 	UpdatedAt time.Time
 }
 
-// GroupRepository 定义 Group 表的存储库
-type GroupRepository struct {
-	db *gorm.DB
+// NewGroup creates a new Group
+func NewGroup(groupID int64) *Group {
+	return &Group{GroupID: groupID}
 }
 
-// NewGroupRepository 创建 GroupRepository 实例
-func NewGroupRepository(db *gorm.DB) *GroupRepository {
-	return &GroupRepository{db: db}
+// NewServer creates a new Server
+func NewServer(gameID string) *Server {
+	return &Server{GameID: gameID}
 }
 
-// CreateGroup 创建一个新的 Group 记录
-func (r *GroupRepository) CreateGroup(group *Group) error {
-	return r.db.Create(group).Error
+// NewAdmin creates a new Admin
+func NewAdmin(qid int64) *Admin {
+	return &Admin{QQID: qid}
 }
 
-// GetGroupByID 根据 GroupID 获取 Group 记录
-func (r *GroupRepository) GetGroupByID(groupID int64) (*Group, error) {
-	var group Group
-	err := r.db.Preload("Servers").Preload("Admins").First(&group, groupID).Error
+// Create 创建一个新的 Group 记录
+func (g *Group) Create(db *gorm.DB) error {
+	if g.GroupID == 0 {
+		return errors.New("invalid Group ID")
+	}
+	return db.Create(g).Error
+}
+
+// GetByID 根据 GroupID 获取 Group 记录
+func (g *Group) GetByID(db *gorm.DB) (*Group, error) {
+	if g.GroupID == 0 {
+		return nil, errors.New("invalid Group ID")
+	}
+	err := db.Preload("Servers").Preload("Admins").First(&g, g.GroupID).Error
 	if err != nil {
 		return nil, err
 	}
-	return &group, nil
+	return g, nil
 }
 
-// UpdateGroup 更新 Group 记录
+// Update 更新 Group 记录
 //
 // 注意不能修改为各类型零值
-func (r *GroupRepository) UpdateGroup(group *Group) error {
+func (g *Group) Update(db *gorm.DB) error {
+	if g.GroupID == 0 {
+		return errors.New("invalid Group ID")
+	}
 	// 开始事务
-	tx := r.db.Begin()
-	if err := tx.Model(group).Updates(group).Error; err != nil {
+	tx := db.Begin()
+	if err := tx.Model(g).Updates(g).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 	// 添加关联
-	if err := tx.Model(group).Association("Servers").Append(group.Servers).Error; err != nil {
+	if err := tx.Model(g).Association("Servers").Append(g.Servers).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
-	if err := tx.Model(group).Association("Admins").Append(group.Admins).Error; err != nil {
+	if err := tx.Model(g).Association("Admins").Append(g.Admins).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -90,24 +102,27 @@ func (r *GroupRepository) UpdateGroup(group *Group) error {
 	return nil
 }
 
-// DeleteGroupByID 根据 GroupID 删除 Group 记录
-func (r *GroupRepository) DeleteGroupByID(groupID int64) error {
+// DeleteByID 根据 GroupID 删除 Group 记录
+func (g *Group) DeleteByID(db *gorm.DB) error {
+	if g.GroupID == 0 {
+		return errors.New("invalid Group ID")
+	}
 	// 删除 Group 表中的记录
-	if err := r.db.Delete(&Group{GroupID: groupID}).Error; err != nil {
+	if err := db.Delete(&Group{GroupID: g.GroupID}).Error; err != nil {
 		return err
 	}
 
 	// 删除关联表中的数据
-	if err := r.db.Exec("DELETE FROM group_servers WHERE group_group_id = ?", groupID).Error; err != nil {
+	if err := db.Exec("DELETE FROM group_servers WHERE group_group_id = ?", g.GroupID).Error; err != nil {
 		return err
 	}
 
-	return r.db.Exec("DELETE FROM group_admins WHERE group_group_id = ?", groupID).Error
+	return db.Exec("DELETE FROM group_admins WHERE group_group_id = ?", g.GroupID).Error
 }
 
-// IsGroupAdmin 检查是否为该服务器群管理
-func (r *GroupRepository) IsGroupAdmin(groupID, qid int64) bool {
-	grpdb, err := r.GetGroupByID(groupID)
+// IsAdmin 检查是否为该服务器群管理
+func (g *Group) IsAdmin(db *gorm.DB, qid int64) bool {
+	grpdb, err := g.GetByID(db)
 	if err != nil {
 		return false
 	}
@@ -119,81 +134,83 @@ func (r *GroupRepository) IsGroupAdmin(groupID, qid int64) bool {
 	return qid == grpdb.Owner
 }
 
-// IsGroupOwner 检查是否为服务器拥有者
-func (r *GroupRepository) IsGroupOwner(groupID, qid int64) bool {
-	grpdb, err := r.GetGroupByID(groupID)
+// IsOwner 检查是否为服务器拥有者
+func (g *Group) IsOwner(db *gorm.DB, qid int64) bool {
+	grpdb, err := g.GetByID(db)
 	if err != nil {
 		return false
 	}
 	return grpdb.Owner == qid
 }
 
-// ServerRepository 定义 Server 表的存储库
-type ServerRepository struct {
-	db *gorm.DB
+// Create 创建一个新的 Server 记录
+func (s *Server) Create(db *gorm.DB) error {
+	if s.GameID == "" {
+		return errors.New("invalid GameID")
+	}
+	return db.Create(s).Error
 }
 
-// NewServerRepository 创建 ServerRepository 实例
-func NewServerRepository(db *gorm.DB) *ServerRepository {
-	return &ServerRepository{db: db}
-}
-
-// CreateServer 创建一个新的 Server 记录
-func (r *ServerRepository) CreateServer(server *Server) error {
-	return r.db.Create(server).Error
-}
-
-// GetServerByGameID 根据 GameID 获取 Server 记录
-func (r *ServerRepository) GetServerByGameID(gameID string) (*Server, error) {
-	var server Server
-	err := r.db.First(&server, gameID).Error
+// GetByGameID 根据 GameID 获取 Server 记录
+func (s *Server) GetByGameID(db *gorm.DB) (*Server, error) {
+	if s.GameID == "" {
+		return nil, errors.New("invalid GameID")
+	}
+	err := db.First(&s, s.GameID).Error
 	if err != nil {
 		return nil, err
 	}
-	return &server, nil
+	return s, nil
 }
 
-// UpdateServer 更新 Server 记录
-func (r *ServerRepository) UpdateServer(server *Server) error {
-	return r.db.Save(server).Error
+// Update 更新 Server 记录
+func (s *Server) Update(db *gorm.DB) error {
+	if s.GameID == "" {
+		return errors.New("invalid GameID")
+	}
+	return db.Model(&Player{}).Updates(s).Error
 }
 
-// DeleteServerByGameID 根据 GameID 删除 Server 记录
-func (r *ServerRepository) DeleteServerByGameID(gameID string) error {
-	return r.db.Delete(&Server{GameID: gameID}).Error
+// DeleteByGameID 根据 GameID 删除 Server 记录
+func (s *Server) DeleteByGameID(db *gorm.DB) error {
+	if s.GameID == "" {
+		return errors.New("invalid GameID")
+	}
+	return db.Delete(&Server{GameID: s.GameID}).Error
 }
 
-// AdminRepository 定义 Admin 表的存储库
-type AdminRepository struct {
-	db *gorm.DB
+// Create 创建一个新的 Admin 记录
+func (a *Admin) Create(db *gorm.DB) error {
+	if a.QQID == 0 {
+		return errors.New("invalid QQ")
+	}
+	return db.Create(a).Error
 }
 
-// NewAdminRepository 创建 AdminRepository 实例
-func NewAdminRepository(db *gorm.DB) *AdminRepository {
-	return &AdminRepository{db: db}
-}
-
-// CreateAdmin 创建一个新的 Admin 记录
-func (r *AdminRepository) CreateAdmin(admin *Admin) error {
-	return r.db.Create(admin).Error
-}
-
-// GetAdminByQQID 根据 QQID 获取 Admin 记录
-func (r *AdminRepository) GetAdminByQQID(qqid int64) (*Admin, error) {
-	var admin Admin
-	err := r.db.First(&admin, qqid).Error
+// GetByQQID 根据 QQID 获取 Admin 记录
+func (a *Admin) GetByQQID(db *gorm.DB) (*Admin, error) {
+	if a.QQID == 0 {
+		return nil, errors.New("invalid QQ")
+	}
+	err := db.First(a, a.QQID).Error
 	if err != nil {
 		return nil, err
 	}
-	return &admin, nil
+	return a, nil
 }
 
-// UpdateAdmin 更新 Admin 记录
-func (r *AdminRepository) UpdateAdmin(admin *Admin) error {
-	return r.db.Save(admin).Error
+// Update 更新 Admin 记录
+func (a *Admin) Update(db *gorm.DB) error {
+	if a.QQID == 0 {
+		return errors.New("invalid QQ")
+	}
+	return db.Model(&Admin{}).Updates(a).Error
 }
 
-// DeleteAdminByQQID 根据 QQID 删除 Admin 记录
-func (r *AdminRepository) DeleteAdminByQQID(qqid int64) error {
-	return r.db.Delete(&Admin{QQID: qqid}).Error
+// DeleteByQQID 根据 QQID 删除 Admin 记录
+func (a *Admin) DeleteByQQID(db *gorm.DB) error {
+	if a.QQID == 0 {
+		return errors.New("invalid QQ")
+	}
+	return db.Delete(&Admin{QQID: a.QQID}).Error
 }
