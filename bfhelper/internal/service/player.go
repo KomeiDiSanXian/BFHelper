@@ -244,9 +244,8 @@ func (s *Service) GetPlayerWeapon() error {
 
 // GetPlayerVehicle 获取玩家载具信息
 func (s *Service) GetPlayerVehicle() error {
-	id := s.ctx.State["regex_matched"].([]string)[1]
 	s.ctx.Send("少女折寿中...")
-	player, err := s.getPlayer(id)
+	player, err := s.getPlayer(s.ctx.State["regex_matched"].([]string)[1])
 	if err != nil {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 数据库中没有查到该账号! 请检查是否绑定! 如需绑定请使用[.绑定 id], 中括号不需要输入"))
 		return err
@@ -301,5 +300,25 @@ func (s *Service) GetBF1OpreationPack() error {
 	msg += "行动地图：" + pack.Op1Name + " 与 " + pack.Op2Name + "\n"
 	msg += "行动简介：" + pack.Desc
 	renderer.Txt2Img(s.ctx, msg)
+	return nil
+}
+
+// GetPlayerBanInfo 获取玩家联ban信息
+func (s *Service) GetPlayerBanInfo() error {
+	s.ctx.Send("少女折寿中...")
+	id, isVaild := s.getPlayerID()
+	if !isVaild {
+		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 数据库中没有查到该账号! 请检查是否绑定! 如需绑定请使用[.绑定 id], 中括号不需要输入"))
+		return nil
+	}
+	info := bf1player.IsHacker(id)
+	var msg string
+	msg += "id: " + id + "\n"
+	msg += "EAC: " + "\n\t" + info.EAC.Status + "\n\t案件链接: " + info.EAC.URL + "\n"
+	msg += "BFBan: " + "\n\t状态: " + info.BFBan.Status + "\n\t"
+	if info.BFBan.IsCheater {
+		msg += "案件链接: " + info.BFBan.URL
+	}
+	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text(msg))
 	return nil
 }
