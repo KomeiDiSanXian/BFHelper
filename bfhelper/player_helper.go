@@ -22,4 +22,6 @@ func init() {
 	engine.Engine.OnFullMatchGroup([]string{".交换", ".exchange"}, rule.Initialized()).SetBlock(true).Handle(handler.BF1ExchangeHandler())
 	// 行动包查询
 	engine.Engine.OnFullMatchGroup([]string{".行动", ".行动包", ".pack"}, rule.Initialized()).SetBlock(true).Handle(handler.BF1OpreationPackHandler())
+	// 查询玩家是否有案件
+	engine.Engine.OnRegex(`^\. *1?cb *(.*)$`, rule.Initialized()).SetBlock(true).Handle(handler.PlayerBanInfoHandler())
 }

@@ -70,3 +70,10 @@ func BF1OpreationPackHandler() zero.Handler {
 		return svc.GetBF1OpreationPack()
 	})
 }
+
+// PlayerBanInfoHandler 获取玩家联ban信息
+func PlayerBanInfoHandler() zero.Handler {
+	return ErrorHandlerWrapper(func(svc *service.Service) error {
+		return svc.GetPlayerBanInfo()
+	})
+}
