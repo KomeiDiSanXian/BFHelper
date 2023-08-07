@@ -57,7 +57,7 @@ func (d *Dao) IsServerAdmin(groupID, qq int64) bool {
 	return model.NewGroup(groupID).IsAdmin(d.engine, qq)
 }
 
-// IsServerOwner 判断是不是服务器服主
+// IsOwner 判断是不是服务器服主
 func (d *Dao) IsOwner(groupID, qq int64) bool {
 	return model.NewGroup(groupID).IsOwner(d.engine, qq)
 }
