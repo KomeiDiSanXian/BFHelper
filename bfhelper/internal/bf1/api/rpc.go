@@ -10,6 +10,7 @@ import (
 
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq"
+	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq/bf1"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -189,6 +190,12 @@ func GetPersonalID(name string) (string, error) {
 		return "", errors.New("获取玩家pid失败")
 	}
 	return pid, err
+}
+
+// GetServerFullInfo 获取服务器完整信息
+func GetServerFullInfo(gameID string) (*gjson.Result, error) {
+	post := bf1reqbody.NewPostGetServerDetails(gameID)
+	return ReturnJSON(global.NativeAPI, http.MethodPost, post)
 }
 
 // Exception 错误码转换

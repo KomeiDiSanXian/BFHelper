@@ -12,6 +12,7 @@ import (
 
 // Server 服务器结构体
 type Server struct {
+	Name string
 	SID  string
 	GID  string
 	PGID string
