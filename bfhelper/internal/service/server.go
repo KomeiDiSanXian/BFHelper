@@ -93,15 +93,11 @@ func (s *Service) addServerProcess(gameID string, groupID int64) error {
 	return nil
 }
 
-func (s *Service) addServer(gameID string, groupID int64, wg *sync.WaitGroup, mu *sync.Mutex) error {
+func (s *Service) addServer(gameID string, groupID int64, wg *sync.WaitGroup, mu *sync.Mutex) {
 	mu.Lock()
 	defer mu.Unlock()
 	defer wg.Done()
-	if err := s.addServerProcess(gameID, groupID); err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 添加服务器 ", gameID, " 失败"))
-		return errors.Errorf("addServer %s failed: %v", gameID, err)
-	}
-	return nil
+	_ = s.addServerProcess(gameID, groupID)
 }
 
 func (s *Service) addServers(gameIDs []string, groupID int64) {
