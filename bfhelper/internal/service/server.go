@@ -53,7 +53,7 @@ func (s *Service) ChangeOwner() error {
 	o := s.ctx.State["args"].(string)
 	owner, _ := strconv.ParseInt(o, 10, 64)
 	if owner == 0 {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 更换服务器群组所属失败"))
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 未输入要更换的QQ号"))
 		return errors.New("invalid owner")
 	}
 	err := s.dao.UpdateOwner(s.ctx.Event.GroupID, owner)
@@ -90,8 +90,28 @@ func (s *Service) addServerProcess(gameID string, groupID int64) error {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 添加服务器 ", gameID, " 失败"))
 		return err
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("成功添加服务器 ", server.GID))
 	return nil
+}
+
+func (s *Service) addServer(gameID string, groupID int64, wg *sync.WaitGroup, mu *sync.Mutex) error {
+	mu.Lock()
+	defer mu.Unlock()
+	defer wg.Done()
+	if err := s.addServerProcess(gameID, groupID); err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 添加服务器 ", gameID, " 失败"))
+		return errors.Errorf("addServer %s failed: %v", gameID, err)
+	}
+	return nil
+}
+
+func (s *Service) addServers(gameIDs []string, groupID int64) {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	for _, gameID := range gameIDs {
+		wg.Add(1)
+		go s.addServer(gameID, groupID, &wg, &mu)
+	}
+	wg.Wait()
 }
 
 // AddServer 添加服务器
@@ -109,18 +129,8 @@ func (s *Service) AddServer() error {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: GameID 为空"))
 		return errors.New("invalid gameid")
 	}
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	for i := 1; i < len(strs); i++ {
-		wg.Add(1)
-		go func(gameID string) {
-			mu.Lock()
-			_ = s.addServerProcess(gameID, groupID)
-			mu.Unlock()
-			wg.Done()
-		}(strs[i])
-	}
-	wg.Wait()
+	s.addServers(strs[1:], groupID)
+	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("添加完成"))
 	return nil
 }
 
