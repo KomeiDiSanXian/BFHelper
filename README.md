@@ -47,6 +47,7 @@
 开发者**不**负责解封
 
 如果您遭到了联合封禁，本插件不提供任何有关BFEAC及BFBan解封的实际帮助
+
 请前往[BFEAC申诉](https://bfeac.com/#/about)和[BFBan申诉](mailto:ban-appeals@bfban.com)
 
 如果您因本插件未来添加的功能导致被某一服务器添加进该服Ban列，请进入该服务器的QQ群，联系管理员解封
@@ -58,7 +59,7 @@
 > 前往 [src](https://github.com/KomeiDiSanXian/BFHelper/tree/master/bfhelper) 查看更多
 
 - [ ] 举报作弊行为
-- [ ] 查询玩家是否被联合封禁 (在 [BFEAC](https://bfeac.com/#/) & [BFban](https://bfban.gametools.network/) 中查询)
+- [x] 查询玩家是否被联合封禁 (在 [BFEAC](https://bfeac.com/#/) & [BFban](https://bfban.gametools.network/) 中查询)
 
 ### 战地一 BattleField 1
 #### 玩家
