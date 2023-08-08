@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"strings"
 
 	fcext "github.com/FloatTech/floatbox/ctxext"
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
@@ -22,6 +23,9 @@ import (
 //go:embed template.yml
 var defaultConfig string
 
+//go:embed dic.json
+var traditionalChinese string
+
 func setupSetting() error {
 	setting, err := setting.NewSetting("settings", engine.Engine.DataFolder())
 	if err != nil {
@@ -34,12 +38,7 @@ func setupSetting() error {
 }
 
 func readDictionary() error {
-	f, err := os.Open(engine.Engine.DataFolder() + "dic/dic.json")
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	content, err := io.ReadAll(f)
+	content, err := io.ReadAll(strings.NewReader(traditionalChinese))
 	if err != nil {
 		return err
 	}
