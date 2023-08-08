@@ -15,7 +15,8 @@ import (
 //
 // @permission: GroupOwner
 func (s *Service) CreateGroup() error {
-	owner := s.ctx.State["args"].(int64)
+	o := s.ctx.State["args"].(string)
+	owner, _ := strconv.ParseInt(o, 10, 64)
 	create := func(o int64) error {
 		err := s.dao.CreateGroup(s.ctx.Event.GroupID, o)
 		if err != nil {
@@ -49,7 +50,8 @@ func (s *Service) DeleteGroup() error {
 //
 // @permission: ServerOwner
 func (s *Service) ChangeOwner() error {
-	owner := s.ctx.State["args"].(int64)
+	o := s.ctx.State["args"].(string)
+	owner, _ := strconv.ParseInt(o, 10, 64)
 	if owner == 0 {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 更换服务器群组所属失败"))
 		return errors.New("invalid owner")
@@ -189,7 +191,8 @@ func (s *Service) DeleteServer() error {
 //
 // @permission: ServerOwner
 func (s *Service) DeleteAdmin() error {
-	qq := s.ctx.State["args"].(int64)
+	o := s.ctx.State["args"].(string)
+	qq, _ := strconv.ParseInt(o, 10, 64)
 	if qq == 0 {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
 		return errors.New("invalid input")
