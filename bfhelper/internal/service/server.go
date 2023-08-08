@@ -109,8 +109,8 @@ func (s *Service) AddServer() error {
 	}
 	var wg sync.WaitGroup
 	for i := 1; i < len(strs); i++ {
+		wg.Add(1)
 		go func(gameID string) {
-			wg.Add(1)
 			_ = s.addServerProcess(gameID, groupID)
 			wg.Done()
 		}(strs[i])
