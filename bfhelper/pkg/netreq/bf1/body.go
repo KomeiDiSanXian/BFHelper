@@ -19,9 +19,9 @@ type Param struct {
 	Game       string   `json:"game"`
 	PersonaID  string   `json:"personaId"`
 	PersonaIds []string `json:"personaIds"`
-	GameID     string   `json:"gameID"`
-	ServerID   string   `json:"serverID"`
-	PGid       string   `json:"persistedGameID"`
+	GameID     string   `json:"gameId"`
+	ServerID   string   `json:"serverId"`
+	PGid       string   `json:"persistedGameId"`
 	LevelIndex int      `json:"levelIndex"`
 	Reason     string   `json:"reason"`
 }
