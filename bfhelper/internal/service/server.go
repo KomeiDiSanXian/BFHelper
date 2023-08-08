@@ -110,10 +110,13 @@ func (s *Service) AddServer() error {
 		return errors.New("invalid gameid")
 	}
 	var wg sync.WaitGroup
+	var mu sync.Mutex
 	for i := 1; i < len(strs); i++ {
 		wg.Add(1)
 		go func(gameID string) {
+			mu.Lock()
 			_ = s.addServerProcess(gameID, groupID)
+			mu.Unlock()
 			wg.Done()
 		}(strs[i])
 	}
