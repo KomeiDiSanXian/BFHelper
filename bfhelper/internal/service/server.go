@@ -1,15 +1,22 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
 
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
 	bf1server "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/server"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/model"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/textutil"
 	"github.com/pkg/errors"
 	"github.com/wdvxdr1123/ZeroBot/message"
 )
+
+type server struct {
+	name, gameID, serverID, pgid string
+}
 
 // CreateGroup 所在群创建一个服务器群组
 //
@@ -65,18 +72,18 @@ func (s *Service) ChangeOwner() error {
 	return nil
 }
 
-func (s *Service) getServer(gameID string) (*bf1server.Server, error) {
+func (s *Service) getServer(gameID string) (*server, error) {
 	result, err := bf1api.GetServerFullInfo(gameID)
 	if err != nil {
 		return nil, err
 	}
-	server := bf1server.NewServer(
-		result.Get("result.rspInfo.server.serverId").Str,
-		result.Get("result.serverInfo.gameId").Str,
-		result.Get("result.serverInfo.guid").Str,
-	)
-	server.Name = result.Get("result.serverInfo.name").Str
-	return server, nil
+	srv := server{
+		serverID: result.Get("result.rspInfo.server.serverId").Str,
+		gameID:   result.Get("result.serverInfo.gameId").Str,
+		pgid:     result.Get("result.serverInfo.guid").Str,
+	}
+	srv.name = result.Get("result.serverInfo.name").Str
+	return &srv, nil
 }
 
 func (s *Service) addServerProcess(gameID string, groupID int64) error {
@@ -85,7 +92,7 @@ func (s *Service) addServerProcess(gameID string, groupID int64) error {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 添加服务器 ", gameID, " 失败"))
 		return err
 	}
-	err = s.dao.AddGroupServer(groupID, server.GID, server.SID, server.PGID, server.Name)
+	err = s.dao.AddGroupServer(groupID, server.gameID, server.serverID, server.pgid, server.name)
 	if err != nil {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 添加服务器 ", gameID, " 失败"))
 		return err
@@ -212,5 +219,110 @@ func (s *Service) DeleteAdmin() error {
 		return err
 	}
 	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("删除成功"))
+	return nil
+}
+
+func (s *Service) kickProcess(server model.Server, pid, reason string, msgChan chan string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	name := server.NameInGroup
+	if name == "" {
+		name = server.ServerName
+	}
+	returned, err := bf1server.Kick(server.GameID, pid, reason)
+	if err != nil {
+		msgChan <- fmt.Sprintf("ERROR: 在 %s%s\n", name, " 踢出失败")
+	} else {
+		msgChan <- fmt.Sprintf("在 %s%s%s\n", name, " 踢出成功: ", returned)
+	}
+}
+
+func (s *Service) kick(pid string, reason string, group *model.Group) {
+	var wg sync.WaitGroup
+	var tosend string
+	msgChan := make(chan string, len(group.Servers))
+	for _, server := range group.Servers {
+		wg.Add(1)
+		go s.kickProcess(server, pid, reason, msgChan, &wg)
+	}
+	wg.Wait()
+	for msg := range msgChan {
+		tosend += msg
+	}
+	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text(tosend))
+}
+
+// KickPlayer 在绑定的服务器里踢出玩家
+//
+// @permission: ServerAdmin
+func (s *Service) KickPlayer() error {
+	cmdString := s.ctx.State["args"].(string)
+	if cmdString == "" {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errors.New("invalid input")
+	}
+	cmds := strings.Split(cmdString, " ")
+	group, err := s.dao.GetGroup(s.ctx.Event.GroupID)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 获取绑定服务器失败"))
+		return err
+	}
+	player := cmds[0]
+	reason := "Admin kick"
+	if len(cmds) >= 2 {
+		reason = cmds[1]
+	}
+	reason = textutil.Traditionalize(reason)
+	if cleaned, has := textutil.CleanPersonalID(player); has {
+		s.kick(cleaned, reason, group)
+		return nil
+	}
+	pl, err := s.getPlayer(player)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 踢出失败: 未查询到目标玩家pid"))
+		return err
+	}
+	s.kick(pl.PersonalID, reason, group)
+	return nil
+}
+
+// BanPlayer 指定一个已绑定的服务器中封禁玩家
+//
+// @permission: ServerAdmin
+func (s *Service) BanPlayer() error {
+	cmdString := s.ctx.State["args"].(string)
+	if cmdString == "" {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errors.New("invalid input")
+	}
+	cmds := strings.Split(cmdString, " ")
+	if len(cmds) != 2 {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 不能识别的输入"))
+		return errors.New("invalid input")
+	}
+	srvName, player := cmds[0], cmds[1]
+	srv, err := s.dao.GetServerByAlias(s.ctx.Event.GroupID, srvName)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 查询服务器失败"))
+		return err
+	}
+	if cleaned, has := textutil.CleanPersonalID(player); has {
+		err := bf1server.Ban(srv.ServerID, cleaned)
+		if err != nil {
+			s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 封禁失败"))
+			return err
+		}
+		return nil
+	}
+	pl, err := s.getPlayer(player)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 踢出失败: 未查询到目标玩家pid"))
+		return err
+	}
+	err = bf1server.Ban(srv.ServerID, pl.PersonalID)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 封禁失败"))
+		return err
+	}
+	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("封禁", pl.DisplayName, "成功"))
 	return nil
 }
