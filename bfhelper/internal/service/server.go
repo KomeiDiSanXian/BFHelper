@@ -285,10 +285,8 @@ func (s *Service) KickPlayer() error {
 	return nil
 }
 
-// BanPlayer 指定一个已绑定的服务器中封禁玩家
-//
-// @permission: ServerAdmin
-func (s *Service) BanPlayer() error {
+// 单服务器封禁/解封
+func (s *Service) banFunc(banfunc func(sid string, pid string) error) error {
 	cmdString := s.ctx.State["args"].(string)
 	if cmdString == "" {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
@@ -306,23 +304,101 @@ func (s *Service) BanPlayer() error {
 		return err
 	}
 	if cleaned, has := textutil.CleanPersonalID(player); has {
-		err := bf1server.Ban(srv.ServerID, cleaned)
+		err := banfunc(srv.ServerID, cleaned)
 		if err != nil {
-			s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 封禁失败"))
+			s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 失败"))
 			return err
 		}
 		return nil
 	}
 	pl, err := s.getPlayer(player)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 踢出失败: 未查询到目标玩家pid"))
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 未查询到目标玩家pid"))
 		return err
 	}
-	err = bf1server.Ban(srv.ServerID, pl.PersonalID)
+	err = banfunc(srv.ServerID, pl.PersonalID)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 封禁失败"))
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 失败"))
 		return err
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("封禁", pl.DisplayName, "成功"))
+	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("操作", pl.DisplayName, "成功"))
 	return nil
 }
+
+// 多服务器封禁/解封
+func (s *Service) bansFunc(banfunc func(sid string, pid string) error) error {
+	playerName := s.ctx.State["args"].(string)
+	if playerName == "" {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errors.New("invalid input")
+	}
+	player, err := s.getPlayer(playerName)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 未查询到目标玩家pid"))
+		return err
+	}
+	group, err := s.dao.GetGroup(s.ctx.Event.GroupID)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 获取绑定服务器失败"))
+		return err
+	}
+
+	var wg sync.WaitGroup
+	var tosend string
+	msgChan := make(chan string, len(group.Servers))
+	for _, server := range group.Servers {
+		wg.Add(1)
+		go s.bansProcess(&server, player, msgChan, &wg, banfunc)
+	}
+	wg.Wait()
+	for msg := range msgChan {
+		tosend += msg
+	}
+	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text(tosend))
+	return nil
+}
+
+func (s *Service) bansProcess(srv *model.Server, player *model.Player, msgChan chan string, wg *sync.WaitGroup, banfunc func(sid string, pid string) error) {
+	defer wg.Done()
+	srvName := srv.NameInGroup
+	if srvName == "" {
+		srvName = srv.ServerName
+	}
+	err := banfunc(srv.ServerID, player.PersonalID)
+	if err != nil {
+		msgChan <- fmt.Sprintf("ERROR: 在 %s%s\n", srvName, " 操作失败")
+		return
+	}
+	msgChan <- fmt.Sprintf("在 %s%s\n", srvName, " 操作成功")
+}
+
+// BanPlayer 指定一个已绑定的服务器中封禁玩家
+//
+// @permission: ServerAdmin
+// TODO: 添加 vban
+func (s *Service) BanPlayer() error {
+	return s.banFunc(bf1server.Ban)
+}
+
+// UnbanPlayer 指定一个已绑定的服务器中解封玩家
+//
+// @permission: ServerAdmin
+func (s *Service) UnbanPlayer() error {
+	return s.banFunc(bf1server.Unban)
+}
+
+// BanPlayerAtAllServer 在所有已绑定的服务器里封禁玩家
+//
+// @permission: ServerAdmin
+func (s *Service) BanPlayerAtAllServer() error {
+	return s.bansFunc(bf1server.Ban)
+}
+
+// UnbanPlayerAtAllServer 在所有已绑定的服务器里封禁玩家
+//
+// @permission: ServerAdmin
+func (s *Service) UnbanPlayerAtAllServer() error {
+	return s.bansFunc(bf1server.Unban)
+}
+
+
