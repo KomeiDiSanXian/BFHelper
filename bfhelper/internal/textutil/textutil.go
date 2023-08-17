@@ -33,4 +33,3 @@ func CleanPersonalID(input string) (cleaned string, hasHash bool) {
 	}
 	return input, false
 }
-
