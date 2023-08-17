@@ -5,12 +5,15 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
 	bf1server "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/server"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/textutil"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/renderer"
 	"github.com/pkg/errors"
+	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
 )
 
@@ -401,4 +404,100 @@ func (s *Service) UnbanPlayerAtAllServer() error {
 	return s.bansFunc(bf1server.Unban)
 }
 
+func (s *Service) sendMaps(maptxt string, next *zero.FutureEvent, srv *model.Server, maps []*bf1server.Map) error {
+	renderer.Txt2Img(s.ctx, maptxt)
+	recv, cancle := next.Repeat()
+	defer cancle()
+	tick := time.NewTimer(time.Minute)
+	for {
+		select {
+		case <-tick.C:
+			s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 等待回复超时"))
+			return nil
+		case c := <-recv:
+			index, _ := strconv.Atoi(c.Event.Message.String())
+			if index > len(maps) || index < 0 {
+				s.ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("ERROR: 无效的地图序号,取值范围为 0-", len(maps)))
+				return nil
+			}
+			err := bf1server.ChangeMap(srv.PGID, index)
+			if err != nil {
+				s.ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("ERROR: 切图失败"))
+				return err
+			}
+			return nil
+		}
+	}
+}
 
+// ChangeMap 切换指定服务器的地图
+//
+// @permission: ServerAdmin
+func (s *Service) ChangeMap() error {
+	cmdString := s.ctx.State["args"].(string)
+	if cmdString == "" {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errors.New("invalid input")
+	}
+	cmds := strings.Split(cmdString, " ")
+	srvName := cmds[0]
+	srv, err := s.dao.GetServerByAlias(s.ctx.Event.GroupID, srvName)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 找不到别名为 ", srvName, " 的服务器"))
+		return err
+	}
+	maps, err := bf1server.GetMapSlice(srv.GameID)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 获取地图池失败"))
+		return err
+	}
+
+	maptxt := fmt.Sprint("请在一分钟内选择一个序号来回复\n------\n\t地图序号\t|\t地图名\t|\t模式\n")
+	for i, m := range maps {
+		maptxt += fmt.Sprintf("\t%d\t|\t%s\t|\t%s\n", i, m.Name, m.Mode)
+	}
+
+	next := zero.NewFutureEvent("message", 999, false, zero.RegexRule(`^\d{1,2}$`), zero.OnlyGroup, s.ctx.CheckSession())
+	if len(cmds) == 1 {
+		return s.sendMaps(maptxt, next, srv, maps)
+	}
+
+	index, _ := strconv.Atoi(cmds[1])
+	if index > len(maps) || index < 0 {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 无效的地图序号,取值范围为 0-", len(maps)))
+		return nil
+	}
+	err = bf1server.ChangeMap(srv.PGID, index)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 切图失败"))
+		return err
+	}
+	return nil
+}
+
+// GetMap 查看地图池
+//
+// @permission: Everyone
+func (s *Service) GetMap() error {
+	srvName := s.ctx.State["args"].(string)
+	if srvName == "" {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errors.New("invalid input")
+	}
+	srv, err := s.dao.GetServerByAlias(s.ctx.Event.GroupID, srvName)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 找不到别名为 ", srvName, " 的服务器"))
+		return err
+	}
+	maps, err := bf1server.GetMapSlice(srv.GameID)
+	if err != nil {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 获取地图池失败"))
+		return err
+	}
+	maptxt := fmt.Sprint("\t地图序号\t|\t地图名\t|\t模式\n")
+	for i, m := range maps {
+		maptxt += fmt.Sprintf("\t%d\t|\t%s\t|\t%s\n", i, m.Name, m.Mode)
+	}
+	renderer.Txt2Img(s.ctx, maptxt)
+	return nil
+}
