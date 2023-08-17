@@ -452,7 +452,7 @@ func (s *Service) ChangeMap() error {
 		return err
 	}
 
-	maptxt := fmt.Sprint("请在一分钟内选择一个序号来回复\n------\n\t地图序号\t|\t地图名\t|\t模式\n")
+	maptxt := "请在一分钟内选择一个序号来回复\n------\n\t地图序号\t|\t地图名\t|\t模式\n"
 	for i, m := range maps {
 		maptxt += fmt.Sprintf("\t%d\t|\t%s\t|\t%s\n", i, m.Name, m.Mode)
 	}
@@ -494,7 +494,7 @@ func (s *Service) GetMap() error {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 获取地图池失败"))
 		return err
 	}
-	maptxt := fmt.Sprint("\t地图序号\t|\t地图名\t|\t模式\n")
+	maptxt := "\t地图序号\t|\t地图名\t|\t模式\n"
 	for i, m := range maps {
 		maptxt += fmt.Sprintf("\t%d\t|\t%s\t|\t%s\n", i, m.Name, m.Mode)
 	}
