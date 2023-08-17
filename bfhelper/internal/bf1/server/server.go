@@ -13,8 +13,8 @@ import (
 
 // Map 服务器地图
 type Map struct {
-	Name   string
-	Mode   string
+	Name string
+	Mode string
 }
 
 // Kick player, reason needs BIG5, return reason and err
