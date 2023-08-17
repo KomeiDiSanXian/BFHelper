@@ -19,4 +19,12 @@ func init() {
 	engine.Engine.OnPrefix(".设置别名", zero.OnlyGroup, rule.Initialized(), rule.ServerAdminPermission()).SetBlock(true).Handle(handler.SetServerAliasHandler())
 	engine.Engine.OnPrefix(".解绑服务器", zero.OnlyGroup, rule.Initialized(), rule.ServerOwnerPermission()).SetBlock(true).Handle(handler.DeleteServerHandler())
 	engine.Engine.OnPrefix(".删除管理", zero.OnlyGroup, rule.Initialized(), rule.ServerOwnerPermission()).SetBlock(true).Handle(handler.DeleteAdminHandler())
+
+	engine.Engine.OnPrefixGroup([]string{".踢出", ".kick", ".k"}, zero.OnlyGroup, rule.Initialized(), rule.ServerAdminPermission()).SetBlock(true).Handle(handler.KickPlayerHandler())
+	engine.Engine.OnPrefixGroup([]string{".封禁", ".b"}, zero.OnlyGroup, rule.Initialized(), rule.ServerAdminPermission()).SetBlock(true).Handle(handler.BanPlayerHandler())
+	engine.Engine.OnPrefixGroup([]string{".解封", ".ub"}, zero.OnlyGroup, rule.Initialized(), rule.ServerAdminPermission()).SetBlock(true).Handle(handler.UnbanPlayerHandler())
+	engine.Engine.OnPrefixGroup([]string{".全封", ".bana"}, zero.OnlyGroup, rule.Initialized(), rule.ServerAdminPermission()).SetBlock(true).Handle(handler.BanPlayerAtAllServerHandler())
+	engine.Engine.OnPrefixGroup([]string{".全解", ".ubana"}, zero.OnlyGroup, rule.Initialized(), rule.ServerAdminPermission()).SetBlock(true).Handle(handler.UnbanPlayerAtAllServerHandler())
+	engine.Engine.OnPrefixGroup([]string{".切图", ".cm"}, zero.OnlyGroup, rule.Initialized(), rule.ServerAdminPermission()).SetBlock(true).Handle(handler.ChangeMapHandler())
+	engine.Engine.OnPrefixGroup([]string{".查图", ".qm"}, zero.OnlyGroup, rule.Initialized(), rule.ServerAdminPermission()).SetBlock(true).Handle(handler.ReadMapsHandler())
 }
