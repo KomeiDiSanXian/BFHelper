@@ -7,7 +7,7 @@ require (
 	github.com/FloatTech/zbputils v1.6.2-0.20230411114057-4c71136244b2
 	github.com/jinzhu/gorm v1.9.16
 	github.com/sirupsen/logrus v1.9.3
-	github.com/tidwall/gjson v1.15.0
+	github.com/tidwall/gjson v1.16.0
 	github.com/wdvxdr1123/ZeroBot v1.7.4
 )
 
@@ -28,7 +28,7 @@ require (
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/subosito/gotenv v1.4.2 // indirect
+	github.com/subosito/gotenv v1.6.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
@@ -37,7 +37,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
-	golang.org/x/sys v0.10.0
+	golang.org/x/sys v0.11.0
 )
 
 require (
@@ -64,12 +64,12 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/spf13/viper v1.16.0
-	golang.org/x/image v0.9.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/image v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	modernc.org/libc v1.24.1 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
-	modernc.org/memory v1.6.0 // indirect
-	modernc.org/sqlite v1.24.0 // indirect
+	modernc.org/memory v1.7.0 // indirect
+	modernc.org/sqlite v1.25.0 // indirect
 
 )
 
