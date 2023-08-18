@@ -248,6 +248,7 @@ func (s *Service) kick(pid string, reason string, group *model.Group) {
 		go s.kickProcess(server, pid, reason, msgChan, &wg)
 	}
 	wg.Wait()
+	close(msgChan)
 	for msg := range msgChan {
 		tosend += msg
 	}
@@ -354,6 +355,7 @@ func (s *Service) bansFunc(banfunc func(sid string, pid string) error) error {
 		go s.bansProcess(&server, player, msgChan, &wg, banfunc)
 	}
 	wg.Wait()
+	close(msgChan)
 	for msg := range msgChan {
 		tosend += msg
 	}
@@ -416,8 +418,8 @@ func (s *Service) sendMaps(maptxt string, next *zero.FutureEvent, srv *model.Ser
 			return nil
 		case c := <-recv:
 			index, _ := strconv.Atoi(c.Event.Message.String())
-			if index > len(maps) || index < 0 {
-				s.ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("ERROR: 无效的地图序号,取值范围为 0-", len(maps)))
+			if index >= len(maps) || index < 0 {
+				s.ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("ERROR: 无效的地图序号,取值范围为 0-", len(maps)-1))
 				return nil
 			}
 			err := bf1server.ChangeMap(srv.PGID, index)
@@ -425,6 +427,7 @@ func (s *Service) sendMaps(maptxt string, next *zero.FutureEvent, srv *model.Ser
 				s.ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("ERROR: 切图失败"))
 				return err
 			}
+			s.ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("已切到 ", maps[index].Name, "(", maps[index].Mode, ")"))
 			return nil
 		}
 	}
@@ -452,9 +455,9 @@ func (s *Service) ChangeMap() error {
 		return err
 	}
 
-	maptxt := "请在一分钟内选择一个序号来回复\n------\n\t地图序号\t|\t地图名\t|\t模式\n"
+	maptxt := "请在一分钟内选择一个序号来回复\n------\n图池序号和模式\n"
 	for i, m := range maps {
-		maptxt += fmt.Sprintf("\t%d\t|\t%s\t|\t%s\n", i, m.Name, m.Mode)
+		maptxt += fmt.Sprintf("\t%2d %s(%s)\n", i, m.Name, m.Mode)
 	}
 
 	next := zero.NewFutureEvent("message", 999, false, zero.RegexRule(`^\d{1,2}$`), zero.OnlyGroup, s.ctx.CheckSession())
@@ -463,8 +466,8 @@ func (s *Service) ChangeMap() error {
 	}
 
 	index, _ := strconv.Atoi(cmds[1])
-	if index > len(maps) || index < 0 {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 无效的地图序号,取值范围为 0-", len(maps)))
+	if index >= len(maps) || index < 0 {
+		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 无效的地图序号,取值范围为 0-", len(maps)-1))
 		return nil
 	}
 	err = bf1server.ChangeMap(srv.PGID, index)
@@ -472,6 +475,7 @@ func (s *Service) ChangeMap() error {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 切图失败"))
 		return err
 	}
+	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("已切到 ", maps[index].Name, "(", maps[index].Mode, ")"))
 	return nil
 }
 
@@ -494,9 +498,9 @@ func (s *Service) GetMap() error {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 获取地图池失败"))
 		return err
 	}
-	maptxt := "\t地图序号\t|\t地图名\t|\t模式\n"
+	maptxt := "图池序号和模式\n" 
 	for i, m := range maps {
-		maptxt += fmt.Sprintf("\t%d\t|\t%s\t|\t%s\n", i, m.Name, m.Mode)
+		maptxt += fmt.Sprintf("\t%2d %s(%s)\n", i, m.Name, m.Mode)
 	}
 	renderer.Txt2Img(s.ctx, maptxt)
 	return nil
