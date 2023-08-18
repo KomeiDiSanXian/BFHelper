@@ -12,6 +12,7 @@ require (
 )
 
 require (
+	github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fumiama/jieba v0.0.0-20221203025406-36c17a10b565 // indirect
 	github.com/mattn/go-sqlite3 v1.14.17 // indirect
@@ -36,7 +37,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
-	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/sys v0.10.0
 )
 
 require (
