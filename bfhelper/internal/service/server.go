@@ -498,7 +498,7 @@ func (s *Service) GetMap() error {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 获取地图池失败"))
 		return err
 	}
-	maptxt := "图池序号和模式\n" 
+	maptxt := "图池序号和模式\n"
 	for i, m := range maps {
 		maptxt += fmt.Sprintf("\t%2d %s(%s)\n", i, m.Name, m.Mode)
 	}
