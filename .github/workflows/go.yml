@@ -3,12 +3,7 @@
 
 name: Bulid
 
-on:
-  push:
-    branches: [ "bot" ]
-  pull_request:
-    branches: [ "bot" ]
-
+on: [push, pull_request,workflow_dispatch]
 env: 
   BINARY_PREFIX: "BFHelper"
   BINARY_SUFFIX: ""
@@ -16,7 +11,7 @@ env:
 
 jobs:
   build:
-    name: Prepare to build
+    name: Build
     runs-on: ubuntu-latest
     strategy:
       matrix:
