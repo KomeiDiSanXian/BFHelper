@@ -13,7 +13,7 @@ const (
 	AddBan        string = "RSP.addServerBan"                   // AddBan 			单服务器添加玩家进入ban列
 	RemoveBan     string = "RSP.removeServerBan"                // RemoveBan 		单服务器ban列移除玩家
 	Kick          string = "RSP.kickPlayer"                     // Kick 			单服务器踢出玩家
-	ChooseMap     string = "RSP.chooseLeve"                     // ChooseMap 		单服务器切换地图
+	ChooseMap     string = "RSP.chooseLevel"                    // ChooseMap 		单服务器切换地图
 	ServerDetails string = "GameServer.getFullServerDetails"    // ServerDetails 	单服务器完整信息查询
 	Stats         string = "Stats.detailedStatsByPersonaId"     // Stats 			单玩家战绩获取
 	Weapons       string = "Progression.getWeaponsByPersonaId"  // Weapons 			单玩家武器获取
