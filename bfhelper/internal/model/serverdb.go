@@ -71,6 +71,23 @@ func (g *Group) GetByID(db *gorm.DB) (*Group, error) {
 	return g, nil
 }
 
+// GetByAlias 根据别名获取 Server 记录
+func (g *Group) GetByAlias(db *gorm.DB, alias string) (*Server, error) {
+	if g.GroupID == 0 {
+		return nil, errors.New("invalid Group ID")
+	}
+	err := db.Preload("Servers").Preload("Admins").First(&g).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, srv := range g.Servers {
+		if srv.NameInGroup == alias {
+			return &srv, nil
+		}
+	}
+	return nil, errors.New("not found server")
+}
+
 // Update 更新 Group 记录
 //
 // 注意不能修改为各类型零值

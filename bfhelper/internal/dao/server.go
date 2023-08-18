@@ -66,3 +66,13 @@ func (d *Dao) IsServerAdmin(groupID, qq int64) bool {
 func (d *Dao) IsOwner(groupID, qq int64) bool {
 	return model.NewGroup(groupID).IsOwner(d.engine, qq)
 }
+
+// GetGroup 获取群组
+func (d *Dao) GetGroup(groupID int64) (*model.Group, error) {
+	return model.NewGroup(groupID).GetByID(d.engine)
+}
+
+// GetServerByAlias 通过别名获取服务器信息
+func (d *Dao) GetServerByAlias(groupID int64, alias string) (*model.Server, error) {
+	return model.NewGroup(groupID).GetByAlias(d.engine, alias)
+}

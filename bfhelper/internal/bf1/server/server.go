@@ -8,40 +8,22 @@ import (
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq/bf1"
+	"github.com/tidwall/gjson"
 )
 
-// Server 服务器结构体
-type Server struct {
+// Map 服务器地图
+type Map struct {
 	Name string
-	SID  string
-	GID  string
-	PGID string
-}
-
-type m struct {
-	MapName  string
-	ModeName string
-}
-
-// Maps 地图切片
-type Maps []m
-
-// NewServer 服务器
-func NewServer(sid, gid, pgid string) *Server {
-	return &Server{
-		SID:  sid,
-		GID:  gid,
-		PGID: pgid,
-	}
+	Mode string
 }
 
 // Kick player, reason needs BIG5, return reason and err
-func (s *Server) Kick(pid, reason string) (string, error) {
+func Kick(gameID, pid, reason string) (string, error) {
 	reason = fmt.Sprintf("%s%s", "Remi:", reason)
 	if len(reason) > 32 {
 		return "", errors.New("理由过长")
 	}
-	post := bf1reqbody.NewPostKick(pid, s.GID, reason)
+	post := bf1reqbody.NewPostKick(pid, gameID, reason)
 	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return "", err
@@ -50,8 +32,8 @@ func (s *Server) Kick(pid, reason string) (string, error) {
 }
 
 // Ban player, check returned id
-func (s *Server) Ban(pid string) error {
-	post := bf1reqbody.NewPostBan(pid, s.SID)
+func Ban(serverID, pid string) error {
+	post := bf1reqbody.NewPostBan(pid, serverID)
 	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return err
@@ -63,8 +45,8 @@ func (s *Server) Ban(pid string) error {
 }
 
 // Unban player
-func (s *Server) Unban(pid string) error {
-	post := bf1reqbody.NewPostRemoveBan(pid, s.SID)
+func Unban(serverID, pid string) error {
+	post := bf1reqbody.NewPostRemoveBan(pid, serverID)
 	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return err
@@ -76,8 +58,8 @@ func (s *Server) Unban(pid string) error {
 }
 
 // ChangeMap will change the map for players
-func (s *Server) ChangeMap(index int) error {
-	post := bf1reqbody.NewPostChangeMap(s.PGID, index)
+func ChangeMap(pgid string, index int) error {
+	post := bf1reqbody.NewPostChangeMap(pgid, index)
 	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return err
@@ -88,9 +70,8 @@ func (s *Server) ChangeMap(index int) error {
 	return nil
 }
 
-// GetMaps returns maps
-func (s *Server) GetMaps() (*Maps, error) {
-	post := bf1reqbody.NewPostGetServerInfo(s.GID)
+func mapRequest(gameID string) ([]gjson.Result, error) {
+	post := bf1reqbody.NewPostGetServerInfo(gameID)
 	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
 	if err != nil {
 		return nil, err
@@ -102,34 +83,20 @@ func (s *Server) GetMaps() (*Maps, error) {
 	if result == nil {
 		return nil, errors.New("获取到的地图池为空")
 	}
-	mp := make(Maps, len(result))
-	for i, v := range result {
-		mp[i] = m{MapName: v.Get("mapPrettyName").Str, ModeName: v.Get("modePrettyName").Str}
-	}
-	return &mp, nil
+	return result, nil
 }
 
-// GetAdminspid returns pids of admins
-func (s *Server) GetAdminspid() ([]string, error) {
-	post := bf1reqbody.NewPostRSPInfo(s.SID)
-	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
+// GetMapSlice returns map slice
+func GetMapSlice(gameID string) ([]*Map, error) {
+	result, err := mapRequest(gameID)
 	if err != nil {
 		return nil, err
 	}
-	result := data.Get("result.adminList.#.personaId").Array()
-	result = append(result, data.Get("result.owner.personaId"))
-	strs := make([]string, len(result))
-	for i, v := range result {
-		strs[i] = v.Str
-	}
-	return strs, bf1api.Exception(data.Get("error.code").Int())
-}
 
-// input keywords for map id
-/* not compiled
-func (s *Server) GetMapidByKeywords(keyword string) (int, error) {
-	switch keyword{
-		case
+	mp := make([]*Map, 0, len(result))
+	for _, v := range result {
+		m := &Map{Name: v.Get("mapPrettyName").Str, Mode: v.Get("modePrettyName").Str}
+		mp = append(mp, m)
 	}
+	return mp, nil
 }
-*/

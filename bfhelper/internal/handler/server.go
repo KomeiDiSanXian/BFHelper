@@ -60,3 +60,52 @@ func DeleteAdminHandler() zero.Handler {
 		return svc.DeleteAdmin()
 	})
 }
+
+// KickPlayerHandler 踢出玩家处理
+func KickPlayerHandler() zero.Handler {
+	return ErrorHandlerWrapper(func(svc *service.Service) error {
+		return svc.KickPlayer()
+	})
+}
+
+// BanPlayerHandler 单服务器封禁玩家处理
+func BanPlayerHandler() zero.Handler {
+	return ErrorHandlerWrapper(func(svc *service.Service) error {
+		return svc.BanPlayer()
+	})
+}
+
+// BanPlayerAtAllServerHandler 已绑定服务器封禁玩家
+func BanPlayerAtAllServerHandler() zero.Handler {
+	return ErrorHandlerWrapper(func(svc *service.Service) error {
+		return svc.BanPlayerAtAllServer()
+	})
+}
+
+// UnbanPlayerHandler 单服务器解封玩家处理
+func UnbanPlayerHandler() zero.Handler {
+	return ErrorHandlerWrapper(func(svc *service.Service) error {
+		return svc.UnbanPlayer()
+	})
+}
+
+// UnbanPlayerAtAllServerHandler 已绑定服务器解封玩家
+func UnbanPlayerAtAllServerHandler() zero.Handler {
+	return ErrorHandlerWrapper(func(svc *service.Service) error {
+		return svc.UnbanPlayerAtAllServer()
+	})
+}
+
+// ChangeMapHandler 切换地图处理
+func ChangeMapHandler() zero.Handler {
+	return ErrorHandlerWrapper(func(svc *service.Service) error {
+		return svc.ChangeMap()
+	})
+}
+
+// ReadMapsHandler 查看地图池处理函数
+func ReadMapsHandler() zero.Handler {
+	return ErrorHandlerWrapper(func(svc *service.Service) error {
+		return svc.GetMap()
+	})
+}
