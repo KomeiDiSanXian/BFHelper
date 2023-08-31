@@ -8,6 +8,7 @@ import (
 
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
 	bf1player "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/player"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/errcode"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/renderer"
@@ -26,35 +27,35 @@ func (s *Service) BindAccount() error {
 		err = s.dao.CreatePlayer(s.ctx.Event.UserID, id)
 		if err != nil {
 			s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("绑定失败, ERR: 数据库错误"))
-			return err
+			return errcode.DataBaseCreateError
 		}
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("绑定成功"))
-		return nil
+		return errcode.Success
 	}
 	if err != nil {
-		return err
+		return errcode.DataBaseReadError.WithDetails("Error",err).WithZeroContext(s.ctx)
 	}
 	// 绑定的是旧id
 	if id == player.DisplayName {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("笨蛋! 你现在绑的就是这个id"))
-		return nil
+		return errcode.Canceled
 	}
 	s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("将原绑定id为 ", player.DisplayName, " 改绑为 ", id))
 	err = s.dao.UpdatePlayer(s.ctx.Event.UserID, "", id)
 	if err != nil {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("绑定失败, ERR: 数据库错误"))
-		return err
+		return errcode.DataBaseUpdateError
 	}
 	s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("绑定 ", id, " 成功"))
 	pid, err := bf1api.GetPersonalID(id)
 	if err != nil {
-		return err
+		return errcode.NetworkError.WithDetails("bf1api.GetPersonalID", err).WithZeroContext(s.ctx)
 	}
 	err = s.dao.UpdatePlayer(s.ctx.Event.UserID, pid, "")
 	if err != nil {
-		return err
+		return errcode.DataBaseUpdateError
 	}
-	return nil
+	return errcode.Success
 }
 
 func (s *Service) getPlayerID() (string, bool) {
@@ -100,12 +101,12 @@ func (s *Service) sendWeaponInfo(id, class string) error {
 	player, err := s.getPlayer(id)
 	if err != nil {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 数据库中没有查到该账号! 请检查是否绑定! 如需绑定请使用[.绑定 id], 中括号不需要输入"))
-		return err
+		return errcode.NotFoundError.WithDetails("s.getPlayer", err).WithZeroContext(s.ctx)
 	}
 	weapons, err := bf1player.GetWeapons(player.PersonalID, class)
 	if err != nil {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 获取武器失败"))
-		return err
+		return errcode.NetworkError.WithDetails("bf1player.GetWeapons", err).WithZeroContext(s.ctx)
 	}
 	txt := "id：" + player.DisplayName + "\n"
 	wp := ([]bf1player.Weapons)(*weapons)
@@ -121,7 +122,7 @@ func (s *Service) sendWeaponInfo(id, class string) error {
 		)
 	}
 	renderer.Txt2Img(s.ctx, txt)
-	return nil
+	return errcode.Success
 }
 
 // GetPlayerRecent 获取玩家最近游玩
@@ -129,13 +130,13 @@ func (s *Service) GetPlayerRecent() error {
 	id, isVaild := s.getPlayerID()
 	if !isVaild {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 数据库中没有查到该账号! 请检查是否绑定! 如需绑定请使用[.绑定 id], 中括号不需要输入"))
-		return nil
+		return errcode.NotFoundError
 	}
 	s.ctx.Send("少女折寿中...")
 	recent, err := bf1player.GetBF1Recent(id)
 	if err != nil {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 获取最近战绩失败"))
-		return err
+		return errcode.NetworkError.WithDetails("bf1player.GetBF1Recent", err).WithZeroContext(s.ctx)
 	}
 	// 发送最近战绩
 	// TODO: 修改为卡片发送
@@ -149,7 +150,7 @@ func (s *Service) GetPlayerRecent() error {
 		msg += "\n---------------\n"
 	}
 	renderer.Txt2Img(s.ctx, msg)
-	return nil
+	return errcode.Success
 }
 
 // GetPlayerStats 获取玩家战绩
@@ -157,17 +158,17 @@ func (s *Service) GetPlayerStats() error {
 	id, isVaild := s.getPlayerID()
 	if !isVaild {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 数据库中没有查到该账号! 请检查是否绑定! 如需绑定请使用[.绑定 id], 中括号不需要输入"))
-		return nil
+		return errcode.NotFoundError
 	}
 	s.ctx.Send("少女折寿中...")
 	stat, err := bf1player.GetStats(id)
 	if err != nil {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 获取玩家战绩失败, 请自行检查id是否正确"))
-		return err
+		return errcode.NetworkError.WithDetails("bf1player.GetStats", err).WithZeroContext(s.ctx)
 	}
 	if stat.Rank == "" {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("获取到的部分数据为空，请检查id是否有效"))
-		return errors.Errorf("%s stat.Rank is blank", id)
+		return errcode.InternalError.WithDetails("Unexpected", errors.Errorf("%s stat.Rank is blank", id))
 	}
 	// 发送战绩
 	// TODO: 修改为卡片发送, 部分数据不准确，等待更改
@@ -193,7 +194,7 @@ func (s *Service) GetPlayerStats() error {
 		"作为神医拉起了 " + stat.Revives + " 人" + "\n" +
 		"开棺材车创死了 " + stat.CarriersKills + " 人"
 	renderer.Txt2Img(s.ctx, txt)
-	return nil
+	return errcode.Success
 }
 
 // GetPlayerWeapon 获取玩家武器
@@ -238,7 +239,7 @@ func (s *Service) GetPlayerWeapon() error {
 			return s.sendWeaponInfo(id, bf1player.ALL)
 		}
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 获取玩家武器失败, 不能识别的输入格式"))
-		return nil
+		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
 	}
 }
 
@@ -248,12 +249,12 @@ func (s *Service) GetPlayerVehicle() error {
 	player, err := s.getPlayer(s.ctx.State["regex_matched"].([]string)[1])
 	if err != nil {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 数据库中没有查到该账号! 请检查是否绑定! 如需绑定请使用[.绑定 id], 中括号不需要输入"))
-		return err
+		return errcode.NotFoundError
 	}
 	car, err := bf1player.GetVehicles(player.PersonalID)
 	if err != nil {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 获取玩家载具失败, 请自行检查id是否正确"))
-		return err
+		return errcode.NetworkError.WithDetails("bf1player.GetVehicles", err).WithZeroContext(s.ctx)
 	}
 	msg := "id：" + player.DisplayName + "\n"
 	for i := range *car {
@@ -265,7 +266,7 @@ func (s *Service) GetPlayerVehicle() error {
 		msg += "游玩时间：" + (*car)[i].Time + " 小时\n"
 	}
 	renderer.Txt2Img(s.ctx, msg)
-	return nil
+	return errcode.Success
 }
 
 // GetBF1Exchange 获取BF1本期交换信息
@@ -273,7 +274,7 @@ func (s *Service) GetBF1Exchange() error {
 	exchange, err := bf1api.GetExchange()
 	if err != nil {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERR: 获取交换失败"))
-		return err
+		return errcode.NetworkError.WithDetails("bf1api.GetExchange", err).WithZeroContext(s.ctx)
 	}
 	var msg string
 	for i, v := range exchange {
@@ -283,7 +284,7 @@ func (s *Service) GetBF1Exchange() error {
 		}
 	}
 	renderer.Txt2Img(s.ctx, msg)
-	return nil
+	return errcode.Success
 }
 
 // GetBF1OpreationPack 获取本期行动包信息
@@ -291,7 +292,7 @@ func (s *Service) GetBF1OpreationPack() error {
 	pack, err := bf1api.GetCampaignPacks()
 	if err != nil {
 		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERR: 获取行动包失败"))
-		return err
+		return errcode.NetworkError.WithDetails("bf1api.GetCampaignPacks", err).WithZeroContext(s.ctx)
 	}
 	var msg string
 	msg += "行动名：" + pack.Name + "\n"
@@ -300,7 +301,7 @@ func (s *Service) GetBF1OpreationPack() error {
 	msg += "行动地图：" + pack.Op1Name + " 与 " + pack.Op2Name + "\n"
 	msg += "行动简介：" + pack.Desc
 	renderer.Txt2Img(s.ctx, msg)
-	return nil
+	return errcode.Success
 }
 
 // GetPlayerBanInfo 获取玩家联ban信息
@@ -309,7 +310,7 @@ func (s *Service) GetPlayerBanInfo() error {
 	id, isVaild := s.getPlayerID()
 	if !isVaild {
 		s.ctx.SendChain(message.At(s.ctx.Event.UserID), message.Text("ERR: 数据库中没有查到该账号! 请检查是否绑定! 如需绑定请使用[.绑定 id], 中括号不需要输入"))
-		return nil
+		return errcode.NotFoundError
 	}
 	info := bf1player.IsHacker(id)
 	var msg string
@@ -320,5 +321,5 @@ func (s *Service) GetPlayerBanInfo() error {
 		msg += "案件链接: " + info.BFBan.URL
 	}
 	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text(msg))
-	return nil
+	return errcode.Success
 }
