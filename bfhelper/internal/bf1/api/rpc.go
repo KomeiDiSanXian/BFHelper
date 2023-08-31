@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/errcode"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq"
 	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq/bf1"
@@ -15,18 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
-)
-
-// error code
-//
-// TODO: #7
-const (
-	ErrServerNotFound int64 = -34501
-	ErrInvalidMapID   int64 = -32603
-	ErrServerOutdate  int64 = -32851
-	ErrPlayerIsAdmin  int64 = -32857
-	ErrinvalidPlayer  int64 = -32856
-	ErrServerNotStart int64 = -32858
 )
 
 // post operation struct
@@ -199,22 +188,20 @@ func GetServerFullInfo(gameID string) (*gjson.Result, error) {
 }
 
 // Exception 错误码转换
-//
-// TODO: #7
-func Exception(errcode int64) error {
-	switch errcode {
-	case ErrServerNotFound:
-		return errors.New("找不到服务器，请检查服务器信息是否正确")
-	case ErrInvalidMapID:
-		return errors.New("无效的地图id/无权限")
-	case ErrServerOutdate:
-		return errors.New("找不到服务器/服务器过期")
-	case ErrPlayerIsAdmin:
-		return errors.New("无权限处理服务器管理")
-	case ErrinvalidPlayer:
-		return errors.New("找不到该玩家")
-	case ErrServerNotStart:
-		return errors.New("服务器未开启")
+func Exception(code int64) error {
+	switch code {
+	case -34501:
+		return errcode.ServerNotFoundError
+	case -32603:
+		return errcode.InvalidAuthError
+	case -32851:
+		return errcode.ServerNotFoundError
+	case -32857:
+		return errcode.InvalidPermissionsError
+	case -32856:
+		return errcode.InvalidPlayerError
+	case -32858:
+		return errcode.ServerNotStartError
 	}
 	return nil
 }
