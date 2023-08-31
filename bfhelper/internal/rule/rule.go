@@ -34,6 +34,9 @@ func setupSetting() error {
 	if err := setting.ReadSection("Account", &global.Account); err != nil {
 		return err
 	}
+	if err := setting.ReadSection("BFEAC", &global.EAC); err != nil {
+		return err
+	}
 	return setting.ReadSection("SakuraKooi", &global.SakuraAPI)
 }
 

@@ -10,3 +10,6 @@ Account:
 SakuraKooi:
   SakuraID: yourid
   SakuraToken: yourtoken
+# 举报功能的使用需要填写该项
+BFEAC:
+  ApiKey: "-"
