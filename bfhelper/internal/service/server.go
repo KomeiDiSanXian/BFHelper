@@ -12,7 +12,7 @@ import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/errcode"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/textutil"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/renderer"	
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/renderer"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
 )

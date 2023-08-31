@@ -69,5 +69,5 @@ func (e *Error) WithZeroContext(ctx *zero.Ctx) *Error {
 		WithDetails("Command", ctx.Event.RawMessage).
 		WithDetails("Time", ctx.Event.Time).
 		WithDetails("Bot", ctx.Event.SelfID).
-		WithDetails("Group",ctx.Event.GroupID)
+		WithDetails("Group", ctx.Event.GroupID)
 }

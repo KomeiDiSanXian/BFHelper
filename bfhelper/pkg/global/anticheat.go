@@ -5,8 +5,10 @@ const (
 	BFEAC = "https://api.bfeac.com/"               // BFEAC api
 )
 
+// BFEACSetting EAC 设置
 type BFEACSetting struct {
 	Apikey string
 }
 
+// EAC 设置
 var EAC BFEACSetting

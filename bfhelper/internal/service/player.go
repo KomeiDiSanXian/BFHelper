@@ -33,7 +33,7 @@ func (s *Service) BindAccount() error {
 		return errcode.Success
 	}
 	if err != nil {
-		return errcode.DataBaseReadError.WithDetails("Error",err).WithZeroContext(s.ctx)
+		return errcode.DataBaseReadError.WithDetails("Error", err).WithZeroContext(s.ctx)
 	}
 	// 绑定的是旧id
 	if id == player.DisplayName {
