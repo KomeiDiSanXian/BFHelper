@@ -69,7 +69,7 @@ func UploadReport(repo Report) error {
 		URL:    global.BFEAC + "inner_api/case_report",
 		Header: map[string]string{
 			"Content-Type": "application/json",
-			"apikey":       global.EAC.Apikey,
+			"apikey":       global.BFEACSetting.APIKey,
 		},
 		Body: bytes.NewReader(jsonData),
 	}.GetRespBodyJSON()

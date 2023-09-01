@@ -65,8 +65,8 @@ func Login(username, password string) error {
 		Method: http.MethodPost,
 		URL:    global.SessionAPI,
 		Header: map[string]string{
-			"Sakura-Instance-Id":  global.SakuraAPI.SakuraID,
-			"Sakura-Access-Token": global.SakuraAPI.SakuraToken,
+			"Sakura-Instance-Id":  global.SessionAPISetting.SakuraID,
+			"Sakura-Access-Token": global.SessionAPISetting.SakuraToken,
 		},
 		Body: bodyJSON,
 	}.GetRespBodyJSON()
@@ -77,10 +77,10 @@ func Login(username, password string) error {
 	if code != 0 {
 		return errors.Errorf("更新session时出错: code: %d, msg: %s", code, result.Get("message").Str)
 	}
-	global.Account.Session = result.Get("data.gatewaySession").Str
-	global.Account.Token = fmt.Sprintf("%s%s", "Bearer ", result.Get("data.bearerAccessToken").Str)
-	global.Account.SID = result.Get("data.sid").Str
-	global.Account.Remid = result.Get("data.remid").Str
+	global.AccountSetting.Session = result.Get("data.gatewaySession").Str
+	global.AccountSetting.Token = fmt.Sprintf("%s%s", "Bearer ", result.Get("data.bearerAccessToken").Str)
+	global.AccountSetting.SID = result.Get("data.sid").Str
+	global.AccountSetting.Remid = result.Get("data.remid").Str
 	return nil
 }
 
@@ -96,13 +96,13 @@ func ReturnJSON(url, method string, body interface{}) (*gjson.Result, error) {
 		result, err := netreq.Request{
 			Method: method,
 			URL:    url,
-			Header: map[string]string{"X-Gatewaysession": global.Account.Session},
+			Header: map[string]string{"X-Gatewaysession": global.AccountSetting.Session},
 			Body:   bodyjson,
 		}.GetRespBodyJSON()
 
 		code := result.Get("error.code").Int()
 		if code == -32501 {
-			if err := Login(global.Account.Username, global.Account.Password); err != nil {
+			if err := Login(global.AccountSetting.Username, global.AccountSetting.Password); err != nil {
 				logrus.Errorln("[battlefield]", err)
 				return nil, err
 			}
@@ -157,7 +157,7 @@ func GetPersonalID(name string) (string, error) {
 		URL:    "https://gateway.ea.com/proxy/identity/personas?namespaceName=cem_ea_id&displayName=" + name,
 		Header: map[string]string{
 			"X-Expand-Results": "true",
-			"Authorization":    global.Account.Token,
+			"Authorization":    global.AccountSetting.Token,
 		},
 	}.GetRespBodyJSON()
 	if err != nil {
@@ -165,7 +165,7 @@ func GetPersonalID(name string) (string, error) {
 	}
 	info := result.Get("error").Str
 	if info == "invalid_access_token" || info == "invalid_oauth_info" {
-		err := Login(global.Account.Username, global.Account.Password)
+		err := Login(global.AccountSetting.Username, global.AccountSetting.Password)
 		if err != nil {
 			return "", err
 		}

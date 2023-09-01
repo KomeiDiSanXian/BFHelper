@@ -31,13 +31,13 @@ func setupSetting() error {
 	if err != nil {
 		return err
 	}
-	if err := setting.ReadSection("Account", &global.Account); err != nil {
+	if err := setting.ReadSection("Account", &global.AccountSetting); err != nil {
 		return err
 	}
-	if err := setting.ReadSection("BFEAC", &global.EAC); err != nil {
+	if err := setting.ReadSection("BFEAC", &global.BFEACSetting); err != nil {
 		return err
 	}
-	return setting.ReadSection("SakuraKooi", &global.SakuraAPI)
+	return setting.ReadSection("SakuraKooi", &global.SessionAPISetting)
 }
 
 func readDictionary() error {
@@ -82,7 +82,7 @@ func Initialized() zero.Rule {
 			return false
 		}
 		// 刷新Session
-		_ = bf1api.Login(global.Account.Username, global.Account.Password)
+		_ = bf1api.Login(global.AccountSetting.Username, global.AccountSetting.Password)
 		// 读字典
 		err = readDictionary()
 		if err != nil {
