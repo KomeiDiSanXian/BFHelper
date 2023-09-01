@@ -5,7 +5,9 @@ import (
 	"reflect"
 	"runtime"
 
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/errcode"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/service"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 )
@@ -15,9 +17,9 @@ func ErrorHandlerWrapper(serviceMethod func(*service.Service) error) zero.Handle
 	return func(ctx *zero.Ctx) {
 		svc := service.New(ctx)
 		err := serviceMethod(svc)
-		// TODO: 写入日志
-		if err != nil {
+		if !errors.Is(err, errcode.Success) {
 			logrus.Errorf("%s error: %v", runtime.FuncForPC(reflect.ValueOf(serviceMethod).Pointer()).Name(), err)
+			svc.Log().Error(err)
 		}
 	}
 }

@@ -45,13 +45,13 @@ func setupSetting() error {
 }
 
 func setupLogger() {
-	fileName := engine.Engine.DataFolder() + "/log/logs.log"
+	fileName := engine.Engine.DataFolder() + "/log/bfhelper.log"
 	global.Logger = logger.NewLogger(&lumberjack.Logger{
 		Filename:  fileName,
 		MaxSize:   1024, // 最大为1G
 		MaxAge:    10,   // 日志保存10天
 		LocalTime: true,
-	}, "", log.LstdFlags).WithCaller(3)
+	}, "", log.LstdFlags)
 }
 
 func readDictionary() error {

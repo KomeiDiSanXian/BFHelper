@@ -37,7 +37,7 @@ func (e *Error) Message() string {
 
 // Error 打印错误信息
 func (e *Error) Error() string {
-	return fmt.Sprintf("code: %d, message: %s", e.Code(), e.Message())
+	return fmt.Sprintf("code: %d, message: %s, details: %v", e.Code(), e.Message(), e.Details())
 }
 
 // Messagef 格式化输出错误信息

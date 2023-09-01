@@ -4,6 +4,7 @@ package service
 import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/dao"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/logger"
 	zero "github.com/wdvxdr1123/ZeroBot"
 )
 
@@ -18,4 +19,11 @@ func New(ctx *zero.Ctx) *Service {
 	svc := Service{ctx: ctx}
 	svc.dao = dao.New(global.DB)
 	return &svc
+}
+
+// Log 日志记录
+//
+// 多业务使用同一个log
+func (s *Service) Log() *logger.Logger {
+	return global.Logger
 }
