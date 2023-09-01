@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"io"
+	"log"
 	"os"
 	"strings"
 
@@ -14,10 +15,12 @@ import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/engine"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/logger"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/setting"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 //go:embed template.yml
@@ -37,7 +40,18 @@ func setupSetting() error {
 	if err := setting.ReadSection("BFEAC", &global.BFEACSetting); err != nil {
 		return err
 	}
+	setupLogger()
 	return setting.ReadSection("SakuraKooi", &global.SessionAPISetting)
+}
+
+func setupLogger() {
+	fileName := engine.Engine.DataFolder() + "/log/logs.log"
+	global.Logger = logger.NewLogger(&lumberjack.Logger{
+		Filename:  fileName,
+		MaxSize:   1024, // 最大为1G
+		MaxAge:    10,   // 日志保存10天
+		LocalTime: true,
+	}, "", log.LstdFlags).WithCaller(3)
 }
 
 func readDictionary() error {

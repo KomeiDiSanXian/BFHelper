@@ -66,6 +66,7 @@ require (
 	github.com/spf13/viper v1.16.0
 	golang.org/x/image v0.11.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	modernc.org/libc v1.24.1 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.0 // indirect
