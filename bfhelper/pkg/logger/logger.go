@@ -18,12 +18,12 @@ type Level int8
 type Fields map[string]any
 
 const (
-	LevelDebug Level = iota
-	LevelInfo
-	LevelWarn
-	LevelError
-	LevelFatal
-	LevelPanic
+	LevelDebug Level = iota // LevelDebug Debug
+	LevelInfo               // LevelInfo Info
+	LevelWarn               // LevelWarn Warn
+	LevelError              // LevelError Error
+	LevelFatal              // LevelFatal Fatal
+	LevelPanic              // LevelPanic Panic
 )
 
 // String returns a string representation of level
