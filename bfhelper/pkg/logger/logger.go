@@ -89,7 +89,7 @@ func (l *Logger) WithCaller(skip int) *Logger {
 	if ok {
 		f := runtime.FuncForPC(pc)
 		// 打出文件名, 行号和函数名
-		ll.callers = []string{fmt.Sprintf("%s: %d %s", file, line, f.Name())}
+		ll.callers = []string{fmt.Sprintf("%s:%d %s", file, line, f.Name())}
 	}
 	return ll
 }
@@ -106,7 +106,7 @@ func (l *Logger) WithCallerFrames() *Logger {
 
 	frames := runtime.CallersFrames(pcs[:depth])
 	for frame, more := frames.Next(); more; frame, more = frames.Next() {
-		currentCaller := fmt.Sprintf("%s: %d %s", frame.File, frame.Line, frame.Function)
+		currentCaller := fmt.Sprintf("%s:%d %s", frame.File, frame.Line, frame.Function)
 		callers = append(callers, currentCaller)
 		if !more {
 			break
@@ -139,16 +139,10 @@ func (l *Logger) JSONFormat(level Level, message string) map[string]any {
 
 // Output 输出日志
 func (l *Logger) Output(level Level, message string) {
-	body, _ := json.Marshal(l.JSONFormat(level, message))
+	body, _ := json.Marshal(l.WithCaller(3).JSONFormat(level, message))
 	content := string(body)
 	switch level {
-	case LevelDebug:
-		fallthrough
-	case LevelInfo:
-		fallthrough
-	case LevelWarn:
-		fallthrough
-	case LevelError:
+	case LevelDebug, LevelInfo, LevelWarn, LevelError:
 		l.newLogger.Print(content)
 	case LevelFatal:
 		l.newLogger.Fatal(content)
@@ -206,6 +200,7 @@ func (l *Logger) Fatal(v ...interface{}) {
 func (l *Logger) Fatalf(format string, v ...interface{}) {
 	l.Output(LevelFatal, fmt.Sprintf(format, v...))
 }
+
 // Panic 输出Panic级别日志，并触发 panic
 func (l *Logger) Panic(v ...interface{}) {
 	l.Output(LevelPanic, fmt.Sprint(v...))
