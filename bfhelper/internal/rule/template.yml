@@ -16,4 +16,5 @@ BFEAC:
 # 追踪相关
 Trace:
   Enabled: false # 是否开启追踪
-  URL: "-" # 追踪日志上传到何处
+  URL: "-" # 追踪日志上传到何处，不要填写http或者https等schema
+  UseHTTPS: false # 是否使用ssl

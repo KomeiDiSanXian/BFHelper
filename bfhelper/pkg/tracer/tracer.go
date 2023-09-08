@@ -15,7 +15,11 @@ import (
 )
 
 func newExporter(ctx context.Context, url string) (*otlptrace.Exporter, error) {
-	client := otlptracehttp.NewClient(otlptracehttp.WithEndpoint(url))
+	opt := []otlptracehttp.Option{otlptracehttp.WithEndpoint(url)}
+	if !global.TraceSetting.UseHTTPS {
+		opt = append(opt, otlptracehttp.WithInsecure())
+	}
+	client := otlptracehttp.NewClient(opt...)
 	return otlptrace.New(ctx, client)
 }
 
@@ -33,11 +37,9 @@ func newTraceProvider(expo sdktrace.SpanExporter) (*sdktrace.TracerProvider, err
 	}
 	// 总是开启追踪
 	sampler := sdktrace.WithSampler(sdktrace.AlwaysSample())
-
 	if !global.TraceSetting.Enabled {
 		sampler = sdktrace.WithSampler(sdktrace.NeverSample())
 	}
-
 	return sdktrace.NewTracerProvider(sdktrace.WithBatcher(expo), sdktrace.WithResource(r), sampler), nil
 }
 

@@ -23,6 +23,7 @@ type BFEACSettingS struct {
 
 // TraceSettingS 追踪设置
 type TraceSettingS struct {
-	Enabled bool
-	URL     string
+	Enabled  bool
+	UseHTTPS bool
+	URL      string
 }
