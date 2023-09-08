@@ -13,3 +13,7 @@ SakuraKooi:
 # 举报功能的使用需要填写该项
 BFEAC:
   ApiKey: "-"
+# 追踪相关
+Trace:
+  Enabled: false # 是否开启追踪
+  URL: "-" # 追踪日志上传到何处

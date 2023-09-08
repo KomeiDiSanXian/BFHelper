@@ -2,21 +2,25 @@
 package service
 
 import (
+	"context"
+
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/dao"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/logger"
 	zero "github.com/wdvxdr1123/ZeroBot"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Service 业务
 type Service struct {
-	ctx *zero.Ctx
-	dao *dao.Dao
+	zctx *zero.Ctx
+	dao  *dao.Dao
+	ctx  context.Context
 }
 
 // New 新建业务
-func New(ctx *zero.Ctx) *Service {
-	svc := Service{ctx: ctx}
+func New(ctx context.Context, zctx *zero.Ctx) *Service {
+	svc := Service{zctx: zctx, ctx: ctx}
 	svc.dao = dao.New(global.DB)
 	return &svc
 }
@@ -26,4 +30,9 @@ func New(ctx *zero.Ctx) *Service {
 // 多业务使用同一个log
 func (s *Service) Log() *logger.Logger {
 	return global.Logger
+}
+
+// Trace 追踪
+func (s *Service) Trace(name string) (context.Context, trace.Span) {
+	return global.Tracer.Start(s.ctx, name)
 }

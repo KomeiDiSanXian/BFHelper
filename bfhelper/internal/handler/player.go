@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"context"
 	"reflect"
 	"runtime"
 
@@ -14,8 +15,9 @@ import (
 
 // ErrorHandlerWrapper 错误处理封装
 func ErrorHandlerWrapper(serviceMethod func(*service.Service) error) zero.Handler {
-	return func(ctx *zero.Ctx) {
-		svc := service.New(ctx)
+	return func(zctx *zero.Ctx) {
+		ctx := context.Background()
+		svc := service.New(ctx, zctx)
 		err := serviceMethod(svc)
 		if !errors.Is(err, errcode.Success) {
 			logrus.Errorf("%s error: %v", runtime.FuncForPC(reflect.ValueOf(serviceMethod).Pointer()).Name(), err)

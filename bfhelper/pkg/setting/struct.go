@@ -20,3 +20,9 @@ type SessionAPISettingS struct {
 type BFEACSettingS struct {
 	APIKey string
 }
+
+// TraceSettingS 追踪设置
+type TraceSettingS struct {
+	Enabled bool
+	URL     string
+}

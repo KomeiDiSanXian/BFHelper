@@ -25,34 +25,34 @@ type server struct {
 //
 // @permission: GroupOwner
 func (s *Service) CreateGroup() error {
-	o := s.ctx.State["args"].(string)
+	o := s.zctx.State["args"].(string)
 	owner, _ := strconv.ParseInt(o, 10, 64)
 	create := func(o int64) error {
-		err := s.dao.CreateGroup(s.ctx.Event.GroupID, o)
+		err := s.dao.CreateGroup(s.zctx.Event.GroupID, o)
 		if err != nil {
-			s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 创建服务器群组失败"))
+			s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 创建服务器群组失败"))
 			return errcode.DataBaseCreateError
 		}
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("创建成功!"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("创建成功!"))
 		return errcode.Success
 	}
-	s.ctx.Send("少女折寿中...")
+	s.zctx.Send("少女折寿中...")
 	if owner != 0 {
 		return create(owner)
 	}
-	return create(s.ctx.Event.UserID)
+	return create(s.zctx.Event.UserID)
 }
 
 // DeleteGroup 所在群删除服务器群组
 //
 // @permission: ServerOwner
 func (s *Service) DeleteGroup() error {
-	err := s.dao.DeleteGroup(s.ctx.Event.GroupID)
+	err := s.dao.DeleteGroup(s.zctx.Event.GroupID)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 删除服务器群组失败"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 删除服务器群组失败"))
 		return errcode.DataBaseDeleteError
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("删除成功"))
+	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("删除成功"))
 	return errcode.Success
 }
 
@@ -60,18 +60,18 @@ func (s *Service) DeleteGroup() error {
 //
 // @permission: ServerOwner
 func (s *Service) ChangeOwner() error {
-	o := s.ctx.State["args"].(string)
+	o := s.zctx.State["args"].(string)
 	owner, _ := strconv.ParseInt(o, 10, 64)
 	if owner == 0 {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 未输入要更换的QQ号"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 未输入要更换的QQ号"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
-	err := s.dao.UpdateOwner(s.ctx.Event.GroupID, owner)
+	err := s.dao.UpdateOwner(s.zctx.Event.GroupID, owner)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 更换服务器群组所属失败"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 更换服务器群组所属失败"))
 		return errcode.DataBaseUpdateError
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("更换成功"))
+	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("更换成功"))
 	return errcode.Success
 }
 
@@ -92,12 +92,12 @@ func (s *Service) getServer(gameID string) (*server, error) {
 func (s *Service) addServerProcess(gameID string, groupID int64) error {
 	server, err := s.getServer(gameID)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 添加服务器 ", gameID, " 失败"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 添加服务器 ", gameID, " 失败"))
 		return err
 	}
 	err = s.dao.AddGroupServer(groupID, server.gameID, server.serverID, server.pgid, server.name)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 添加服务器 ", gameID, " 失败"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 添加服务器 ", gameID, " 失败"))
 		return err
 	}
 	return nil
@@ -124,19 +124,19 @@ func (s *Service) addServers(gameIDs []string, groupID int64) {
 //
 // @permission: SuperAdmin
 func (s *Service) AddServer() error {
-	str := s.ctx.State["args"].(string)
+	str := s.zctx.State["args"].(string)
 	if str == "" {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 无效的输入"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 无效的输入"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	strs := strings.Split(str, " ")
 	groupID, _ := strconv.ParseInt(strs[0], 10, 64)
 	if len(strs) < 2 {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: GameID 为空"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: GameID 为空"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	s.addServers(strs[1:], groupID)
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("添加完成"))
+	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("添加完成"))
 	return errcode.Success
 }
 
@@ -144,10 +144,10 @@ func (s *Service) AddServer() error {
 //
 // @permission: ServerOwner
 func (s *Service) AddServerAdmin() error {
-	str := s.ctx.State["args"].(string)
+	str := s.zctx.State["args"].(string)
 	if str == "" {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 填写的管理员qq为空"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 填写的管理员qq为空"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	admins := strings.Split(str, " ")
 	qqs := make([]int64, 0, len(admins))
@@ -155,12 +155,12 @@ func (s *Service) AddServerAdmin() error {
 		adminQQ, _ := strconv.ParseInt(a, 10, 64)
 		qqs = append(qqs, adminQQ)
 	}
-	err := s.dao.AddGroupAdmin(s.ctx.Event.GroupID, qqs...)
+	err := s.dao.AddGroupAdmin(s.zctx.Event.GroupID, qqs...)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 添加管理失败"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 添加管理失败"))
 		return errcode.DataBaseUpdateError
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("添加成功"))
+	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("添加成功"))
 	return errcode.Success
 }
 
@@ -168,23 +168,23 @@ func (s *Service) AddServerAdmin() error {
 //
 // @permission: ServerAdmin
 func (s *Service) SetServerAlias() error {
-	str := s.ctx.State["args"].(string)
+	str := s.zctx.State["args"].(string)
 	if str == "" {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	strs := strings.Split(str, " ")
 	if len(strs) != 2 {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 不能识别的输入"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 不能识别的输入"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	gameID, alias := strs[0], strs[1]
 	err := s.dao.ServerAlias(gameID, alias)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 设置别名失败"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 设置别名失败"))
 		return errcode.DataBaseUpdateError
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("设置成功"))
+	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("设置成功"))
 	return errcode.Success
 }
 
@@ -192,17 +192,17 @@ func (s *Service) SetServerAlias() error {
 //
 // @permission: ServerOwner
 func (s *Service) DeleteServer() error {
-	gameID := s.ctx.State["args"].(string)
+	gameID := s.zctx.State["args"].(string)
 	if gameID == "" {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
-	err := s.dao.RemoveGroupServer(s.ctx.Event.GroupID, gameID)
+	err := s.dao.RemoveGroupServer(s.zctx.Event.GroupID, gameID)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 删除服务器 ", gameID, " 失败"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 删除服务器 ", gameID, " 失败"))
 		return errcode.DataBaseDeleteError
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("删除成功"))
+	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("删除成功"))
 	return errcode.Success
 }
 
@@ -210,18 +210,18 @@ func (s *Service) DeleteServer() error {
 //
 // @permission: ServerOwner
 func (s *Service) DeleteAdmin() error {
-	o := s.ctx.State["args"].(string)
+	o := s.zctx.State["args"].(string)
 	qq, _ := strconv.ParseInt(o, 10, 64)
 	if qq == 0 {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
-	err := s.dao.RemoveGroupAdmin(s.ctx.Event.GroupID, qq)
+	err := s.dao.RemoveGroupAdmin(s.zctx.Event.GroupID, qq)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 删除管理员 ", qq, " 失败"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 删除管理员 ", qq, " 失败"))
 		return errcode.DataBaseDeleteError
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("删除成功"))
+	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("删除成功"))
 	return errcode.Success
 }
 
@@ -252,23 +252,23 @@ func (s *Service) kick(pid string, reason string, group *model.Group) {
 	for msg := range msgChan {
 		tosend += msg
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text(tosend))
+	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text(tosend))
 }
 
 // KickPlayer 在绑定的服务器里踢出玩家
 //
 // @permission: ServerAdmin
 func (s *Service) KickPlayer() error {
-	cmdString := s.ctx.State["args"].(string)
+	cmdString := s.zctx.State["args"].(string)
 	if cmdString == "" {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	cmds := strings.Split(cmdString, " ")
-	group, err := s.dao.GetGroup(s.ctx.Event.GroupID)
+	group, err := s.dao.GetGroup(s.zctx.Event.GroupID)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 获取绑定服务器失败"))
-		return errcode.DataBaseReadError.WithDetails("Error", err).WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 获取绑定服务器失败"))
+		return errcode.DataBaseReadError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
 	player := cmds[0]
 	reason := "Admin kick"
@@ -282,8 +282,8 @@ func (s *Service) KickPlayer() error {
 	}
 	pl, err := s.getPlayer(player)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 踢出失败: 未查询到目标玩家pid"))
-		return errcode.NotFoundError.WithDetails("Error", err).WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 踢出失败: 未查询到目标玩家pid"))
+		return errcode.NotFoundError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
 	s.kick(pl.PersonalID, reason, group)
 	return errcode.Success
@@ -291,60 +291,60 @@ func (s *Service) KickPlayer() error {
 
 // 单服务器封禁/解封
 func (s *Service) banFunc(banfunc func(sid string, pid string) error) error {
-	cmdString := s.ctx.State["args"].(string)
+	cmdString := s.zctx.State["args"].(string)
 	if cmdString == "" {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	cmds := strings.Split(cmdString, " ")
 	if len(cmds) != 2 {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 不能识别的输入"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 不能识别的输入"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	srvName, player := cmds[0], cmds[1]
-	srv, err := s.dao.GetServerByAlias(s.ctx.Event.GroupID, srvName)
+	srv, err := s.dao.GetServerByAlias(s.zctx.Event.GroupID, srvName)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 查询服务器失败"))
-		return errcode.DataBaseReadError.WithDetails("Error", err).WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 查询服务器失败"))
+		return errcode.DataBaseReadError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
 	if cleaned, has := textutil.CleanPersonalID(player); has {
 		err := banfunc(srv.ServerID, cleaned)
 		if err != nil {
-			s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 失败"))
-			return errcode.InternalError.WithDetails("Error", err).WithZeroContext(s.ctx)
+			s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 失败"))
+			return errcode.InternalError.WithDetails("Error", err).WithZeroContext(s.zctx)
 		}
 		return errcode.Success
 	}
 	pl, err := s.getPlayer(player)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 未查询到目标玩家pid"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 未查询到目标玩家pid"))
 		return errcode.NotFoundError.WithDetails("Error", err)
 	}
 	err = banfunc(srv.ServerID, pl.PersonalID)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 失败"))
-		return errcode.InternalError.WithDetails("Error", err).WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 失败"))
+		return errcode.InternalError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("操作", pl.DisplayName, "成功"))
+	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("操作", pl.DisplayName, "成功"))
 	return errcode.Success
 }
 
 // 多服务器封禁/解封
 func (s *Service) bansFunc(banfunc func(sid string, pid string) error) error {
-	playerName := s.ctx.State["args"].(string)
+	playerName := s.zctx.State["args"].(string)
 	if playerName == "" {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	player, err := s.getPlayer(playerName)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 未查询到目标玩家pid"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 未查询到目标玩家pid"))
 		return errcode.NotFoundError.WithDetails("Error", err)
 	}
-	group, err := s.dao.GetGroup(s.ctx.Event.GroupID)
+	group, err := s.dao.GetGroup(s.zctx.Event.GroupID)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 获取绑定服务器失败"))
-		return errcode.DataBaseReadError.WithDetails("Error", err).WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 获取绑定服务器失败"))
+		return errcode.DataBaseReadError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
 
 	var wg sync.WaitGroup
@@ -359,7 +359,7 @@ func (s *Service) bansFunc(banfunc func(sid string, pid string) error) error {
 	for msg := range msgChan {
 		tosend += msg
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text(tosend))
+	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text(tosend))
 	return errcode.Success
 }
 
@@ -407,27 +407,27 @@ func (s *Service) UnbanPlayerAtAllServer() error {
 }
 
 func (s *Service) sendMaps(maptxt string, next *zero.FutureEvent, srv *model.Server, maps []*bf1server.Map) error {
-	renderer.Txt2Img(s.ctx, maptxt)
+	renderer.Txt2Img(s.zctx, maptxt)
 	recv, cancle := next.Repeat()
 	defer cancle()
 	tick := time.NewTimer(time.Minute)
 	for {
 		select {
 		case <-tick.C:
-			s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 等待回复超时"))
-			return errcode.TimeoutError.WithZeroContext(s.ctx)
+			s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 等待回复超时"))
+			return errcode.TimeoutError.WithZeroContext(s.zctx)
 		case c := <-recv:
 			index, _ := strconv.Atoi(c.Event.Message.String())
 			if index >= len(maps) || index < 0 {
-				s.ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("ERROR: 无效的地图序号,取值范围为 0-", len(maps)-1))
+				s.zctx.SendChain(message.Reply(c.Event.MessageID), message.Text("ERROR: 无效的地图序号,取值范围为 0-", len(maps)-1))
 				return errcode.InvalidParamsError.WithDetails("MapID", "out of index").WithZeroContext(c)
 			}
 			err := bf1server.ChangeMap(srv.PGID, index)
 			if err != nil {
-				s.ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("ERROR: 切图失败"))
+				s.zctx.SendChain(message.Reply(c.Event.MessageID), message.Text("ERROR: 切图失败"))
 				return errcode.NetworkError.WithDetails("bf1server.ChangeMap", err)
 			}
-			s.ctx.SendChain(message.Reply(c.Event.MessageID), message.Text("已切到 ", maps[index].Name, "(", maps[index].Mode, ")"))
+			s.zctx.SendChain(message.Reply(c.Event.MessageID), message.Text("已切到 ", maps[index].Name, "(", maps[index].Mode, ")"))
 			return errcode.Success
 		}
 	}
@@ -437,21 +437,21 @@ func (s *Service) sendMaps(maptxt string, next *zero.FutureEvent, srv *model.Ser
 //
 // @permission: ServerAdmin
 func (s *Service) ChangeMap() error {
-	cmdString := s.ctx.State["args"].(string)
+	cmdString := s.zctx.State["args"].(string)
 	if cmdString == "" {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	cmds := strings.Split(cmdString, " ")
 	srvName := cmds[0]
-	srv, err := s.dao.GetServerByAlias(s.ctx.Event.GroupID, srvName)
+	srv, err := s.dao.GetServerByAlias(s.zctx.Event.GroupID, srvName)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 找不到别名为 ", srvName, " 的服务器"))
-		return errcode.NotFoundError.WithDetails("Error", err).WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 找不到别名为 ", srvName, " 的服务器"))
+		return errcode.NotFoundError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
 	maps, err := bf1server.GetMapSlice(srv.GameID)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 获取地图池失败"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 获取地图池失败"))
 		return errcode.NetworkError.WithDetails("Error", err)
 	}
 
@@ -460,22 +460,22 @@ func (s *Service) ChangeMap() error {
 		maptxt += fmt.Sprintf("\t%2d %s(%s)\n", i, m.Name, m.Mode)
 	}
 
-	next := zero.NewFutureEvent("message", 999, false, zero.RegexRule(`^\d{1,2}$`), zero.OnlyGroup, s.ctx.CheckSession())
+	next := zero.NewFutureEvent("message", 999, false, zero.RegexRule(`^\d{1,2}$`), zero.OnlyGroup, s.zctx.CheckSession())
 	if len(cmds) == 1 {
 		return s.sendMaps(maptxt, next, srv, maps)
 	}
 
 	index, _ := strconv.Atoi(cmds[1])
 	if index >= len(maps) || index < 0 {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 无效的地图序号,取值范围为 0-", len(maps)-1))
-		return errcode.InvalidParamsError.WithDetails("MapID", "out of index").WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 无效的地图序号,取值范围为 0-", len(maps)-1))
+		return errcode.InvalidParamsError.WithDetails("MapID", "out of index").WithZeroContext(s.zctx)
 	}
 	err = bf1server.ChangeMap(srv.PGID, index)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 切图失败"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 切图失败"))
 		return errcode.NetworkError.WithDetails("bf1server.ChangeMap", err)
 	}
-	s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("已切到 ", maps[index].Name, "(", maps[index].Mode, ")"))
+	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("已切到 ", maps[index].Name, "(", maps[index].Mode, ")"))
 	return errcode.Success
 }
 
@@ -483,25 +483,25 @@ func (s *Service) ChangeMap() error {
 //
 // @permission: Everyone
 func (s *Service) GetMap() error {
-	srvName := s.ctx.State["args"].(string)
+	srvName := s.zctx.State["args"].(string)
 	if srvName == "" {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 输入为空"))
-		return errcode.InvalidParamsError.WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 输入为空"))
+		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
-	srv, err := s.dao.GetServerByAlias(s.ctx.Event.GroupID, srvName)
+	srv, err := s.dao.GetServerByAlias(s.zctx.Event.GroupID, srvName)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 找不到别名为 ", srvName, " 的服务器"))
-		return errcode.NotFoundError.WithDetails("Error", err).WithZeroContext(s.ctx)
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 找不到别名为 ", srvName, " 的服务器"))
+		return errcode.NotFoundError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
 	maps, err := bf1server.GetMapSlice(srv.GameID)
 	if err != nil {
-		s.ctx.SendChain(message.Reply(s.ctx.Event.MessageID), message.Text("ERROR: 获取地图池失败"))
+		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 获取地图池失败"))
 		return errcode.NetworkError.WithDetails("bf1server.GetMapSlice", err)
 	}
 	maptxt := "图池序号和模式\n"
 	for i, m := range maps {
 		maptxt += fmt.Sprintf("\t%2d %s(%s)\n", i, m.Name, m.Mode)
 	}
-	renderer.Txt2Img(s.ctx, maptxt)
+	renderer.Txt2Img(s.zctx, maptxt)
 	return errcode.Success
 }

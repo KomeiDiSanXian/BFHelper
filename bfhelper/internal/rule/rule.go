@@ -2,6 +2,7 @@
 package rule
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"io"
@@ -17,6 +18,7 @@ import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/logger"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/setting"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/tracer"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
@@ -40,6 +42,9 @@ func setupSetting() error {
 	if err := setting.ReadSection("BFEAC", &global.BFEACSetting); err != nil {
 		return err
 	}
+	if err := setting.ReadSection("Trace", &global.TraceSetting); err != nil {
+		return err
+	}
 	setupLogger()
 	return setting.ReadSection("SakuraKooi", &global.SessionAPISetting)
 }
@@ -52,6 +57,11 @@ func setupLogger() {
 		MaxAge:    10,   // 日志保存10天
 		LocalTime: true,
 	}, "", log.LstdFlags)
+}
+
+func setupTracer() error {
+	_, err := tracer.InstallExportPipeline(context.Background(), global.TraceSetting.URL)
+	return err
 }
 
 func readDictionary() error {
@@ -101,6 +111,11 @@ func Initialized() zero.Rule {
 		err = readDictionary()
 		if err != nil {
 			logrus.Errorf("read dictionary: %v", err)
+		}
+		// 追踪初始化
+		err = setupTracer()
+		if err != nil {
+			logrus.Errorf("tracer: %v", err)
 		}
 		return true
 	})
