@@ -7,11 +7,13 @@ import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/kanban/banner"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func newExporter(ctx context.Context, url string) (*otlptrace.Exporter, error) {
@@ -55,4 +57,14 @@ func InstallExportPipeline(ctx context.Context, url string) (func(ctx context.Co
 	}
 	otel.SetTracerProvider(tp)
 	return tp.Shutdown, nil
+}
+
+// AddEventWithDescription 在span添加k-v形式的描述
+func AddEventWithDescription(desc ...attribute.KeyValue) trace.EventOption {
+	return trace.WithAttributes(desc...)
+}
+
+// Description 返回attribute.KeyValue
+func Description(k, v string) attribute.KeyValue {
+	return attribute.String(k, v)
 }

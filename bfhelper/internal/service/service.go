@@ -15,12 +15,11 @@ import (
 type Service struct {
 	zctx *zero.Ctx
 	dao  *dao.Dao
-	ctx  context.Context
 }
 
 // New 新建业务
 func New(ctx context.Context, zctx *zero.Ctx) *Service {
-	svc := Service{zctx: zctx, ctx: ctx}
+	svc := Service{zctx: zctx}
 	svc.dao = dao.New(global.DB)
 	return &svc
 }
@@ -33,6 +32,6 @@ func (s *Service) Log() *logger.Logger {
 }
 
 // Trace 追踪
-func (s *Service) Trace(name string) (context.Context, trace.Span) {
-	return global.Tracer.Start(s.ctx, name)
+func (s *Service) Trace(ctx context.Context, name string) (context.Context, trace.Span) {
+	return global.Tracer.Start(ctx, name)
 }

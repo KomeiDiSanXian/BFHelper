@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -12,49 +13,69 @@ import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/renderer"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/tracer"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"github.com/wdvxdr1123/ZeroBot/message"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // BindAccount 绑定账号
-func (s *Service) BindAccount() error {
+func (s *Service) BindAccount(ctx context.Context) error {
+	_, span := s.Trace(ctx, "BindAccount")
+	defer span.End()
 	id := s.zctx.State["args"].(string)
 	// 数据库查询是否绑定
+	span.AddEvent("start query database", tracer.AddEventWithDescription(tracer.Description("query player", id)))
 	player, err := s.dao.GetPlayerByQID(s.zctx.Event.UserID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		s.zctx.SendChain(message.At(s.zctx.Event.UserID), message.Text("正在绑定id为 ", id))
+		span.AddEvent("try to bind account")
 		err = s.dao.CreatePlayer(s.zctx.Event.UserID, id)
 		if err != nil {
+			span.AddEvent("database error occurred")
+			span.SetStatus(codes.Error, err.Error())
 			s.zctx.SendChain(message.At(s.zctx.Event.UserID), message.Text("绑定失败, ERR: 数据库错误"))
 			return errcode.DataBaseCreateError
 		}
+		span.AddEvent("bind success")
 		s.zctx.SendChain(message.At(s.zctx.Event.UserID), message.Text("绑定成功"))
 		return errcode.Success
 	}
 	if err != nil {
+		span.AddEvent("database error occurred")
+		span.SetStatus(codes.Error, err.Error())
 		return errcode.DataBaseReadError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
 	// 绑定的是旧id
 	if id == player.DisplayName {
+		span.AddEvent("detected user try to bind same, operation cancelled ")
 		s.zctx.SendChain(message.At(s.zctx.Event.UserID), message.Text("笨蛋! 你现在绑的就是这个id"))
 		return errcode.Canceled
 	}
+	span.AddEvent("detected user try to change display name")
 	s.zctx.SendChain(message.At(s.zctx.Event.UserID), message.Text("将原绑定id为 ", player.DisplayName, " 改绑为 ", id))
 	err = s.dao.UpdatePlayer(s.zctx.Event.UserID, "", id)
 	if err != nil {
+		span.AddEvent("database error occurred")
 		s.zctx.SendChain(message.At(s.zctx.Event.UserID), message.Text("绑定失败, ERR: 数据库错误"))
 		return errcode.DataBaseUpdateError
 	}
+	span.AddEvent("bind success")
 	s.zctx.SendChain(message.At(s.zctx.Event.UserID), message.Text("绑定 ", id, " 成功"))
+	span.AddEvent("try to get pid")
 	pid, err := bf1api.GetPersonalID(id)
 	if err != nil {
+		span.AddEvent("get pid failed")
 		return errcode.NetworkError.WithDetails("bf1api.GetPersonalID", err).WithZeroContext(s.zctx)
 	}
+	span.AddEvent("write pid")
 	err = s.dao.UpdatePlayer(s.zctx.Event.UserID, pid, "")
 	if err != nil {
+		span.AddEvent("database error occurred")
 		return errcode.DataBaseUpdateError
 	}
+	span.AddEvent("write success")
 	return errcode.Success
 }
 

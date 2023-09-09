@@ -11,73 +11,83 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // ErrorHandlerWrapper 错误处理封装
-func ErrorHandlerWrapper(serviceMethod func(*service.Service) error) zero.Handler {
+func ErrorHandlerWrapper(serviceMethod func(context.Context, *service.Service) error) zero.Handler {
 	return func(zctx *zero.Ctx) {
 		ctx := context.Background()
 		svc := service.New(ctx, zctx)
-		err := serviceMethod(svc)
-		if !errors.Is(err, errcode.Success) {
-			logrus.Errorf("%s error: %v", runtime.FuncForPC(reflect.ValueOf(serviceMethod).Pointer()).Name(), err)
-			svc.Log().Error(err)
+		funcName := runtime.FuncForPC(reflect.ValueOf(serviceMethod).Pointer()).Name()
+
+		nCtx, span := svc.Trace(ctx, "Handler")
+		err := serviceMethod(nCtx, svc)
+		defer span.End()
+
+		if errors.Is(err,errcode.Success)||errors.Is(err,errcode.Canceled){
+			span.SetStatus(codes.Ok, "")
+			return
 		}
+		logrus.Errorf("%s error: %v", funcName, err)
+		svc.Log().Error(err)
+		span.SetStatus(codes.Error, "received error")
+		span.RecordError(err)
 	}
 }
 
 // BindAccountHandler 绑定账号处理函数
 func BindAccountHandler() zero.Handler {
-	return ErrorHandlerWrapper(func(svc *service.Service) error {
-		return svc.BindAccount()
+	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
+		return svc.BindAccount(ctx)
 	})
 }
 
 // PlayerRecentHandler 最近战绩查询处理函数
 func PlayerRecentHandler() zero.Handler {
-	return ErrorHandlerWrapper(func(svc *service.Service) error {
+	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
 		return svc.GetPlayerRecent()
 	})
 }
 
 // PlayerStatsHandler 玩家战绩查询处理函数
 func PlayerStatsHandler() zero.Handler {
-	return ErrorHandlerWrapper(func(svc *service.Service) error {
+	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
 		return svc.GetPlayerStats()
 	})
 }
 
 // PlayerWeaponHandler 玩家武器查询处理函数
 func PlayerWeaponHandler() zero.Handler {
-	return ErrorHandlerWrapper(func(svc *service.Service) error {
+	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
 		return svc.GetPlayerWeapon()
 	})
 }
 
 // PlayerVehicleHandler 玩家载具查询处理函数
 func PlayerVehicleHandler() zero.Handler {
-	return ErrorHandlerWrapper(func(svc *service.Service) error {
+	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
 		return svc.GetPlayerVehicle()
 	})
 }
 
 // BF1ExchangeHandler 获取战地一本期交换处理函数
 func BF1ExchangeHandler() zero.Handler {
-	return ErrorHandlerWrapper(func(svc *service.Service) error {
+	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
 		return svc.GetBF1Exchange()
 	})
 }
 
 // BF1OpreationPackHandler 获取战地一本期行动包处理函数
 func BF1OpreationPackHandler() zero.Handler {
-	return ErrorHandlerWrapper(func(svc *service.Service) error {
+	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
 		return svc.GetBF1OpreationPack()
 	})
 }
 
 // PlayerBanInfoHandler 获取玩家联ban信息
 func PlayerBanInfoHandler() zero.Handler {
-	return ErrorHandlerWrapper(func(svc *service.Service) error {
+	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
 		return svc.GetPlayerBanInfo()
 	})
 }
