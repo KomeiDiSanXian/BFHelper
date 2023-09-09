@@ -152,61 +152,61 @@ func (l *Logger) Output(level Level, message string) {
 }
 
 // Debug 输出Debug级别日志
-func (l *Logger) Debug(v ...interface{}) {
+func (l *Logger) Debug(v ...any) {
 	l.Output(LevelDebug, fmt.Sprint(v...))
 }
 
 // Debugf 格式化输出Debug级别日志
-func (l *Logger) Debugf(format string, v ...interface{}) {
+func (l *Logger) Debugf(format string, v ...any) {
 	l.Output(LevelDebug, fmt.Sprintf(format, v...))
 }
 
 // Info 输出Info级别日志
-func (l *Logger) Info(v ...interface{}) {
+func (l *Logger) Info(v ...any) {
 	l.Output(LevelInfo, fmt.Sprint(v...))
 }
 
 // Infof 格式化输出Info级别日志
-func (l *Logger) Infof(format string, v ...interface{}) {
+func (l *Logger) Infof(format string, v ...any) {
 	l.Output(LevelInfo, fmt.Sprintf(format, v...))
 }
 
 // Warn 输出Warn级别日志
-func (l *Logger) Warn(v ...interface{}) {
+func (l *Logger) Warn(v ...any) {
 	l.Output(LevelWarn, fmt.Sprint(v...))
 }
 
 // Warnf 格式化输出Warn级别日志
-func (l *Logger) Warnf(format string, v ...interface{}) {
+func (l *Logger) Warnf(format string, v ...any) {
 	l.Output(LevelWarn, fmt.Sprintf(format, v...))
 }
 
 // Error 输出Error级别日志
-func (l *Logger) Error(v ...interface{}) {
+func (l *Logger) Error(v ...any) {
 	l.Output(LevelError, fmt.Sprint(v...))
 }
 
 // Errorf 格式化输出Error级别日志
-func (l *Logger) Errorf(format string, v ...interface{}) {
+func (l *Logger) Errorf(format string, v ...any) {
 	l.Output(LevelError, fmt.Sprintf(format, v...))
 }
 
 // Fatal 输出Fatal级别日志
-func (l *Logger) Fatal(v ...interface{}) {
+func (l *Logger) Fatal(v ...any) {
 	l.Output(LevelFatal, fmt.Sprint(v...))
 }
 
 // Fatalf 格式化输出Fatal级别日志
-func (l *Logger) Fatalf(format string, v ...interface{}) {
+func (l *Logger) Fatalf(format string, v ...any) {
 	l.Output(LevelFatal, fmt.Sprintf(format, v...))
 }
 
 // Panic 输出Panic级别日志，并触发 panic
-func (l *Logger) Panic(v ...interface{}) {
+func (l *Logger) Panic(v ...any) {
 	l.Output(LevelPanic, fmt.Sprint(v...))
 }
 
 // Panicf 格式化输出Panic级别日志，并触发 panic
-func (l *Logger) Panicf(format string, v ...interface{}) {
+func (l *Logger) Panicf(format string, v ...any) {
 	l.Output(LevelPanic, fmt.Sprintf(format, v...))
 }
