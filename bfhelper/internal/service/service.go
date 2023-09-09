@@ -18,7 +18,7 @@ type Service struct {
 }
 
 // New 新建业务
-func New(ctx context.Context, zctx *zero.Ctx) *Service {
+func New(zctx *zero.Ctx) *Service {
 	svc := Service{zctx: zctx}
 	svc.dao = dao.New(global.DB)
 	return &svc

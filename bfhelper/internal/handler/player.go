@@ -18,14 +18,14 @@ import (
 func ErrorHandlerWrapper(serviceMethod func(context.Context, *service.Service) error) zero.Handler {
 	return func(zctx *zero.Ctx) {
 		ctx := context.Background()
-		svc := service.New(ctx, zctx)
+		svc := service.New(zctx)
 		funcName := runtime.FuncForPC(reflect.ValueOf(serviceMethod).Pointer()).Name()
 
 		nCtx, span := svc.Trace(ctx, "Handler")
 		err := serviceMethod(nCtx, svc)
 		defer span.End()
 
-		if errors.Is(err,errcode.Success)||errors.Is(err,errcode.Canceled){
+		if errors.Is(err, errcode.Success) || errors.Is(err, errcode.Canceled) {
 			span.SetStatus(codes.Ok, "")
 			return
 		}
