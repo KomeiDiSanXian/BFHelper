@@ -13,7 +13,6 @@ import (
 	fcext "github.com/FloatTech/floatbox/ctxext"
 	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/dao"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/engine"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/logger"
@@ -32,7 +31,7 @@ var defaultConfig string
 var traditionalChinese string
 
 func setupSetting() error {
-	setting, err := setting.NewSetting("settings", engine.Engine.DataFolder())
+	setting, err := setting.NewSetting("settings", global.Engine.DataFolder())
 	if err != nil {
 		return err
 	}
@@ -50,7 +49,7 @@ func setupSetting() error {
 }
 
 func setupLogger() {
-	fileName := engine.Engine.DataFolder() + "/log/bfhelper.log"
+	fileName := global.Engine.DataFolder() + "/log/bfhelper.log"
 	global.Logger = logger.NewLogger(&lumberjack.Logger{
 		Filename:  fileName,
 		MaxSize:   1024, // 最大为1G
@@ -78,7 +77,7 @@ func readDictionary() error {
 
 func generateConfig() {
 	logrus.Warnln("[battlefield]未找到配置或者出现错误, 正在重新生成...")
-	_ = os.WriteFile(engine.Engine.DataFolder()+"settings.yml", []byte(defaultConfig), 0o644)
+	_ = os.WriteFile(global.Engine.DataFolder()+"settings.yml", []byte(defaultConfig), 0o644)
 	logrus.Warnln("配置已生成! 请修改 settings.yml")
 }
 
@@ -86,7 +85,7 @@ func generateConfig() {
 func Initialized() zero.Rule {
 	return fcext.DoOnceOnSuccess(func(ctx *zero.Ctx) bool {
 		var err error
-		dbname := engine.Engine.DataFolder() + "battlefield.db"
+		dbname := global.Engine.DataFolder() + "battlefield.db"
 		// 初始化数据库
 		if err = model.Init(dbname); err != nil {
 			ctx.SendChain(message.Text("ERROR: 数据库初始化失败, 请联系机器人管理员重启"))

@@ -1,5 +1,5 @@
-// Package engine 插件注册
-package engine
+// Package global 插件注册
+package global
 
 import (
 	ctrl "github.com/FloatTech/zbpctrl"
