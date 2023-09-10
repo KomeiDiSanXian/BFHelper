@@ -1,7 +1,7 @@
 // Package service 业务逻辑代码
 package service
 
-import (	
+import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/dao"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/logger"
@@ -27,4 +27,3 @@ func New(zctx *zero.Ctx) *Service {
 func (s *Service) Log() *logger.Logger {
 	return global.Logger
 }
-
