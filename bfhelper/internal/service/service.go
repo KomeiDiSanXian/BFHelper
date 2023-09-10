@@ -1,14 +1,11 @@
 // Package service 业务逻辑代码
 package service
 
-import (
-	"context"
-
+import (	
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/dao"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/logger"
 	zero "github.com/wdvxdr1123/ZeroBot"
-	"go.opentelemetry.io/otel/trace"
 )
 
 // Service 业务
@@ -31,7 +28,3 @@ func (s *Service) Log() *logger.Logger {
 	return global.Logger
 }
 
-// Trace 追踪
-func (s *Service) Trace(ctx context.Context, name string) (context.Context, trace.Span) {
-	return global.Tracer.Start(ctx, name)
-}

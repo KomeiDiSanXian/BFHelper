@@ -66,35 +66,35 @@ func DeleteAdminHandler() zero.Handler {
 // KickPlayerHandler 踢出玩家处理
 func KickPlayerHandler() zero.Handler {
 	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
-		return svc.KickPlayer()
+		return svc.KickPlayer(ctx)
 	})
 }
 
 // BanPlayerHandler 单服务器封禁玩家处理
 func BanPlayerHandler() zero.Handler {
 	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
-		return svc.BanPlayer()
+		return svc.BanPlayer(ctx)
 	})
 }
 
 // BanPlayerAtAllServerHandler 已绑定服务器封禁玩家
 func BanPlayerAtAllServerHandler() zero.Handler {
 	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
-		return svc.BanPlayerAtAllServer()
+		return svc.BanPlayerAtAllServer(ctx)
 	})
 }
 
 // UnbanPlayerHandler 单服务器解封玩家处理
 func UnbanPlayerHandler() zero.Handler {
 	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
-		return svc.UnbanPlayer()
+		return svc.UnbanPlayer(ctx)
 	})
 }
 
 // UnbanPlayerAtAllServerHandler 已绑定服务器解封玩家
 func UnbanPlayerAtAllServerHandler() zero.Handler {
 	return ErrorHandlerWrapper(func(ctx context.Context, svc *service.Service) error {
-		return svc.UnbanPlayerAtAllServer()
+		return svc.UnbanPlayerAtAllServer(ctx)
 	})
 }
 

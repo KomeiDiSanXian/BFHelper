@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,9 +13,12 @@ import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/errcode"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/textutil"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/renderer"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/tracer"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type server struct {
@@ -72,6 +76,7 @@ func (s *Service) ChangeOwner() error {
 		return errcode.DataBaseUpdateError
 	}
 	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("更换成功"))
+	s.Log().Infof("Group %d changed owner, new owner: %d", s.zctx.Event.GroupID, owner)
 	return errcode.Success
 }
 
@@ -136,6 +141,7 @@ func (s *Service) AddServer() error {
 		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	s.addServers(strs[1:], groupID)
+	s.Log().Infof("Added server %v to group %d", strs[1:], groupID)
 	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("添加完成"))
 	return errcode.Success
 }
@@ -160,6 +166,7 @@ func (s *Service) AddServerAdmin() error {
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 添加管理失败"))
 		return errcode.DataBaseUpdateError
 	}
+	s.Log().Infof("Group %d added admin: %v", s.zctx.Event.GroupID, qqs)
 	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("添加成功"))
 	return errcode.Success
 }
@@ -184,6 +191,7 @@ func (s *Service) SetServerAlias() error {
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 设置别名失败"))
 		return errcode.DataBaseUpdateError
 	}
+	s.Log().Infof("Group %d changed server %s alias to %s", s.zctx.Event.GroupID, gameID, alias)
 	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("设置成功"))
 	return errcode.Success
 }
@@ -202,6 +210,7 @@ func (s *Service) DeleteServer() error {
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 删除服务器 ", gameID, " 失败"))
 		return errcode.DataBaseDeleteError
 	}
+	s.Log().Infof("Group %d deleted server %s", s.zctx.Event.GroupID, gameID)
 	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("删除成功"))
 	return errcode.Success
 }
@@ -221,6 +230,7 @@ func (s *Service) DeleteAdmin() error {
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 删除管理员 ", qq, " 失败"))
 		return errcode.DataBaseDeleteError
 	}
+	s.Log().Infof("Group %d removed server admin %d", s.zctx.Event.GroupID, qq)
 	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("删除成功"))
 	return errcode.Success
 }
@@ -258,15 +268,23 @@ func (s *Service) kick(pid string, reason string, group *model.Group) {
 // KickPlayer 在绑定的服务器里踢出玩家
 //
 // @permission: ServerAdmin
-func (s *Service) KickPlayer() error {
+func (s *Service) KickPlayer(ctx context.Context) error {
+	nCtx, span := global.Tracer.Start(ctx, "KickPlayer")
+	defer span.End()
+	span.AddEvent("phase command")
 	cmdString := s.zctx.State["args"].(string)
 	if cmdString == "" {
+		span.AddEvent("invalid command")
+		span.SetStatus(codes.Error, "invalid command")
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 输入为空"))
 		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	cmds := strings.Split(cmdString, " ")
+	span.AddEvent("try to get group")
 	group, err := s.dao.GetGroup(s.zctx.Event.GroupID)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "database error")
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 获取绑定服务器失败"))
 		return errcode.DataBaseReadError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
@@ -275,74 +293,140 @@ func (s *Service) KickPlayer() error {
 	if len(cmds) >= 2 {
 		reason = cmds[1]
 	}
+	span.AddEvent("traditionalize reason")
 	reason = textutil.Traditionalize(reason)
 	if cleaned, has := textutil.CleanPersonalID(player); has {
+		span.AddEvent("start kick process", tracer.AddEventWithDescription(
+			tracer.Description("operator", strconv.FormatInt(s.zctx.Event.UserID, 10)),
+			tracer.Description("reason", reason),
+			tracer.Description("at", strconv.FormatInt(s.zctx.Event.GroupID, 10)),
+			tracer.Description("target", cleaned),
+		))
 		s.kick(cleaned, reason, group)
+		span.AddEvent("finish kick process")
+		span.SetStatus(codes.Ok, "")
 		return errcode.Success
 	}
-	pl, err := s.getPlayer(player)
+	span.AddEvent("try to get player info")
+	pl, err := s.getPlayer(nCtx, player)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "get player info failed")
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 踢出失败: 未查询到目标玩家pid"))
 		return errcode.NotFoundError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
+	span.AddEvent("start kick process", tracer.AddEventWithDescription(
+		tracer.Description("operator", strconv.FormatInt(s.zctx.Event.UserID, 10)),
+		tracer.Description("reason", reason),
+		tracer.Description("at", strconv.FormatInt(s.zctx.Event.GroupID, 10)),
+		tracer.Description("target", pl.PersonalID),
+	))
 	s.kick(pl.PersonalID, reason, group)
+	span.AddEvent("finish kick process")
+	span.SetStatus(codes.Ok, "")
+
+	s.Log().Infof("Group %d try to kick player %s", group.GroupID, pl.DisplayName)
 	return errcode.Success
 }
 
 // 单服务器封禁/解封
-func (s *Service) banFunc(banfunc func(sid string, pid string) error) error {
+func (s *Service) banFunc(ctx context.Context, banfunc func(sid string, pid string) error) error {
+	nCtx, span := global.Tracer.Start(ctx, "SingleServer")
+	defer span.End()
+	span.AddEvent("phase command")
 	cmdString := s.zctx.State["args"].(string)
 	if cmdString == "" {
+		span.AddEvent("invalid command")
+		span.SetStatus(codes.Error, "invalid command")
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 输入为空"))
 		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	cmds := strings.Split(cmdString, " ")
 	if len(cmds) != 2 {
+		span.AddEvent("invalid command")
+		span.SetStatus(codes.Error, "invalid command")
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 不能识别的输入"))
 		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
 	srvName, player := cmds[0], cmds[1]
+	span.AddEvent("try to get server")
 	srv, err := s.dao.GetServerByAlias(s.zctx.Event.GroupID, srvName)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "get server failed")
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 查询服务器失败"))
 		return errcode.DataBaseReadError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
 	if cleaned, has := textutil.CleanPersonalID(player); has {
+		span.AddEvent("start process", tracer.AddEventWithDescription(
+			tracer.Description("operator", strconv.FormatInt(s.zctx.Event.UserID, 10)),
+			tracer.Description("at", strconv.FormatInt(s.zctx.Event.GroupID, 10)),
+			tracer.Description("target", cleaned),
+			tracer.Description("server", srv.GameID),
+		))
 		err := banfunc(srv.ServerID, cleaned)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "ban player failed")
 			s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 失败"))
 			return errcode.InternalError.WithDetails("Error", err).WithZeroContext(s.zctx)
 		}
+		span.AddEvent("success")
+		span.SetStatus(codes.Ok, "")
 		return errcode.Success
 	}
-	pl, err := s.getPlayer(player)
+	span.AddEvent("try to get player")
+	pl, err := s.getPlayer(nCtx, player)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "get player failed")
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 未查询到目标玩家pid"))
 		return errcode.NotFoundError.WithDetails("Error", err)
 	}
+	span.AddEvent("start process", tracer.AddEventWithDescription(
+		tracer.Description("operator", strconv.FormatInt(s.zctx.Event.UserID, 10)),
+		tracer.Description("at", strconv.FormatInt(s.zctx.Event.GroupID, 10)),
+		tracer.Description("target", player),
+		tracer.Description("server", srv.GameID),
+	))
 	err = banfunc(srv.ServerID, pl.PersonalID)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "ban player failed")
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 失败"))
 		return errcode.InternalError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
+	span.AddEvent("success")
+	span.SetStatus(codes.Ok, "")
 	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("操作", pl.DisplayName, "成功"))
 	return errcode.Success
 }
 
 // 多服务器封禁/解封
-func (s *Service) bansFunc(banfunc func(sid string, pid string) error) error {
+func (s *Service) bansFunc(ctx context.Context, banfunc func(sid string, pid string) error) error {
+	nCtx, span := global.Tracer.Start(ctx, "MutipleServer")
+	defer span.End()
+	span.AddEvent("try to get player name")
 	playerName := s.zctx.State["args"].(string)
 	if playerName == "" {
+		span.AddEvent("empty player name")
+		span.SetStatus(codes.Error, "empty player name")
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 输入为空"))
 		return errcode.InvalidParamsError.WithZeroContext(s.zctx)
 	}
-	player, err := s.getPlayer(playerName)
+	span.AddEvent("try to get player info")
+	player, err := s.getPlayer(nCtx, playerName)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "get player failed")
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 未查询到目标玩家pid"))
 		return errcode.NotFoundError.WithDetails("Error", err)
 	}
+	span.AddEvent("try to get group info")
 	group, err := s.dao.GetGroup(s.zctx.Event.GroupID)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "get group failed")
 		s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text("ERROR: 获取绑定服务器失败"))
 		return errcode.DataBaseReadError.WithDetails("Error", err).WithZeroContext(s.zctx)
 	}
@@ -350,6 +434,11 @@ func (s *Service) bansFunc(banfunc func(sid string, pid string) error) error {
 	var wg sync.WaitGroup
 	var tosend string
 	msgChan := make(chan string, len(group.Servers))
+	span.AddEvent("start goroutine", tracer.AddEventWithDescription(
+		tracer.Description("operator", strconv.FormatInt(s.zctx.Event.UserID, 10)),
+		tracer.Description("at", strconv.FormatInt(s.zctx.Event.GroupID, 10)),
+		tracer.Description("target", player.PersonalID),
+	))
 	for _, server := range group.Servers {
 		wg.Add(1)
 		go s.bansProcess(&server, player, msgChan, &wg, banfunc)
@@ -359,6 +448,8 @@ func (s *Service) bansFunc(banfunc func(sid string, pid string) error) error {
 	for msg := range msgChan {
 		tosend += msg
 	}
+	span.AddEvent("finish")
+	span.SetStatus(codes.Ok, "")
 	s.zctx.SendChain(message.Reply(s.zctx.Event.MessageID), message.Text(tosend))
 	return errcode.Success
 }
@@ -380,30 +471,38 @@ func (s *Service) bansProcess(srv *model.Server, player *model.Player, msgChan c
 // BanPlayer 指定一个已绑定的服务器中封禁玩家
 //
 // @permission: ServerAdmin
-// TODO: 添加 vban
-func (s *Service) BanPlayer() error {
-	return s.banFunc(bf1server.Ban)
+// TODO: #13 添加 vban
+func (s *Service) BanPlayer(ctx context.Context) error {
+	nCtx, span := global.Tracer.Start(ctx, "Ban")
+	defer span.End()
+	return s.banFunc(nCtx, bf1server.Ban)
 }
 
 // UnbanPlayer 指定一个已绑定的服务器中解封玩家
 //
 // @permission: ServerAdmin
-func (s *Service) UnbanPlayer() error {
-	return s.banFunc(bf1server.Unban)
+func (s *Service) UnbanPlayer(ctx context.Context) error {
+	nCtx, span := global.Tracer.Start(ctx, "UnBan")
+	defer span.End()
+	return s.banFunc(nCtx, bf1server.Unban)
 }
 
 // BanPlayerAtAllServer 在所有已绑定的服务器里封禁玩家
 //
 // @permission: ServerAdmin
-func (s *Service) BanPlayerAtAllServer() error {
-	return s.bansFunc(bf1server.Ban)
+func (s *Service) BanPlayerAtAllServer(ctx context.Context) error {
+	nCtx, span := global.Tracer.Start(ctx, "BanAll")
+	defer span.End()
+	return s.bansFunc(nCtx, bf1server.Ban)
 }
 
 // UnbanPlayerAtAllServer 在所有已绑定的服务器里封禁玩家
 //
 // @permission: ServerAdmin
-func (s *Service) UnbanPlayerAtAllServer() error {
-	return s.bansFunc(bf1server.Unban)
+func (s *Service) UnbanPlayerAtAllServer(ctx context.Context) error {
+	nCtx, span := global.Tracer.Start(ctx, "UnBanAll")
+	defer span.End()
+	return s.bansFunc(nCtx, bf1server.Unban)
 }
 
 func (s *Service) sendMaps(maptxt string, next *zero.FutureEvent, srv *model.Server, maps []*bf1server.Map) error {
