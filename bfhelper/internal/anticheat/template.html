@@ -65,21 +65,22 @@
             text-decoration: none;
         }
     </style>
-
-    <a href="http://example.com">链接地址</a><br>
-    <img class="report-img" src="http://report_imgbed.com" /><br><br>
-
-    <span>report 123456789</span>
-
+    {{if .Link}}
+    <a href="{{.Link}}">视频链接</a><br>
+    {{end}}
+    <img class="report-img" src="{{.ImageURL}}" /><br><br>
+    {{range .Words}}
+    <span>{{.}}</span><br>
+    {{end}}
 <div class="icon-container">
     <div class="custom-icon">
         <a href="https://github.com/KomeiDiSanXian/BFHelper">
-            <img src="img.jpg" alt="Custom Image">
+            <img src="http://q4.qlogo.cn/g?b=qq&nk={{.SelfID}}&s=640" alt="BotAvatar">
         </a>
     </div>
     <div class="text">
         <span>Report By</span><br>
-        <span>RemiliaBot</span>
+        <span>Remilia</span>
     </div>
 </div>
 </p>
