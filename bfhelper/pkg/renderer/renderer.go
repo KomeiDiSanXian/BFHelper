@@ -152,6 +152,11 @@ func (i *Image) ToImage() image.Image {
 	return i.Canvas.Image()
 }
 
+// ToBase64 转换图片为b64
+func (i *Image) ToBase64() ([]byte, error) {
+	return imgfactory.ToBase64(i.Canvas.Image())
+}
+
 // ScaleByPercent 百分比缩放
 func (i *Image) ScaleByPercent(factor float64) *Image {
 	width, height := i.Canvas.W(), i.Canvas.H()
