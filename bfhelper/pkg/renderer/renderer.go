@@ -25,18 +25,24 @@ type ImageWithXY struct {
 	X, Y int
 }
 
-// NewImage 创建一个宽、高分别为width、height 的图片
+// NewImage 创建一个宽、高分别为width、height 的空白图片
 func NewImage(width, height int) *Image {
 	return &Image{
 		Canvas: gg.NewContext(width, height),
 	}
 }
 
-// NewImageForImage 使用image.Image 创建图片
-func NewImageForImage(im image.Image) *Image {
+// NewImageByImage 使用image.Image 创建图片
+func NewImageByImage(im image.Image) *Image {
 	return &Image{
 		Canvas: gg.NewContextForImage(im),
 	}
+}
+
+// NewImageByPath 使用path下的图片创建图片
+func NewImageByPath(path string) *Image {
+	img, _ := ReadFromPath(path)
+	return NewImageByImage(img)
 }
 
 // NewImageWithXY 使用Image 创建位置在 (x, y) 的图片
@@ -45,6 +51,28 @@ func NewImageWithXY(img *Image, x, y int) *ImageWithXY {
 		Image: img,
 		X:     x,
 		Y:     y,
+	}
+}
+
+// ReadFromPath 读取路径为path 的图片
+func ReadFromPath(path string) (image.Image, error) {
+	inputFile, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer inputFile.Close()
+
+	img, _, err := image.Decode(inputFile)
+	if err != nil {
+		return nil, err
+	}
+	return img, nil
+}
+
+// WithXY 转换Imgage 为ImageWithXY
+func (i *Image) WithXY(x, y int) *ImageWithXY {
+	return &ImageWithXY{
+		i, x, y,
 	}
 }
 
@@ -78,24 +106,13 @@ func (i *Image) ToBytes() ([]byte, error) {
 
 // DrawBackground 绘制背景
 func (i *Image) DrawBackground(path string) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return errors.Wrap(err, "failed to open")
-	}
-	defer f.Close()
-	background, _, err := image.Decode(f)
+	background, err := ReadFromPath(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to decode")
 	}
-	backgroundHeight, backgroundWidth := float64(background.Bounds().Dy()), float64(background.Bounds().Dx())
-	CanvasHeight, CanvasWidth := float64(i.Canvas.H()), float64(i.Canvas.W())
-	if backgroundHeight/backgroundWidth < CanvasHeight/CanvasWidth {
-		background = imgfactory.Size(background, int(backgroundWidth*CanvasHeight/backgroundHeight), int(backgroundHeight*CanvasHeight/backgroundHeight)).Image()
-		i.Canvas.DrawImageAnchored(background, i.Canvas.W()/2, i.Canvas.H()/2, 0.5, 0.5)
-		return nil
-	}
-	background = imgfactory.Size(background, int(backgroundWidth*CanvasWidth/backgroundWidth), int(backgroundHeight*CanvasWidth/backgroundWidth)).Image()
-	i.Canvas.DrawImage(background, 0, 0)
+	bgimg := NewImageWithXY(NewImageByImage(background), 0, 0)
+	bgimg.ScaleToSize(i.Canvas.W(), i.Canvas.H())
+	i.DrawImages([]*ImageWithXY{bgimg})
 	return nil
 }
 
@@ -133,4 +150,26 @@ func (i *Image) Fillet(r float64) image.Image {
 // ToImage 转换为image.Image
 func (i *Image) ToImage() image.Image {
 	return i.Canvas.Image()
+}
+
+// ScaleByPercent 百分比缩放
+func (i *Image) ScaleByPercent(factor float64) *Image {
+	width, height := i.Canvas.W(), i.Canvas.H()
+	newWidth, newHeight := float64(width)*factor, float64(height)*factor
+	newCanvas := gg.NewContext(int(newWidth), int(newHeight))
+	newCanvas.Scale(factor, factor)
+	newCanvas.DrawImage(i.ToImage(), 0, 0)
+	i.Canvas = newCanvas
+	return i
+}
+
+// ScaleToSize 缩放到指定宽高
+func (i *Image) ScaleToSize(targetWidth, targetHeight int) *Image {
+	newCanvas := gg.NewContext(targetWidth, targetHeight)
+	scaleX := float64(targetWidth) / float64(i.Canvas.W())
+	scaleY := float64(targetHeight) / float64(i.Canvas.H())
+	newCanvas.Scale(scaleX, scaleY)
+	newCanvas.DrawImage(i.ToImage(), 0, 0)
+	i.Canvas = newCanvas
+	return i
 }
