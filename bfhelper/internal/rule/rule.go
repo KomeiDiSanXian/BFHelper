@@ -82,8 +82,8 @@ func generateConfig() {
 }
 
 // Initialized 需要执行后才能使用插件
-func Initialized() zero.Rule {
-	return fcext.DoOnceOnSuccess(func(ctx *zero.Ctx) bool {
+func Initialized(ctx *zero.Ctx) bool {
+	rule := fcext.DoOnceOnSuccess(func(ctx *zero.Ctx) bool {
 		var err error
 		dbname := global.Engine.DataFolder() + "battlefield.db"
 		// 初始化数据库
@@ -118,24 +118,21 @@ func Initialized() zero.Rule {
 		}
 		return true
 	})
+	return rule(ctx)
 }
 
 // ServerAdminPermission 是否拥有权限
-func ServerAdminPermission() zero.Rule {
-	return func(ctx *zero.Ctx) bool {
-		if zero.AdminPermission(ctx) {
-			return true
-		}
-		return dao.New(global.DB).IsServerAdmin(ctx.Event.GroupID, ctx.Event.UserID)
+func ServerAdminPermission(ctx *zero.Ctx) bool {
+	if zero.AdminPermission(ctx) {
+		return true
 	}
+	return dao.New(global.DB).IsServerAdmin(ctx.Event.GroupID, ctx.Event.UserID)
 }
 
 // ServerOwnerPermission 腐竹权限
-func ServerOwnerPermission() zero.Rule {
-	return func(ctx *zero.Ctx) bool {
-		if zero.OwnerPermission(ctx) {
-			return true
-		}
-		return dao.New(global.DB).IsOwner(ctx.Event.GroupID, ctx.Event.UserID)
+func ServerOwnerPermission(ctx *zero.Ctx) bool {
+	if zero.OwnerPermission(ctx) {
+		return true
 	}
+	return dao.New(global.DB).IsOwner(ctx.Event.GroupID, ctx.Event.UserID)
 }
