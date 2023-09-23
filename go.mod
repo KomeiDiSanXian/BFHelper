@@ -27,10 +27,10 @@ require (
 	go.opentelemetry.io/otel/sdk v1.17.0 // indirect
 	go.opentelemetry.io/otel/trace v1.17.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20230530153820-e85fd2cbaebc // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc // indirect
-	google.golang.org/grpc v1.57.0 // indirect
+	golang.org/x/net v0.12.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20230711160842-782d3b101e98 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
+	google.golang.org/grpc v1.58.2 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 )
 
@@ -94,6 +94,6 @@ require (
 
 replace modernc.org/sqlite => github.com/fumiama/sqlite3 v1.20.0-with-win386
 
-replace github.com/FloatTech/zbputils => github.com/KomeiDiSanXian/zbputils v0.0.0-20230601080829-20c1a8e2f8c7
+replace github.com/FloatTech/zbputils => github.com/KomeiDiSanXian/zbputils v0.0.0-20230923095115-55ba2c51620d
 
 replace github.com/remyoudompheng/bigfft => github.com/fumiama/bigfft v0.0.0-20211011143303-6e0bfa3c836b
