@@ -10,6 +10,7 @@ Account:
 SakuraKooi:
   SakuraID: yourid
   SakuraToken: yourtoken
+  MFACode: "" # 开启了两步验证就要填这个, 一定要填写保留的, 仅支持令牌形式
 # 举报功能的使用需要填写该项
 BFEAC:
   ApiKey: "-"

@@ -14,6 +14,7 @@ type AccountSettingS struct {
 type SessionAPISettingS struct {
 	SakuraID    string
 	SakuraToken string
+	MFACode     string
 }
 
 // BFEACSettingS BFEAC 设置

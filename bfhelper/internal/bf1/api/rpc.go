@@ -56,7 +56,13 @@ func Login(username, password string) error {
 	if username == "" || password == "" {
 		return errors.New("账号信息不完整！")
 	}
-	user := map[string]interface{}{"username": username, "password": password, "refreshToken": true, "allowSaveSession": false}
+	user := map[string]interface{}{
+		"username":         username,
+		"password":         password,
+		"refreshToken":     true,
+		"allowSaveSession": false,
+		"mfaCode":          global.SessionAPISetting.MFACode,
+	}
 	bodyJSON, err := toJSON(user)
 	if err != nil {
 		return errors.New("更新session时出错: json marshal error")
