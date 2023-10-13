@@ -9,6 +9,7 @@ import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/errcode"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/service"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/tracer"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
@@ -20,9 +21,17 @@ func GenericHandler(zctx *zero.Ctx, serviceMethod func(context.Context, *service
 	ctx := context.Background()
 	svc := service.New(zctx)
 	funcName := runtime.FuncForPC(reflect.ValueOf(serviceMethod).Pointer()).Name()
+	shutdown, err := tracer.InstallExportPipeline(ctx, global.TraceSetting.URL)
+	if err != nil {
+		svc.Log().Error(err)
+		return
+	}
+	defer func() {
+		_ = shutdown(ctx)
+	}()
 
 	nCtx, span := global.Tracer.Start(ctx, "Handler")
-	err := serviceMethod(nCtx, svc)
+	err = serviceMethod(nCtx, svc)
 	defer span.End()
 
 	if errors.Is(err, errcode.Success) || errors.Is(err, errcode.Canceled) {

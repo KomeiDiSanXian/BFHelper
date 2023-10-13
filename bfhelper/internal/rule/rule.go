@@ -2,7 +2,6 @@
 package rule
 
 import (
-	"context"
 	_ "embed"
 	"encoding/json"
 	"io"
@@ -11,13 +10,11 @@ import (
 	"strings"
 
 	fcext "github.com/FloatTech/floatbox/ctxext"
-	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/dao"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/model"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/logger"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/setting"
-	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/tracer"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/message"
@@ -30,22 +27,27 @@ var defaultConfig string
 //go:embed dic.json
 var traditionalChinese string
 
+var settings *setting.Setting
+
+func init() {
+	dbname := global.Engine.DataFolder() + "battlefield.db"
+	_ = model.Init(dbname)
+	global.DB, _ = model.Open(dbname)
+	settings, _ = setting.NewSetting("settings", global.Engine.DataFolder())
+}
+
 func setupSetting() error {
-	setting, err := setting.NewSetting("settings", global.Engine.DataFolder())
-	if err != nil {
+	if err := settings.ReadSection("Account", &global.AccountSetting); err != nil {
 		return err
 	}
-	if err := setting.ReadSection("Account", &global.AccountSetting); err != nil {
+	if err := settings.ReadSection("BFEAC", &global.BFEACSetting); err != nil {
 		return err
 	}
-	if err := setting.ReadSection("BFEAC", &global.BFEACSetting); err != nil {
-		return err
-	}
-	if err := setting.ReadSection("Trace", &global.TraceSetting); err != nil {
+	if err := settings.ReadSection("Trace", &global.TraceSetting); err != nil {
 		return err
 	}
 	setupLogger()
-	return setting.ReadSection("SakuraKooi", &global.SessionAPISetting)
+	return settings.ReadSection("SakuraKooi", &global.SessionAPISetting)
 }
 
 func setupLogger() {
@@ -56,11 +58,6 @@ func setupLogger() {
 		MaxAge:    10,   // 日志保存10天
 		LocalTime: true,
 	}, "", log.LstdFlags)
-}
-
-func setupTracer() error {
-	_, err := tracer.InstallExportPipeline(context.Background(), global.TraceSetting.URL)
-	return err
 }
 
 func readDictionary() error {
@@ -85,12 +82,6 @@ func generateConfig() {
 func Initialized(ctx *zero.Ctx) bool {
 	rule := fcext.DoOnceOnSuccess(func(ctx *zero.Ctx) bool {
 		var err error
-		dbname := global.Engine.DataFolder() + "battlefield.db"
-		// 初始化数据库
-		if err = model.Init(dbname); err != nil {
-			ctx.SendChain(message.Text("ERROR: 数据库初始化失败, 请联系机器人管理员重启"))
-			return false
-		}
 		// 读取配置文件
 		if err = setupSetting(); err != nil {
 			ctx.SendChain(message.Text("ERROR: 读取插件配置失败, 正在重新创建"))
@@ -98,23 +89,10 @@ func Initialized(ctx *zero.Ctx) bool {
 			ctx.SendChain(message.Text("INFO: 插件配置已重新创建, 请联系机器人主人修改"))
 			return false
 		}
-		// 建立数据库连接
-		global.DB, err = model.Open(dbname)
-		if err != nil {
-			ctx.SendChain(message.Text("ERROR: 插件数据库连接失败, 请联系机器人管理员重启"))
-			return false
-		}
-		// 刷新Session
-		_ = bf1api.Login(global.AccountSetting.Username, global.AccountSetting.Password)
 		// 读字典
 		err = readDictionary()
 		if err != nil {
 			logrus.Errorf("read dictionary: %v", err)
-		}
-		// 追踪初始化
-		err = setupTracer()
-		if err != nil {
-			logrus.Errorf("tracer: %v", err)
 		}
 		return true
 	})
