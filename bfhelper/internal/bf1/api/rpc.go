@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/errcode"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
@@ -14,6 +15,7 @@ import (
 	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq/bf1"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/uuid"
 	"github.com/pkg/errors"
+	"github.com/pquerna/otp/totp"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 )
@@ -56,12 +58,20 @@ func Login(username, password string) error {
 	if username == "" || password == "" {
 		return errors.New("账号信息不完整！")
 	}
+	var mfaCode string
+	var err error
+	if global.SessionAPISetting.MFASecret != "" {
+		mfaCode, err = totp.GenerateCode(global.SessionAPISetting.MFASecret, time.Now())
+		if err != nil {
+			return err
+		}
+	}
 	user := map[string]interface{}{
 		"username":         username,
 		"password":         password,
 		"refreshToken":     true,
 		"allowSaveSession": false,
-		"mfaCode":          global.SessionAPISetting.MFACode,
+		"mfaCode":          mfaCode,
 	}
 	bodyJSON, err := toJSON(user)
 	if err != nil {
