@@ -2,11 +2,13 @@
 package rule
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"io"
 	"log"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/dao"
@@ -14,6 +16,7 @@ import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/logger"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/setting"
+	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/tracer"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -44,6 +47,18 @@ func init() {
 	if err != nil {
 		logrus.Errorf("read dictionary: %v", err)
 	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	shutdown, err := tracer.InstallExportPipeline(ctx, global.TraceSetting.URL)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+	go func() {
+		<-ctx.Done()
+		stop()
+		_ = shutdown(context.Background())
+	}()
 }
 
 func setupSetting() error {
