@@ -17,11 +17,9 @@ import (
 
 // GenericHandler 通用处理封装
 func GenericHandler(zctx *zero.Ctx, serviceMethod func(context.Context, *service.Service) error) {
-	ctx := context.Background()
 	svc := service.New(zctx)
 	funcName := runtime.FuncForPC(reflect.ValueOf(serviceMethod).Pointer()).Name()
-
-	nCtx, span := global.Tracer.Start(ctx, "Handler")
+	nCtx, span := global.Tracer.Start(context.Background(), "Handler")
 	err := serviceMethod(nCtx, svc)
 	defer span.End()
 
