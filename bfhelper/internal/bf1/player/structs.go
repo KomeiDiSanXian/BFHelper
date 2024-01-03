@@ -59,7 +59,6 @@ type Stat struct {
 	VehicleKills      string
 	VehicleKPM        string
 	Rank              string
-	Skill             string
 	TimePlayed        string
 	MVP               string
 	Accuracy          string
@@ -68,7 +67,6 @@ type Stat struct {
 	HighestKillStreak string
 	LongestHeadshot   string
 	Revives           string
-	CarriersKills     string
 }
 
 // Weapons 武器

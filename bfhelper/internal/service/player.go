@@ -250,7 +250,6 @@ func (s *Service) GetPlayerStats(ctx context.Context) error {
 	// TODO: 修改为卡片发送, 部分数据不准确，等待更改
 	txt := "id：" + id + "\n" +
 		"等级：" + stat.Rank + "\n" +
-		"技巧值：" + stat.Skill + "\n" +
 		"游玩时长：" + stat.TimePlayed + "\n" +
 		"总kd：" + stat.TotalKD + "(" + stat.Kills + "/" + stat.Deaths + ")" + "\n" +
 		"总kpm：" + stat.KPM + "\n" +
@@ -267,8 +266,7 @@ func (s *Service) GetPlayerStats(ctx context.Context) error {
 		"最高连杀：" + stat.HighestKillStreak + "\n" +
 		"最远爆头：" + stat.LongestHeadshot + "\n" +
 		"MVP数：" + stat.MVP + "\n" +
-		"作为神医拉起了 " + stat.Revives + " 人" + "\n" +
-		"开棺材车创死了 " + stat.CarriersKills + " 人"
+		"作为神医拉起了 " + stat.Revives + " 人"
 
 	span.AddEvent("success")
 	span.SetStatus(codes.Ok, "")

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
 	"sync"
@@ -26,39 +27,54 @@ type Cheater struct {
 
 // GetStats 获取战绩信息
 func GetStats(id string) (*Stat, error) {
-	data, err := netreq.Request{URL: "https://battlefieldtracker.com/api/appStats?platform=3&name=" + id}.GetRespBodyJSON()
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.ForceAttemptHTTP2 = false
+	transport.TLSClientConfig.NextProtos = []string{"http/1.1"}
+	res, err := netreq.Request{
+		URL: "https://api.tracker.gg/api/v2/bf1/standard/profile/origin/" + id,
+		Header: map[string]string{
+			"Host":          "api.tracker.gg",
+			"User-Agent":    "Tracker Network App / 3.22.9",
+			"Accept":        "application/json; charset=utf-8",
+			"x-app-version": "3.22.9",
+		},
+		Transport: transport,
+	}.GetRespBodyJSON()
+	if res == nil {
+		return nil, errors.New("empty response")
+	}
 	if err != nil {
 		return nil, err
 	}
-	if !data.IsObject() {
+	if res.Get("errors").Exists() {
 		return nil, errors.New("invalid id")
 	}
+
+	data := res.Get("data.segments.0")
 	stat := &Stat{
-		SPM:               data.Get("stats.2.value").Str,
-		TotalKD:           data.Get("stats.4.value").Str,
-		WinPercent:        data.Get("stats.5.value").Str,
-		KillsPerGame:      data.Get("stats.6.value").Str,
-		Kills:             data.Get("stats.7.value").Str,
-		Deaths:            data.Get("stats.9.value").Str,
-		KPM:               data.Get("stats.10.value").Str,
-		Losses:            data.Get("stats.11.value").Str,
-		Wins:              data.Get("stats.12.value").Str,
-		InfantryKills:     data.Get("stats.13.value").Str,
-		InfantryKPM:       data.Get("stats.14.value").Str,
-		InfantryKD:        data.Get("stats.15.value").Str,
-		VehicleKills:      data.Get("stats.16.value").Str,
-		VehicleKPM:        data.Get("stats.17.value").Str,
-		Rank:              data.Get("stats.18.value").Str,
-		Skill:             data.Get("stats.19.value").Str,
-		TimePlayed:        data.Get("stats.20.displayValue").Str,
-		MVP:               data.Get("stats.26.value").Str,
-		Accuracy:          data.Get("stats.27.value").Str,
-		DogtagsTaken:      data.Get("stats.31.value").Str,
-		Headshots:         data.Get("stats.32.value").Str,
-		HighestKillStreak: data.Get("stats.35.value").Str,
-		LongestHeadshot:   data.Get("stats.37.value").Str,
-		Revives:           data.Get("stats.41.value").Str,
-		CarriersKills:     data.Get("stats.54.value").Str,
+		SPM:               data.Get("stats.scorePerMinute.displayValue").Str,
+		TotalKD:           data.Get("stats.kdRatio.displayValue").Str,
+		WinPercent:        data.Get("stats.winPercentage.displayValue").Str,
+		KillsPerGame:      data.Get("stats.killsPerRound.displayValue").Str,
+		Kills:             data.Get("stats.kills.displayValue").Str,
+		Deaths:            data.Get("stats.deaths.displayValue").Str,
+		KPM:               data.Get("stats.killsPerMinute.displayValue").Str,
+		Losses:            data.Get("stats.losses.displayValue").Str,
+		Wins:              data.Get("stats.wins.displayValue").Str,
+		InfantryKills:     data.Get("stats.infantryKills.displayValue").Str,
+		InfantryKPM:       data.Get("stats.infantryKillsPerMinute.displayValue").Str,
+		InfantryKD:        data.Get("stats.infantryKdRatio.displayValue").Str,
+		VehicleKills:      data.Get("stats.vehicleKills.displayValue").Str,
+		VehicleKPM:        data.Get("stats.vehicleKillsPerMinute.displayValue").Str,
+		Rank:              data.Get("stats.rank.displayValue").Str,
+		TimePlayed:        data.Get("stats.timePlayed.displayValue").Str,
+		MVP:               data.Get("stats.mvp.displayValue").Str,
+		Accuracy:          data.Get("stats.shotsAccuracy.displayValue").Str,
+		DogtagsTaken:      data.Get("stats.dogtagsTaken.displayValue").Str,
+		Headshots:         data.Get("stats.headshots.displayValue").Str,
+		HighestKillStreak: data.Get("stats.killStreak.displayValue").Str,
+		LongestHeadshot:   data.Get("stats.longestHeadshot.displayValue").Str,
+		Revives:           data.Get("stats.revive.displayValue").Str,
 	}
 	return stat, err
 }

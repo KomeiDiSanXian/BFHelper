@@ -12,15 +12,17 @@ import (
 
 // Request 请求结构体
 type Request struct {
-	Method string
-	URL    string
-	Header map[string]string
-	Body   io.Reader
+	Method    string
+	URL       string
+	Header    map[string]string
+	Body      io.Reader
+	Transport http.RoundTripper
 }
 
 func (r Request) client() *http.Client {
 	return &http.Client{
-		Timeout: time.Minute,
+		Timeout:   time.Minute,
+		Transport: r.Transport,
 	}
 }
 
