@@ -2,8 +2,6 @@ module github.com/KomeiDiSanXian/BFHelper
 
 go 1.21
 
-toolchain go1.22.4
-
 require (
 	github.com/FloatTech/zbpctrl v1.6.1
 	github.com/FloatTech/zbputils v1.7.1
