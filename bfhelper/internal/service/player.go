@@ -25,6 +25,10 @@ func (s *Service) BindAccount(ctx context.Context) error {
 	_, span := global.Tracer.Start(ctx, "BindAccount")
 	defer span.End()
 	id := s.zctx.State["args"].(string)
+	if id == "" {
+		s.zctx.SendChain(message.At(s.zctx.Event.UserID), message.Text("绑定失败, ERR: 空id"))
+		return errcode.InvalidPlayerError
+	}
 	// 数据库查询是否绑定
 	span.AddEvent("start query database", tracer.AddEventWithDescription(tracer.Description("query player", id)))
 	player, err := s.dao.GetPlayerByQID(s.zctx.Event.UserID)
