@@ -9,7 +9,6 @@ import (
 	"github.com/FloatTech/gg"
 	"github.com/FloatTech/imgfactory"
 	"github.com/FloatTech/rendercard"
-	"github.com/disintegration/imaging"
 	"github.com/pkg/errors"
 )
 
@@ -137,10 +136,10 @@ func (i *Image) DrawImages(imgs []*ImageWithXY) *Image {
 	return i
 }
 
-// Blur 绘制强度为delta 的高斯模糊
-func (i *Image) Blur(delta float64) image.Image {
-	return imaging.Blur(i.Canvas.Image(), delta)
-}
+// // Blur 绘制强度为delta 的高斯模糊
+// func (i *Image) Blur(delta float64) image.Image {
+// 	return imaging.Blur(i.Canvas.Image(), delta)
+// }
 
 // Fillet 裁剪图片为圆角矩形
 func (i *Image) Fillet(r float64) image.Image {
