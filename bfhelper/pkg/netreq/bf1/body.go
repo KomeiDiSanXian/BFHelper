@@ -18,7 +18,7 @@ type Post struct {
 type Param struct {
 	Game       string   `json:"game"`
 	PersonaID  string   `json:"personaId"`
-	PersonaIds []string `json:"personaIds"`
+	PersonaIDs []string `json:"personaIds"`
 	GameID     string   `json:"gameId"`
 	ServerID   string   `json:"serverId"`
 	PGid       string   `json:"persistedGameId"`
@@ -168,7 +168,7 @@ func NewPostPlaying(pid string) *Post {
 		Method:  global.Playing,
 		Params: Param{
 			Game:       global.BF1,
-			PersonaIds: []string{pid},
+			PersonaIDs: []string{pid},
 		},
 		ID: uuid.NewUUID(),
 	}

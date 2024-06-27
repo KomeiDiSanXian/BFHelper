@@ -9,56 +9,56 @@ import (
 
 // CreateGroupHandler 创建服务器群组处理函数
 func CreateGroupHandler(zctx *zero.Ctx) {
-	GenericHandler(zctx, func(ctx context.Context, svc *service.Service) error {
+	GenericHandler(zctx, func(_ context.Context, svc *service.Service) error {
 		return svc.CreateGroup()
 	})
 }
 
 // DeleteGroupHandler 所在群删除服务器群组处理函数
 func DeleteGroupHandler(zctx *zero.Ctx) {
-	GenericHandler(zctx, func(ctx context.Context, svc *service.Service) error {
+	GenericHandler(zctx, func(_ context.Context, svc *service.Service) error {
 		return svc.DeleteGroup()
 	})
 }
 
 // ChangeOwnerHandler 更换服务器群组所有人处理函数
 func ChangeOwnerHandler(zctx *zero.Ctx) {
-	GenericHandler(zctx, func(ctx context.Context, svc *service.Service) error {
+	GenericHandler(zctx, func(_ context.Context, svc *service.Service) error {
 		return svc.ChangeOwner()
 	})
 }
 
 // AddServerHandler 添加服务器处理函数
 func AddServerHandler(zctx *zero.Ctx) {
-	GenericHandler(zctx, func(ctx context.Context, svc *service.Service) error {
+	GenericHandler(zctx, func(_ context.Context, svc *service.Service) error {
 		return svc.AddServer()
 	})
 }
 
 // AddServerAdminHandler 添加服务器管理员
 func AddServerAdminHandler(zctx *zero.Ctx) {
-	GenericHandler(zctx, func(ctx context.Context, svc *service.Service) error {
+	GenericHandler(zctx, func(_ context.Context, svc *service.Service) error {
 		return svc.AddServerAdmin()
 	})
 }
 
 // SetServerAliasHandler 设置服务器别名
 func SetServerAliasHandler(zctx *zero.Ctx) {
-	GenericHandler(zctx, func(ctx context.Context, svc *service.Service) error {
+	GenericHandler(zctx, func(_ context.Context, svc *service.Service) error {
 		return svc.SetServerAlias()
 	})
 }
 
 // DeleteServerHandler 删除服务器处理函数
 func DeleteServerHandler(zctx *zero.Ctx) {
-	GenericHandler(zctx, func(ctx context.Context, svc *service.Service) error {
+	GenericHandler(zctx, func(_ context.Context, svc *service.Service) error {
 		return svc.DeleteServer()
 	})
 }
 
 // DeleteAdminHandler 删除群组服务器管理员
 func DeleteAdminHandler(zctx *zero.Ctx) {
-	GenericHandler(zctx, func(ctx context.Context, svc *service.Service) error {
+	GenericHandler(zctx, func(_ context.Context, svc *service.Service) error {
 		return svc.DeleteAdmin()
 	})
 }
@@ -100,14 +100,14 @@ func UnbanPlayerAtAllServerHandler(zctx *zero.Ctx) {
 
 // ChangeMapHandler 切换地图处理
 func ChangeMapHandler(zctx *zero.Ctx) {
-	GenericHandler(zctx, func(ctx context.Context, svc *service.Service) error {
+	GenericHandler(zctx, func(_ context.Context, svc *service.Service) error {
 		return svc.ChangeMap()
 	})
 }
 
 // ReadMapsHandler 查看地图池处理函数
 func ReadMapsHandler(zctx *zero.Ctx) {
-	GenericHandler(zctx, func(ctx context.Context, svc *service.Service) error {
+	GenericHandler(zctx, func(_ context.Context, svc *service.Service) error {
 		return svc.GetMap()
 	})
 }
