@@ -6,15 +6,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
-        uses: actions/setup-go@master
+        uses: actions/setup-go@v5.0.2
         with:
           go-version: '1.21'
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@master
+        uses: actions/checkout@v4.1.7
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@master
+        uses: golangci/golangci-lint-action@v6.1.0
         with:
           version: latest
 
@@ -30,4 +30,4 @@ jobs:
       - name: Create Pull Request
         if: ${{ !github.head_ref }}
         continue-on-error: true
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v6.1.0
