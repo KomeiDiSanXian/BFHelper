@@ -11,8 +11,8 @@ require (
 	github.com/tidwall/gjson v1.17.1
 	github.com/wdvxdr1123/ZeroBot v1.7.5-0.20240501144516-eb574bbdad32
 	go.opentelemetry.io/otel v1.30.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.27.0
-	go.opentelemetry.io/otel/sdk v1.27.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.30.0
+	go.opentelemetry.io/otel/sdk v1.30.0
 	go.opentelemetry.io/otel/trace v1.30.0
 )
 
@@ -59,7 +59,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
-	golang.org/x/sys v0.21.0
+	golang.org/x/sys v0.25.0
 )
 
 require (
