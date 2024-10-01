@@ -50,6 +50,7 @@ jobs:
         GOOS: ${{ matrix.goos }}
         GOARCH: ${{ matrix.goarch }}
         IS_PR: ${{ !!github.head_ref }}
+        LD_FLAGS: "-checklinkname=0"
       # 如果是windows, 添加.exe后缀
       # 如果是拉取请求触发, 显示拉取请求, 不构建
       run: |
