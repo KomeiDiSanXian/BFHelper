@@ -30,4 +30,4 @@ jobs:
       - name: Create Pull Request
         if: ${{ !github.head_ref }}
         continue-on-error: true
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v7
