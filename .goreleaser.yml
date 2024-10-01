@@ -26,6 +26,7 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
+      - -checklinkname=0
   - id: win
     env:
       - CGO_ENABLED=0
