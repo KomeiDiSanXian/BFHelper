@@ -139,6 +139,11 @@
 ### b. 本地编译
 
 1. 下载并安装最新的 [golang](https://studygolang.com/dl) 环境
+> [!IMPORTANT]
+> 如果你使用的是**1.23**及以上版本的golang, 需要在编译时额外添加 `-checklinkname=0` 参数, 如下
+> ```bash
+> go build -ldflags=-checklinkname=0 .   
+> ```
 2. clone [FloatTech/ZeroBot-Plugin](https://github.com/FloatTech/ZeroBot-Plugin)
 3. 编辑`main.go`文件中的import, 在其中添加
 
