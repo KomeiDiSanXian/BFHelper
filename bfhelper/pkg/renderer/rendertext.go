@@ -1,3 +1,4 @@
+// Package renderer 文字转图片并发送
 package renderer
 
 import (
