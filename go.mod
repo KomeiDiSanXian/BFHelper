@@ -8,7 +8,7 @@ require (
 	github.com/FloatTech/zbputils v1.7.1
 	github.com/jinzhu/gorm v1.9.16
 	github.com/sirupsen/logrus v1.9.3
-	github.com/tidwall/gjson v1.17.1
+	github.com/tidwall/gjson v1.17.3
 	github.com/wdvxdr1123/ZeroBot v1.7.5-0.20240501144516-eb574bbdad32
 	go.opentelemetry.io/otel v1.30.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.30.0
