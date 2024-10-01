@@ -1,0 +1,38 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+registries:
+  github:
+    type: git
+    url: https://github.com
+    username: KomeiDiSanXian
+    password: ${{ secrets.TOKEN }}
+updates:
+  - package-ecosystem: "github-actions"
+    registries:
+      - github
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps): update"
+    labels:
+      - "dependencies"
+    assignees:
+      - "dependabot[bot]"
+
+  - package-ecosystem: "gomod"
+    registries:
+      - github
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps): update go dependencies"
+    labels:
+      - "dependencies"
+    assignees:
+      - "dependabot[bot]"
