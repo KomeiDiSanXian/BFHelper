@@ -128,23 +128,6 @@ func GetVehicles(pid string) (*VehicleSort, error) {
 	return &vehicle, err
 }
 
-// Get2k battlelog 获取kd,kpm
-func Get2k(pid string) (kd float64, kpm float64, err error) {
-	g := bf1.NewGateway(global.Session.GetSessionID())
-	data, err := bf1.DetailedStatsByPersonaID(g, pid)
-	if err != nil {
-		return -1, -1, err
-	}
-	death := data.Get("result.basicStats.deaths").Float()
-	if death == 0 {
-		kd = data.Get("result.basicStats.kills").Float()
-		return kd, data.Get("result.basicStats.kpm").Float(), nil
-	}
-	kd = data.Get("result.basicStats.kills").Float() / death
-	kpm = data.Get("result.basicStats.kpm").Float()
-	return kd, kpm, err
-}
-
 // IsHacker 借助id 获取举报信息
 func IsHacker(id string) *Cheater {
 	var c Cheater
