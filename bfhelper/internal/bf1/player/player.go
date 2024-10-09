@@ -10,11 +10,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Dev4BF/GoBattlefieldAPI/bf1"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/anticheat"
-	rsp "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq"
-	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq/bf1"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
@@ -81,8 +80,8 @@ func GetStats(id string) (*Stat, error) {
 
 // GetWeapons 获取武器
 func GetWeapons(pid, class string) (*WeaponSort, error) {
-	post := bf1reqbody.NewPostWeapon(pid)
-	data, err := rsp.ReturnJSON(global.NativeAPI, "POST", post)
+	g := bf1.NewGateway(global.Session.GetSessionID())
+	data, err := bf1.GetWeaponsByPersonaID(g, pid)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +96,8 @@ func GetWeapons(pid, class string) (*WeaponSort, error) {
 
 // GetVehicles 获取载具信息
 func GetVehicles(pid string) (*VehicleSort, error) {
-	post := bf1reqbody.NewPostVehicle(pid)
-	data, err := rsp.ReturnJSON(global.NativeAPI, "POST", post)
+	g := bf1.NewGateway(global.Session.GetSessionID())
+	data, err := bf1.PlayerVehicles(g, pid)
 	if err != nil {
 		return nil, err
 	}
@@ -131,8 +130,8 @@ func GetVehicles(pid string) (*VehicleSort, error) {
 
 // Get2k battlelog 获取kd,kpm
 func Get2k(pid string) (kd float64, kpm float64, err error) {
-	post := bf1reqbody.NewPostStats(pid)
-	data, err := rsp.ReturnJSON(global.NativeAPI, "POST", post)
+	g := bf1.NewGateway(global.Session.GetSessionID())
+	data, err := bf1.DetailedStatsByPersonaID(g, pid)
 	if err != nil {
 		return -1, -1, err
 	}

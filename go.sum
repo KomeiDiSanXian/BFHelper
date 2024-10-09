@@ -1,3 +1,5 @@
+github.com/Dev4BF/GoBattlefieldAPI v0.0.0-20240924002511-d92930a47da0 h1:+7uW5l3U6PmfM9Pz+JtIp+SGoTOdlnmE7o4Hed/nlkw=
+github.com/Dev4BF/GoBattlefieldAPI v0.0.0-20240924002511-d92930a47da0/go.mod h1:oIp2UXG2HS4dMNmv40AnUeVihzQ5vvUaHxd0/4gF30A=
 github.com/FloatTech/floatbox v0.0.0-20240505082030-226ec6713e14 h1:8O0Iq9MnKsKowltY9txhOqcJdmGTjxHPQ4gEYzbJc9A=
 github.com/FloatTech/floatbox v0.0.0-20240505082030-226ec6713e14/go.mod h1:OzGLhvmtz1TKIdGaJDd8pQumvD36UqK+dWsiCISmzQQ=
 github.com/FloatTech/gg v1.1.3 h1:+GlL02lTKsxJQr4WCuNwVxC1/eBZrCvypCIBtxuOFb4=
@@ -12,6 +14,8 @@ github.com/FloatTech/ttl v0.0.0-20230307105452-d6f7b2b647d1 h1:g4pTnDJUW4VbJ9Nvo
 github.com/FloatTech/ttl v0.0.0-20230307105452-d6f7b2b647d1/go.mod h1:fHZFWGquNXuHttu9dUYoKuNbm3dzLETnIOnm1muSfDs=
 github.com/FloatTech/zbpctrl v1.6.1 h1:SilK5R2poO8iUT6JPzpgr/BSzxYAaybBYNZkMyZ8STw=
 github.com/FloatTech/zbpctrl v1.6.1/go.mod h1:I+MetM++1sJhNPg3zww1aw04BicYsNohvHC4Jh52XSo=
+github.com/KomeiDiSanXian/BFSession v0.0.0-20240903022626-490287c76eb8 h1:u5QtMzB+MGQrfQgKhigLRWV0Y+gPK0s75SbHvjgUGg8=
+github.com/KomeiDiSanXian/BFSession v0.0.0-20240903022626-490287c76eb8/go.mod h1:owFdho3k8DSY4qMGvje6IQltaXdQuND5obSz4S9SHmA=
 github.com/KomeiDiSanXian/zbputils v0.0.0-20230923095115-55ba2c51620d h1:xDRTbCeUNaCWSzSqlmbOJE7VqTtYgn5tNKeCZmy9eyU=
 github.com/KomeiDiSanXian/zbputils v0.0.0-20230923095115-55ba2c51620d/go.mod h1:6DMCU2lhpS1x6BjM15XGzlAUcEPTKqjUaalmbJED198=
 github.com/PuerkitoBio/goquery v1.5.1/go.mod h1:GsLWisAFVj4WgDibEWF4pvYnkVQBpKBKeU+7zCJoLcc=
@@ -21,8 +25,8 @@ github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5 h1:bBmmB7he0i
 github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5/go.mod h1:0UcFaCkhp6vZw6l5Dpq0Dp673CoF9GdvA8lTfst0GiU=
 github.com/andybalholm/cascadia v1.1.0/go.mod h1:GsXiBklL0woXo1j/WYWtSYYC4ouU9PqHO0sqidkEA4Y=
 github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
-github.com/boombuler/barcode v1.0.1 h1:NDBbPmhS+EqABEs5Kg3n/5ZNjy73Pz7SIV+KCeqyXcs=
-github.com/boombuler/barcode v1.0.1/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
+github.com/boombuler/barcode v1.0.2 h1:79yrbttoZrLGkL/oOI8hBrUKucwOL0oOjUgEguGMcJ4=
+github.com/boombuler/barcode v1.0.2/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
