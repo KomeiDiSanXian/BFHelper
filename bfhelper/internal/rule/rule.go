@@ -17,6 +17,7 @@ import (
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/logger"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/setting"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/tracer"
+	"github.com/KomeiDiSanXian/BFSession/session"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -69,6 +70,7 @@ func setupSetting() error {
 	if err := settings.ReadSection("Account", &global.AccountSetting); err != nil {
 		return err
 	}
+	global.Session = session.LoginWithCookie(global.AccountSetting.Remid, global.AccountSetting.SID)
 	if err := settings.ReadSection("BFEAC", &global.BFEACSetting); err != nil {
 		return err
 	}
@@ -76,7 +78,7 @@ func setupSetting() error {
 		return err
 	}
 	setupLogger()
-	return settings.ReadSection("SakuraKooi", &global.SessionAPISetting)
+	return nil
 }
 
 func setupLogger() {

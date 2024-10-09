@@ -5,6 +5,7 @@ go 1.22
 toolchain go1.23.1
 
 require (
+	github.com/Dev4BF/GoBattlefieldAPI v0.0.0-20240924002511-d92930a47da0
 	github.com/FloatTech/zbpctrl v1.6.1
 	github.com/FloatTech/zbputils v1.7.1
 	github.com/jinzhu/gorm v1.9.16
@@ -19,7 +20,7 @@ require (
 
 require (
 	github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5 // indirect
-	github.com/boombuler/barcode v1.0.1 // indirect
+	github.com/boombuler/barcode v1.0.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fumiama/terasu v0.0.0-20240507144117-547a591149c0 // indirect
@@ -57,7 +58,7 @@ require (
 )
 
 require (
-	github.com/google/uuid v1.6.0
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	golang.org/x/sys v0.26.0
@@ -70,6 +71,7 @@ require (
 	github.com/FloatTech/rendercard v0.1.2 // indirect
 	github.com/FloatTech/sqlite v1.6.3 // indirect
 	github.com/FloatTech/ttl v0.0.0-20230307105452-d6f7b2b647d1 // indirect
+	github.com/KomeiDiSanXian/BFSession v0.0.0-20240903022626-490287c76eb8
 	github.com/RomiChan/syncx v0.0.0-20240418144900-b7402ffdebc7 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/ericpauley/go-quantize v0.0.0-20200331213906-ae555eb2afa4 // indirect
@@ -85,7 +87,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/pquerna/otp v1.4.0
+	github.com/pquerna/otp v1.4.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/spf13/viper v1.19.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.30.0

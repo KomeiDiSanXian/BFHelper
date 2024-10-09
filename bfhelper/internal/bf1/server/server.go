@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	bf1api "github.com/KomeiDiSanXian/BFHelper/bfhelper/internal/bf1/api"
+	"github.com/Dev4BF/GoBattlefieldAPI/bf1"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/global"
-	bf1reqbody "github.com/KomeiDiSanXian/BFHelper/bfhelper/pkg/netreq/bf1"
 	"github.com/tidwall/gjson"
 )
 
@@ -23,8 +22,8 @@ func Kick(gameID, pid, reason string) (string, error) {
 	if len(reason) > 32 {
 		return "", errors.New("理由过长")
 	}
-	post := bf1reqbody.NewPostKick(pid, gameID, reason)
-	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
+	g := bf1.NewGateway(global.Session.GetSessionID())
+	data, err := bf1.KickPlayer(g, gameID, pid, reason)
 	if err != nil {
 		return "", err
 	}
@@ -33,8 +32,8 @@ func Kick(gameID, pid, reason string) (string, error) {
 
 // Ban player, check returned id
 func Ban(serverID, pid string) error {
-	post := bf1reqbody.NewPostBan(pid, serverID)
-	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
+	g := bf1.NewGateway(global.Session.GetSessionID())
+	data, err := bf1.AddServerBan(g, serverID, pid)
 	if err != nil {
 		return err
 	}
@@ -46,8 +45,8 @@ func Ban(serverID, pid string) error {
 
 // Unban player
 func Unban(serverID, pid string) error {
-	post := bf1reqbody.NewPostRemoveBan(pid, serverID)
-	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
+	g := bf1.NewGateway(global.Session.GetSessionID())
+	data, err := bf1.RemoveServerBan(g, serverID, pid)
 	if err != nil {
 		return err
 	}
@@ -59,8 +58,8 @@ func Unban(serverID, pid string) error {
 
 // ChangeMap will change the map for players
 func ChangeMap(pgid string, index int) error {
-	post := bf1reqbody.NewPostChangeMap(pgid, index)
-	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
+	g := bf1.NewGateway(global.Session.GetSessionID())
+	data, err := bf1.ChooseLevel(g, pgid, index)
 	if err != nil {
 		return err
 	}
@@ -71,8 +70,8 @@ func ChangeMap(pgid string, index int) error {
 }
 
 func mapRequest(gameID string) ([]gjson.Result, error) {
-	post := bf1reqbody.NewPostGetServerInfo(gameID)
-	data, err := bf1api.ReturnJSON(global.NativeAPI, "POST", post)
+	g := bf1.NewGateway(global.Session.GetSessionID())
+	data, err := bf1.ServerDetailsByGameID(g, gameID)
 	if err != nil {
 		return nil, err
 	}
