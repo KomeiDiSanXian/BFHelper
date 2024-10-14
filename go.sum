@@ -8,8 +8,8 @@ github.com/FloatTech/rendercard v0.1.2 h1:W4SF9fSxv6Ava+kIUI0T1ILOjId/cgZ0huuEpM
 github.com/FloatTech/rendercard v0.1.2/go.mod h1:Sbojcy1t3NfFz7/WicZRmR/uKFxNMYkKF8qHx69dxY0=
 github.com/FloatTech/sqlite v1.6.3 h1:MQkqBNlkPuCoKQQgoNLuTL/2Ci3tBTFAnVYBdD0Wy4M=
 github.com/FloatTech/sqlite v1.6.3/go.mod h1:zFbHzRfB+CJ+VidfjuVbrcin3DAz283F7hF1hIeHzpY=
-github.com/FloatTech/ttl v0.0.0-20230307105452-d6f7b2b647d1 h1:g4pTnDJUW4VbJ9NvoRfUvdjDrHz/6QhfN/LoIIpICbo=
-github.com/FloatTech/ttl v0.0.0-20230307105452-d6f7b2b647d1/go.mod h1:fHZFWGquNXuHttu9dUYoKuNbm3dzLETnIOnm1muSfDs=
+github.com/FloatTech/ttl v0.0.0-20240716161252-965925764562 h1:snfw7FNFym1eNnLrQ/VCf80LiQo9C7jHgrunZDwiRcY=
+github.com/FloatTech/ttl v0.0.0-20240716161252-965925764562/go.mod h1:fHZFWGquNXuHttu9dUYoKuNbm3dzLETnIOnm1muSfDs=
 github.com/FloatTech/zbpctrl v1.6.1 h1:SilK5R2poO8iUT6JPzpgr/BSzxYAaybBYNZkMyZ8STw=
 github.com/FloatTech/zbpctrl v1.6.1/go.mod h1:I+MetM++1sJhNPg3zww1aw04BicYsNohvHC4Jh52XSo=
 github.com/KomeiDiSanXian/zbputils v0.0.0-20230923095115-55ba2c51620d h1:xDRTbCeUNaCWSzSqlmbOJE7VqTtYgn5tNKeCZmy9eyU=
@@ -155,8 +155,8 @@ github.com/tidwall/match v1.1.1/go.mod h1:eRSPERbgtNPcGhD8UCthc6PmLEQXEWd3PRB5JT
 github.com/tidwall/pretty v1.2.0/go.mod h1:ITEVvHYasfjBbM0u2Pg8T2nJnzm8xPwvNhhsoaGGjNU=
 github.com/tidwall/pretty v1.2.1 h1:qjsOFOWWQl+N3RsoF5/ssm1pHmJJwhjlSbZ51I6wMl4=
 github.com/tidwall/pretty v1.2.1/go.mod h1:ITEVvHYasfjBbM0u2Pg8T2nJnzm8xPwvNhhsoaGGjNU=
-github.com/wdvxdr1123/ZeroBot v1.7.5-0.20240501144516-eb574bbdad32 h1:GuVwh4uGtDegpKNgSkcqpbISLAn5nCpqoGxXmiEv4iI=
-github.com/wdvxdr1123/ZeroBot v1.7.5-0.20240501144516-eb574bbdad32/go.mod h1:J6uHaXS/Am2VsLxF9TcU6il19PbOeC4SvgxHJ1E2jaE=
+github.com/wdvxdr1123/ZeroBot v1.7.5 h1:a/zOc7AaBOmxMon/YAHXLJFr4bg+iS8QucrM+KxkSPQ=
+github.com/wdvxdr1123/ZeroBot v1.7.5/go.mod h1:C86nQ0gIdAri4K2vg8IIQIslt08zzrKMcqYt8zhkx1M=
 go.opentelemetry.io/otel v1.31.0 h1:NsJcKPIW0D0H3NgzPDHmo0WW6SptzPdqg/L1zsIm2hY=
 go.opentelemetry.io/otel v1.31.0/go.mod h1:O0C14Yl9FgkjqcCZAsE053C13OaddMYr/hz6clDkEJE=
 go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.31.0 h1:K0XaT3DwHAcV4nKLzcQvwAgSyisUghWoY20I7huthMk=

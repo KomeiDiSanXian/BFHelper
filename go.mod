@@ -10,7 +10,7 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/sirupsen/logrus v1.9.3
 	github.com/tidwall/gjson v1.18.0
-	github.com/wdvxdr1123/ZeroBot v1.7.5-0.20240501144516-eb574bbdad32
+	github.com/wdvxdr1123/ZeroBot v1.7.5
 	go.opentelemetry.io/otel v1.31.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.31.0
 	go.opentelemetry.io/otel/sdk v1.31.0
@@ -69,7 +69,7 @@ require (
 	github.com/FloatTech/imgfactory v0.2.2-0.20230315152233-49741fc994f9 // indirect
 	github.com/FloatTech/rendercard v0.1.2 // indirect
 	github.com/FloatTech/sqlite v1.6.3 // indirect
-	github.com/FloatTech/ttl v0.0.0-20230307105452-d6f7b2b647d1 // indirect
+	github.com/FloatTech/ttl v0.0.0-20240716161252-965925764562 // indirect
 	github.com/RomiChan/syncx v0.0.0-20240418144900-b7402ffdebc7 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/ericpauley/go-quantize v0.0.0-20200331213906-ae555eb2afa4 // indirect
