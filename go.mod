@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.23.1
 
 require (
-	github.com/FloatTech/zbpctrl v1.6.1
+	github.com/FloatTech/zbpctrl v1.7.0
 	github.com/FloatTech/zbputils v1.7.1
 	github.com/jinzhu/gorm v1.9.16
 	github.com/sirupsen/logrus v1.9.3
@@ -68,7 +68,7 @@ require (
 	github.com/FloatTech/gg v1.1.3 // indirect
 	github.com/FloatTech/imgfactory v0.2.2-0.20230315152233-49741fc994f9 // indirect
 	github.com/FloatTech/rendercard v0.1.2 // indirect
-	github.com/FloatTech/sqlite v1.6.3 // indirect
+	github.com/FloatTech/sqlite v1.7.0 // indirect
 	github.com/FloatTech/ttl v0.0.0-20240716161252-965925764562 // indirect
 	github.com/RomiChan/syncx v0.0.0-20240418144900-b7402ffdebc7 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
@@ -92,10 +92,10 @@ require (
 	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/text v0.20.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	modernc.org/libc v1.53.4 // indirect
+	modernc.org/libc v1.61.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
-	modernc.org/sqlite v1.30.1 // indirect
+	modernc.org/sqlite v1.33.1 // indirect
 
 )
 
