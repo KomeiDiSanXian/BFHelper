@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.26"
+  GOPRIVATE: github.com/KomeiDiSanXian,github.com/Dev4BF
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Configure git for private modules
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com".insteadOf "https://github.com"
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          args: --timeout=10m
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Configure git for private modules
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com".insteadOf "https://github.com"
+      - name: Download dependencies
+        run: go mod download
+      - name: Build (Remilia mode)
+        run: go build -v .
+      - name: Build (ZeroBot mode)
+        run: go build -tags zerobot -v .
+      - name: Vet
+        run: go vet ./...
+      - name: Check tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
