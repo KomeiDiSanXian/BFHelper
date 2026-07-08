@@ -1,2 +1,14 @@
-*_test.go
-*.db
+# Binary
+bfhelper.exe
+bfhelper
+
+# Data
+data/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env

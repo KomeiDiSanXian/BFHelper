@@ -1,0 +1,38 @@
+# BFHelper 全局配置文件
+# 首次启动会自动生成，按需修改后重启
+
+# 运行模式: remilia（默认）| zerobot
+# Remilia 模式使用 remilia 框架 + QQ 官方适配器
+# ZeroBot 模式使用 ZeroBot 框架 + OneBot 协议
+mode: remilia
+
+# EA 账号凭据（从浏览器 cookie 中提取）
+account:
+  sid: ""              # EA sid cookie
+  remid: ""            # EA remid cookie
+  game: "bf1"          # bf1 | bfv | bf4 | bf2042 | bf6
+
+# Remilia 模式配置
+remilia:
+  ws_server: "ws://127.0.0.1:6700"
+  ws_token: ""
+  super_users:          # 机器人超级管理员 QQ
+    - 123456
+
+# ZeroBot 模式配置（使用 build tag: zerobot）
+zerobot:
+  bot_names:
+    - "蕾米"
+  command_prefix: "."
+  super_users:
+    - 123456
+  ws_server: "ws://127.0.0.1:6700"
+  ws_token: ""
+
+# BFEAC 反作弊查询配置
+bfeac:
+  api_key: ""
+
+# Blaze TCP 实时推送
+blaze:
+  enabled: false

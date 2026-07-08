@@ -4,8 +4,6 @@ env:
 before:
   hooks:
     - go mod tidy
-    - go install github.com/tc-hib/go-winres@latest
-    - go-winres make
 builds:
   - id: nowin
     env:
@@ -42,6 +40,43 @@ builds:
     ldflags:
       - -s -w
       - -checklinkname=0
+  - id: nowin-zerobot
+    env:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+    goos:
+      - linux
+    goarch:
+      - 386
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - 6
+      - 7
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+      - -tags=zerobot
+    ldflags:
+      - -s -w
+      - -checklinkname=0
+  - id: win-zerobot
+    env:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+    goos:
+      - windows
+    goarch:
+      - 386
+      - amd64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+      - -tags=zerobot
+    ldflags:
+      - -s -w
+      - -checklinkname=0
 
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
@@ -58,7 +93,7 @@ changelog:
       - go mod tidy
 
 archives:
-  - id: nowin
+  - id: default
     builds:
       - nowin
       - win
@@ -66,6 +101,22 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+    files:
+      - config.yaml
+      - README.md
+      - LICENSE
+  - id: zerobot
+    builds:
+      - nowin-zerobot
+      - win-zerobot
+    name_template: "{{ .ProjectName }}v{{ .Version }}_zerobot_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - config.yaml
+      - README.md
+      - LICENSE
 
 nfpms:
   - license: AGPL 3.0
