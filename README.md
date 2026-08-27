@@ -155,7 +155,7 @@ plugins:
 | `bfhelper/core` | 类型 + 存储 + 错误定义 | ❌ |
 | `bfhelper/public` | BTR/Bili22/BFEAC/BFBan API | ❌ |
 | `bfhelper/battlefield` | EA 认证 + Sparta 管理 | ✅ `GoBattlefieldAPI` |
-| `remilia/` | Remilia 框架适配器 | ✅ `remilia` |
+
 
 ## 免责声明
 
