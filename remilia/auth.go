@@ -2,6 +2,7 @@ package remilia
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/core"
 	eventctx "github.com/KomeiDiSanXian/remilia/core/context"
@@ -9,34 +10,40 @@ import (
 )
 
 func (p *Plugin) handleLogin(ctx *eventctx.Context) error {
-	if p.Client.IsLoggedIn() {
-		ctx.Reply(platform.TextMessage("已经登录，如需重新登录请先 /bf logout"))
+	if !p.requireSuperUser(ctx) {
+		return nil
+	}
+	if p.IsLoggedIn() {
+		ctx.Reply(platform.TextMessage("已经登录，如需重新登录请先 /logout"))
 		return nil
 	}
 
-	sid := p.Config.Account.SID
-	remid := p.Config.Account.Remid
+	sid := p.Account.SID
+	remid := p.Account.Remid
 	if sid == "" || remid == "" {
 		ctx.Reply(platform.TextMessage("未配置 EA 凭据，请在插件配置中设置 account.sid 和 account.remid"))
 		return nil
 	}
 
-	eaGame := toEAGame(p.Config.Account.Game)
-	if err := p.Client.Login(ctx.Context(), sid, remid, eaGame); err != nil {
+	eaGame := toEAGame(p.Account.Game)
+	if err := p.Login(ctx.Context(), sid, remid, eaGame); err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("登录失败: %v", err)))
 		return nil
 	}
 
-	game, _ := core.ParseGame(p.Config.Account.Game)
+	game, _ := core.ParseGame(p.Account.Game)
 	p.persistCredentials(sid, remid, game)
 
-	ctx.Reply(platform.TextMessage(fmt.Sprintf("✅ EA 登录成功（游戏: %s）", p.Config.Account.Game)))
+	ctx.Reply(platform.TextMessage(fmt.Sprintf("✅ EA 登录成功（游戏: %s）", p.Account.Game)))
 	return nil
 }
 
 func (p *Plugin) handleLogout(ctx *eventctx.Context) error {
-	p.Client.Logout()
-	if p.Config.Account.SID == "" {
+	if !p.requireSuperUser(ctx) {
+		return nil
+	}
+	p.Logout()
+	if p.Account.SID == "" {
 		_ = p.kv.Delete([]byte("ea_credentials"))
 	}
 	ctx.Reply(platform.TextMessage("✅ 已登出 EA 账号"))
@@ -47,13 +54,13 @@ func (p *Plugin) handleStatus(ctx *eventctx.Context) error {
 	msg := "BFHelper 状态\n"
 	msg += "─────────────\n"
 
-	if p.Client.IsLoggedIn() {
+	if p.IsLoggedIn() {
 		msg += "EA 登录: ✅\n"
 	} else {
 		msg += "EA 登录: ❌\n"
 	}
 
-	db := p.Storage.DB()
+	db := p.DB()
 	var playerCount, groupCount, watchCount int64
 	db.Model(&core.Player{}).Count(&playerCount)
 	db.Model(&core.Group{}).Count(&groupCount)
@@ -67,7 +74,6 @@ func (p *Plugin) handleStatus(ctx *eventctx.Context) error {
 }
 
 func parseUserID(idStr string) int64 {
-	var id int64
-	fmt.Sscanf(idStr, "%d", &id)
+	id, _ := strconv.ParseInt(idStr, 10, 64)
 	return id
 }

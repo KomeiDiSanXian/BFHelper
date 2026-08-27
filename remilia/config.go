@@ -7,6 +7,8 @@ type Config struct {
 	Account AccountConfig `yaml:"account"`
 	BFEAC   BFEACConfig   `yaml:"bfeac"`
 	Blaze   BlazeConfig   `yaml:"blaze"`
+	// SuperUsers 机器人超级管理员 QQ（可绕过群主/管理员权限检查）。
+	SuperUsers []int64 `yaml:"super_users"`
 }
 
 // AccountConfig EA 账号认证配置。

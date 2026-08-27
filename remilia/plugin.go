@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/Dev4BF/GoBattlefieldAPI/auth"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/battlefield"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/core"
 	"github.com/KomeiDiSanXian/BFHelper/bfhelper/public"
-	"github.com/Dev4BF/GoBattlefieldAPI/auth"
 	"github.com/KomeiDiSanXian/remilia/infra/kv"
 	"github.com/KomeiDiSanXian/remilia/infra/storage"
 	"github.com/KomeiDiSanXian/remilia/plugin"
@@ -17,7 +17,13 @@ import (
 // Plugin 是 BFHelper 插件的运行时实例。
 type Plugin struct {
 	*Config
-	core.Storage
+	core.PlayerStore
+	core.GroupStore
+	core.ServerStore
+	core.AdminStore
+	core.BlazeWatchStore
+	core.OperationLogStore
+	core.DBProvider
 	*public.BTRClient
 	*public.Bili22Client
 	*battlefield.Client
@@ -34,10 +40,9 @@ func New() *plugin.Descriptor {
 
 	return &plugin.Descriptor{
 		Name:         "bfhelper",
-		Version:      "2.0.0",
+		Version:      "2.1.0",
 		Deps:         []string{"storage"},
 		OptionalDeps: []string{"permission"},
-		Privileged:   true,
 		Meta:         newMetadata(),
 		Setup:        p.setup,
 		Teardown:     p.teardown,
@@ -47,12 +52,19 @@ func New() *plugin.Descriptor {
 func (p *Plugin) setup(ctx *plugin.SetupContext) (any, error) {
 	p.Config = readConfig(ctx)
 
-	store := plugin.Service[*storage.Plugin](ctx, "storage")
+	store := ctx.Service[*storage.Plugin]("storage")
 	db := store.DB()
-	if err := db.AutoMigrate(&core.Player{}, &core.Group{}, &core.Server{}, &core.Admin{}, &core.BlazeWatch{}); err != nil {
+	if err := db.AutoMigrate(&core.Player{}, &core.Group{}, &core.Server{}, &core.Admin{}, &core.BlazeWatch{}, &core.OperationLog{}); err != nil {
 		return nil, fmt.Errorf("auto migrate: %w", err)
 	}
-	p.Storage = core.NewStorage(db)
+	coreStore := core.NewStorage(db)
+	p.PlayerStore = coreStore
+	p.GroupStore = coreStore
+	p.ServerStore = coreStore
+	p.AdminStore = coreStore
+	p.BlazeWatchStore = coreStore
+	p.OperationLogStore = coreStore
+	p.DBProvider = coreStore
 
 	if !ctx.DryRun {
 		kvDB, err := kv.Open("./data/bfhelper/credentials.kv")
@@ -69,17 +81,35 @@ func (p *Plugin) setup(ctx *plugin.SetupContext) (any, error) {
 
 func readConfig(ctx *plugin.SetupContext) *Config {
 	cfg := DefaultConfig()
-	if v := ctx.Config.GetString("account.sid", ""); v != "" {
-		cfg.Account.SID = v
+	if account := ctx.Config.GetStringMap("account", nil); account != nil {
+		if v, ok := account["sid"].(string); ok && v != "" {
+			cfg.Account.SID = v
+		}
+		if v, ok := account["remid"].(string); ok && v != "" {
+			cfg.Account.Remid = v
+		}
+		if v, ok := account["game"].(string); ok && v != "" {
+			cfg.Account.Game = v
+		}
 	}
-	if v := ctx.Config.GetString("account.remid", ""); v != "" {
-		cfg.Account.Remid = v
+	if blaze := ctx.Config.GetStringMap("blaze", nil); blaze != nil {
+		if v, ok := blaze["enabled"].(bool); ok {
+			cfg.Blaze.Enabled = v
+		}
 	}
-	if v := ctx.Config.GetString("account.game", "bf1"); v != "" {
-		cfg.Account.Game = v
+	if v := ctx.Config.GetStringSlice("super_users", nil); v != nil {
+		for _, s := range v {
+			var qq int64
+			if _, err := fmt.Sscanf(s, "%d", &qq); err == nil && qq > 0 {
+				cfg.SuperUsers = append(cfg.SuperUsers, qq)
+			}
+		}
 	}
-	cfg.Blaze.Enabled = ctx.Config.GetBool("blaze.enabled", false)
-	cfg.BFEAC.APIKey = ctx.Config.GetString("bfeac.api_key", "")
+	if bfeac := ctx.Config.GetStringMap("bfeac", nil); bfeac != nil {
+		if v, ok := bfeac["api_key"].(string); ok {
+			cfg.BFEAC.APIKey = v
+		}
+	}
 	return &cfg
 }
 
@@ -91,7 +121,7 @@ func (p *Plugin) teardown(_ *plugin.TeardownContext) error {
 }
 
 func (p *Plugin) tryAutoLogin(ctx *plugin.SetupContext) {
-	sid, remid := p.Config.Account.SID, p.Config.Account.Remid
+	sid, remid := p.Account.SID, p.Account.Remid
 
 	if sid == "" || remid == "" {
 		data, err := p.kv.Get([]byte("ea_credentials"))
@@ -108,14 +138,14 @@ func (p *Plugin) tryAutoLogin(ctx *plugin.SetupContext) {
 		return
 	}
 
-	eaGame := toEAGame(p.Config.Account.Game)
-	if err := p.Client.Login(context.Background(), sid, remid, eaGame); err != nil {
+	eaGame := toEAGame(p.Account.Game)
+	if err := p.Login(context.Background(), sid, remid, eaGame); err != nil {
 		ctx.Log.Warn(fmt.Sprintf("Auto login failed: %v", err))
 		return
 	}
 	ctx.Log.Info("EA auto login successful")
 
-	game, _ := core.ParseGame(p.Config.Account.Game)
+	game, _ := core.ParseGame(p.Account.Game)
 	p.persistCredentials(sid, remid, game)
 }
 

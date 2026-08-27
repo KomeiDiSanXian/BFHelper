@@ -11,20 +11,23 @@ import (
 func (p *Plugin) handleBlazeWatch(ctx *eventctx.Context) error {
 	gid := p.getGroupID(ctx)
 
-	_, err := p.Storage.GetGroup(gid)
+	_, err := p.GetGroup(gid)
 	if err != nil {
-		ctx.Reply(platform.TextMessage("请先创建服务器群组: /bf group create"))
+		ctx.Reply(platform.TextMessage("请先创建服务器群组: /group create"))
+		return nil
+	}
+	if !p.checkAdmin(ctx, gid) {
 		return nil
 	}
 
 	args := strings.Fields(ctx.GetMessageContent())
-	if len(args) < 4 {
-		ctx.Reply(platform.TextMessage("用法: /bf blaze watch <gameId>"))
+	if len(args) < 3 {
+		ctx.Reply(platform.TextMessage("用法: /blaze watch <gameId>"))
 		return nil
 	}
 
-	gameID := args[3]
-	if err := p.Storage.SetBlazeWatch(gid, gameID, true); err != nil {
+	gameID := args[2]
+	if err := p.SetBlazeWatch(gid, gameID, true); err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("设置失败: %v", err)))
 		return nil
 	}
@@ -36,13 +39,22 @@ func (p *Plugin) handleBlazeWatch(ctx *eventctx.Context) error {
 func (p *Plugin) handleBlazeUnwatch(ctx *eventctx.Context) error {
 	gid := p.getGroupID(ctx)
 
-	args := strings.Fields(ctx.GetMessageContent())
-	if len(args) < 4 {
-		ctx.Reply(platform.TextMessage("用法: /bf blaze unwatch <gameId>"))
+	_, err := p.GetGroup(gid)
+	if err != nil {
+		ctx.Reply(platform.TextMessage("请先创建服务器群组: /group create"))
+		return nil
+	}
+	if !p.checkAdmin(ctx, gid) {
 		return nil
 	}
 
-	if err := p.Storage.RemoveBlazeWatch(gid, args[3]); err != nil {
+	args := strings.Fields(ctx.GetMessageContent())
+	if len(args) < 3 {
+		ctx.Reply(platform.TextMessage("用法: /blaze unwatch <gameId>"))
+		return nil
+	}
+
+	if err := p.RemoveBlazeWatch(gid, args[2]); err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("取消监听失败: %v", err)))
 		return nil
 	}
@@ -54,21 +66,30 @@ func (p *Plugin) handleBlazeUnwatch(ctx *eventctx.Context) error {
 func (p *Plugin) handleBlazeList(ctx *eventctx.Context) error {
 	gid := p.getGroupID(ctx)
 
-	watches, err := p.Storage.GetBlazeWatches(gid)
+	_, err := p.GetGroup(gid)
+	if err != nil {
+		ctx.Reply(platform.TextMessage("请先创建服务器群组: /group create"))
+		return nil
+	}
+	if !p.checkAdmin(ctx, gid) {
+		return nil
+	}
+
+	watches, err := p.GetBlazeWatches(gid)
 	if err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("查询失败: %v", err)))
 		return nil
 	}
 
 	if len(watches) == 0 {
-		ctx.Reply(platform.TextMessage("本群没有正在监听的服务器\n使用 /bf blaze watch <gameId> 添加"))
+		ctx.Reply(platform.TextMessage("本群没有正在监听的服务器\n使用 /blaze watch <gameId> 添加"))
 		return nil
 	}
 
 	var msg strings.Builder
 	msg.WriteString("📡 正在监听的服务器:\n")
 	for _, w := range watches {
-		msg.WriteString(fmt.Sprintf("  - %s\n", w.GameID))
+		fmt.Fprintf(&msg, "  - %s\n", w.GameID)
 	}
 	ctx.Reply(platform.TextMessage(msg.String()))
 	return nil

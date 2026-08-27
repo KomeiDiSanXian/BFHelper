@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 env:
-  GO_VERSION: "1.26"
+  GO_VERSION: "1.27"
   GOPRIVATE: github.com/KomeiDiSanXian,github.com/Dev4BF
 
 jobs:
@@ -47,8 +47,6 @@ jobs:
         run: go mod download
       - name: Build (Remilia mode)
         run: go build -v .
-      - name: Build (ZeroBot mode)
-        run: go build -tags zerobot -v .
       - name: Vet
         run: go vet ./...
       - name: Check tidy

@@ -1,6 +1,5 @@
 # Binary
 bfhelper.exe
-bfhelper
 
 # Data
 data/
@@ -12,3 +11,6 @@ data/
 
 # Environment
 .env
+
+# Private reference (not part of this repo)
+private/

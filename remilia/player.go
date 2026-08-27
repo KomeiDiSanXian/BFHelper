@@ -17,22 +17,22 @@ func (p *Plugin) handleBind(ctx *eventctx.Context) error {
 	parsed := ctx.GetParsedCommand()
 	name := parsed.GetString("name")
 	if name == "" {
-		ctx.Reply(platform.TextMessage("用法: /bf bind <玩家名>"))
+		ctx.Reply(platform.TextMessage("用法: /bind <玩家名>"))
 		return nil
 	}
 
 	qqID := p.getUserID(ctx)
-	_, err := p.Storage.GetPlayerByQQ(qqID)
+	_, err := p.GetPlayerByQQ(qqID)
 	if err == nil {
-		existed, _ := p.Storage.GetPlayerByQQ(qqID)
-		_ = p.Storage.DeletePlayer(qqID)
+		existed, _ := p.GetPlayerByQQ(qqID)
+		_ = p.DeletePlayer(qqID)
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("已将 %s 解绑，重新绑定为 %s", existed.PersonaName, name)))
 	} else if err != gorm.ErrRecordNotFound {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("数据库错误: %v", err)))
 		return nil
 	}
 
-	if err := p.Storage.CreatePlayer(&core.Player{QQID: qqID, PersonaName: name}); err != nil {
+	if err := p.CreatePlayer(&core.Player{QQID: qqID, PersonaName: name}); err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("绑定失败: %v", err)))
 		return nil
 	}
@@ -42,7 +42,7 @@ func (p *Plugin) handleBind(ctx *eventctx.Context) error {
 
 func (p *Plugin) handleUnbind(ctx *eventctx.Context) error {
 	qqID := p.getUserID(ctx)
-	if err := p.Storage.DeletePlayer(qqID); err != nil {
+	if err := p.DeletePlayer(qqID); err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("解绑失败: %v", err)))
 		return nil
 	}
@@ -55,7 +55,7 @@ func (p *Plugin) resolvePersonaName(ctx *eventctx.Context, name string) (string,
 		return name, nil
 	}
 	qqID := p.getUserID(ctx)
-	player, err := p.Storage.GetPlayerByQQ(qqID)
+	player, err := p.GetPlayerByQQ(qqID)
 	if err != nil {
 		return "", core.ErrPlayerNotFound
 	}
@@ -72,7 +72,7 @@ func (p *Plugin) handleStats(ctx *eventctx.Context) error {
 
 	ctx.Reply(platform.TextMessage("少女折寿中..."))
 
-	stat, err := p.BTRClient.GetStats(name)
+	stat, err := p.GetStats(name)
 	if err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("查询失败: %v", err)))
 		return nil
@@ -91,7 +91,7 @@ func (p *Plugin) handleWeapons(ctx *eventctx.Context) error {
 		return nil
 	}
 
-	if !p.Client.IsLoggedIn() {
+	if !p.IsLoggedIn() {
 		ctx.Reply(platform.TextMessage("需要先登录 EA 账号才能查询武器数据"))
 		return nil
 	}
@@ -104,7 +104,7 @@ func (p *Plugin) handleWeapons(ctx *eventctx.Context) error {
 		return nil
 	}
 
-	ws, err := public.GetWeapons(pid, public.SpartaAPIURL, p.Client.GatewaySession(), core.WeaponALL)
+	ws, err := public.GetWeapons(pid, public.SpartaAPIURL, p.GatewaySession(), core.WeaponALL)
 	if err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("查询武器失败: %v", err)))
 		return nil
@@ -123,7 +123,7 @@ func (p *Plugin) handleVehicles(ctx *eventctx.Context) error {
 		return nil
 	}
 
-	if !p.Client.IsLoggedIn() {
+	if !p.IsLoggedIn() {
 		ctx.Reply(platform.TextMessage("需要先登录 EA 账号才能查询载具数据"))
 		return nil
 	}
@@ -136,7 +136,7 @@ func (p *Plugin) handleVehicles(ctx *eventctx.Context) error {
 		return nil
 	}
 
-	vs, err := public.GetVehicles(pid, public.SpartaAPIURL, p.Client.GatewaySession())
+	vs, err := public.GetVehicles(pid, public.SpartaAPIURL, p.GatewaySession())
 	if err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("查询载具失败: %v", err)))
 		return nil
@@ -157,7 +157,7 @@ func (p *Plugin) handleRecent(ctx *eventctx.Context) error {
 
 	ctx.Reply(platform.TextMessage("少女折寿中..."))
 
-	entries, err := p.Bili22Client.GetRecent(name)
+	entries, err := p.GetRecent(name)
 	if err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("查询失败: %v", err)))
 		return nil
@@ -174,12 +174,12 @@ func (p *Plugin) handleRecent(ctx *eventctx.Context) error {
 }
 
 func (p *Plugin) handleExchange(ctx *eventctx.Context) error {
-	if !p.Client.IsLoggedIn() {
+	if !p.IsLoggedIn() {
 		ctx.Reply(platform.TextMessage("需要先登录 EA 账号才能查询交换信息"))
 		return nil
 	}
 
-	exchange, err := public.GetExchange(p.Client.GatewaySession())
+	exchange, err := public.GetExchange(p.GatewaySession())
 	if err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("查询失败: %v", err)))
 		return nil
@@ -197,12 +197,12 @@ func (p *Plugin) handleExchange(ctx *eventctx.Context) error {
 }
 
 func (p *Plugin) handleCampaign(ctx *eventctx.Context) error {
-	if !p.Client.IsLoggedIn() {
+	if !p.IsLoggedIn() {
 		ctx.Reply(platform.TextMessage("需要先登录 EA 账号才能查询行动包"))
 		return nil
 	}
 
-	pack, err := public.GetCampaignPacks(p.Client.GatewaySession())
+	pack, err := public.GetCampaignPacks(p.GatewaySession())
 	if err != nil {
 		ctx.Reply(platform.TextMessage(fmt.Sprintf("查询失败: %v", err)))
 		return nil
@@ -236,10 +236,10 @@ func (p *Plugin) handleCheaterCheck(ctx *eventctx.Context) error {
 }
 
 func (p *Plugin) resolvePersonaID(stdCtx stdctx.Context, name string) (string, error) {
-	persona, err := p.Client.LookupPersonaByName(stdCtx, name)
+	persona, err := p.LookupPersonaByName(stdCtx, name)
 	if err != nil {
 		// Fallback: check local DB
-		player, err2 := p.Storage.GetPlayerByName(name)
+		player, err2 := p.GetPlayerByName(name)
 		if err2 != nil || player.PersonaID == "" {
 			return "", err
 		}
